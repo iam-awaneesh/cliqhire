@@ -60,6 +60,8 @@ export default function JobsPage() {
 
   const router = useRouter();
 
+  const [clientList,  setClientList] = useState([]);
+
   useEffect(() => {
     const loadJobs = async () => {
       try {
@@ -80,9 +82,25 @@ export default function JobsPage() {
         setLoading(false);
       }
     };
+
+    const loadClients = async () => {
+      try {
+        const response = await fetch("https://aems-backend.onrender.com/api/clients/names");
+        if (!response.ok) {
+          throw new Error("Failed to fetch clients");
+        }
+        const data = await response.json();
+        setClientList(data);
+      } catch (error) {
+        console.error("Error fetching clients:", error);
+      }
+    };
+    loadClients();
     
     loadJobs();
   }, []);
+
+  console.log(clientList);
 
   const handleStageChange = (jobId: string, newStage: JobStage) => {
     setPendingStageChange({ jobId, newStage });

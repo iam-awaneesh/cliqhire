@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/table";
 import { Plus, RefreshCcw, SlidersHorizontal, MoreVertical } from "lucide-react";
 import { CreateClientModal } from "@/components/create-client-modal";
-import { getSampleClients } from "@/app/clients/data/sample-clients";
+import { getSampleClients } from "@/app/(protected)/clients/data/sample-clients";
 import { ClientStageBadge } from "@/components/client-stage-badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";

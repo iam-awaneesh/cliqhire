@@ -1,4 +1,4 @@
-import { CandidatesEmptyState } from "@/app/candidates/empty-states"
+import { CandidatesEmptyState } from "@/app/(protected)/candidates/empty-states"
 import { CreateCandidateButton } from "./create-candidate-button"
 import Link from "next/link"
 

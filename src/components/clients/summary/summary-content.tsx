@@ -439,7 +439,7 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
         </div>
       </div>
 
-      {/* Modals */}
+      {/* Modals - These should properly manage focus when opened/closed */}
       <AddTeamMemberModal
         open={isTeamModalOpen}
         onOpenChange={setIsTeamModalOpen}

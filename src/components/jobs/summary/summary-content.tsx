@@ -169,6 +169,36 @@ export function SummaryContent({ jobId }: SummaryContentProps) {
 
   return (
     <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+
+      {/* Right Column - Job Details */}
+      <div>
+        <div className="bg-gray-50 rounded-lg p-4">
+          <h2 className="text-lg font-semibold mb-4">Job Details</h2>
+          <div className="bg-white rounded border p-4 space-y-4">
+            {Object.entries(jobDetails).map(([key, value]) => {
+              if (key === 'dateRange' || key === 'salaryCurrency' || key === 'minimumSalary' || key === 'maximumSalary' || key === 'salaryRange' || key === 'jobDescription') return null;
+
+              const isDateField = ['deadline', 'dateRange.start', 'dateRange.end'].includes(key);
+
+              return (
+                <DetailRow
+                  key={key}
+                  label={key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
+                  value={isDateField ? new Date(value as string).toLocaleDateString() : value?.toString()}
+                  onEdit={() => handleFieldEdit(
+                    key as keyof JobDetails,
+                    value?.toString() || '',
+                    { isDate: isDateField }
+                  )}
+                />
+              );
+            })}
+          </div>
+
+          
+        </div>
+      </div>
+
       {/* Left Column - Job Description */}
       <div>
         <div className="bg-gray-50 rounded-lg p-4">
@@ -191,32 +221,6 @@ export function SummaryContent({ jobId }: SummaryContentProps) {
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Right Column - Job Details */}
-      <div>
-        <div className="bg-gray-50 rounded-lg p-4">
-          <h2 className="text-lg font-semibold mb-4">Job Details</h2>
-          <div className="bg-white rounded border p-4 space-y-4">
-            {Object.entries(jobDetails).map(([key, value]) => {
-              if (key === 'dateRange' || key === 'salaryCurrency' || key === 'minimumSalary' || key === 'maximumSalary' || key === 'salaryRange' || key === 'jobDescription') return null;
-
-              const isDateField = ['deadline', 'dateRange.start', 'dateRange.end'].includes(key);
-
-              return (
-                <DetailRow
-                  key={key}
-                  label={key}
-                  value={isDateField ? new Date(value as string).toLocaleDateString() : value?.toString()}
-                  onEdit={() => handleFieldEdit(
-                    key as keyof JobDetails,
-                    value?.toString() || '',
-                    { isDate: isDateField }
-                  )}
-                />
-              );
-            })}
-          </div>
 
           {/* Package Details Section */}
           <div className="mt-6">
@@ -229,8 +233,9 @@ export function SummaryContent({ jobId }: SummaryContentProps) {
               />
             </div>
           </div>
-        </div>
       </div>
+
+      
 
       {editingField && (
         <EditFieldDialog
