@@ -587,7 +587,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                 <p className="text-sm mt-2">Selected file: {uploadedFiles.vatCopy.name}</p>
               )}
             </div>
-
+            {/* hiii */}
             <div className="space-y-2">
               <Label>GST/TIN Document</Label>
               <div
