@@ -67,6 +67,20 @@ const getClients = async (): Promise<ClientResponse[]> => {
   }
 };
 
+const getClientNames = async (): Promise<ClientResponse[]> => {
+  try {
+    const response = await axios.get(`${API_URL}/clients/names`);
+    return response.data;
+  } catch (error: any) {
+    if (error.response) {
+      const errorMessage = error.response.data?.message || 'Unknown error occurred';
+      console.error('Server response:', error.response.data);
+      throw new Error(`Error fetching clients: ${errorMessage}`);
+    }
+    throw new Error(`Error fetching clients: ${error.message}`);
+  }
+};
+
 const getClientById = async (id: string): Promise<ClientResponse> => {
   try {
     const response = await axios.get(`${API_URL}/clients/${id}`);
@@ -113,4 +127,4 @@ const deleteClient = async (id: string) => {
   }
 };
 
-export { createClient, getClients, getClientById, updateClient, deleteClient };
+export { createClient, getClients,getClientNames, getClientById, updateClient, deleteClient };
