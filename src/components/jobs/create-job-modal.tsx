@@ -18,7 +18,9 @@ import StarterKit from '@tiptap/starter-kit'
 import Underline from '@tiptap/extension-underline'
 import { JobStage } from "@/types/job"
 import { Badge } from "@/components/ui/badge"
-import { X, FileText, Upload } from "lucide-react"
+import { X, FileText, Upload, RefreshCw } from "lucide-react"
+import { getClientNames } from "@/services/clientService"
+import { ClientResponse } from "@/services/clientService"
 
 interface CreateJobModalProps {
   open: boolean
@@ -59,10 +61,9 @@ const jobStages: JobStage[] = [
   "Cancelled"
 ]
 
-// Currency options with flags
 const currencies = [
   { code: 'USD', symbol: '$', name: 'US Dollar', flag: 'US' },
-  { code: 'EUR', symbol: '€', name: 'Euro', flag: 'EU' },
+  { code: 'EUR', symbol: '€', name: 'Euro', flag: 'EU Appeals Court' },
   { code: 'GBP', symbol: '£', name: 'British Pound', flag: 'GB' },
   { code: 'JPY', symbol: '¥', name: 'Japanese Yen', flag: 'JP' },
   { code: 'AUD', symbol: 'A$', name: 'Australian Dollar', flag: 'AU' },
@@ -85,6 +86,9 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
   const [showCountrySuggestions, setShowCountrySuggestions] = useState(false)
   const [selectedNationalities, setSelectedNationalities] = useState<string[]>([])
   const [searchNationality, setSearchNationality] = useState("")
+  const [clients, setClients] = useState<ClientResponse[]>([])
+  const [isLoadingClients, setIsLoadingClients] = useState(false)
+  const [clientError, setClientError] = useState<string | null>(null)
   
   const [formData, setFormData] = useState({
     jobTitle: "",
@@ -114,8 +118,30 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
     jobDescription: ""
   })
 
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null)
+
+  const fetchClients = async () => {
+    setIsLoadingClients(true)
+    setClientError(null)
+    try {
+      const clientData = await getClientNames()
+      console.log('Clients fetched and set:', clientData)
+      setClients(clientData)
+      if (clientData.length === 0) {
+        setClientError("No clients found in the database")
+      }
+    } catch (error: any) {
+      console.error("Error fetching client names:", error.message)
+      setClientError(`Failed to load clients: ${error.message}`)
+    } finally {
+      setIsLoadingClients(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchClients()
+  }, [])
 
   const editor = useEditor({
     extensions: [
@@ -131,7 +157,6 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
     }
   })
 
-  // Nationality search and suggestions
   useEffect(() => {
     const fetchCountrySuggestions = async () => {
       if (searchNationality.length < 2) {
@@ -216,7 +241,7 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
     try {
       const jobData = {
         jobTitle: formData.jobTitle,
-        department: "General", // Default department
+        department: "General",
         client: formData.client,
         jobPosition: formData.jobTitle,
         location: formData.location,
@@ -256,21 +281,23 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
   }
 
   function handleRemoveFile(): void {
-    setSelectedFile(null);
-    setFormData(prev => ({ ...prev, jobDescription: "" }));
+    setSelectedFile(null)
+    setFormData(prev => ({ ...prev, jobDescription: "" }))
   }
+
   function handleFileUpload(event: React.ChangeEvent<HTMLInputElement>): void {
-    const file = event.target.files?.[0];
+    const file = event.target.files?.[0]
     if (file) {
-      setSelectedFile(file);
-      const reader = new FileReader();
+      setSelectedFile(file)
+      const reader = new FileReader()
       reader.onload = () => {
-        const text = reader.result as string;
-        setFormData(prev => ({ ...prev, jobDescription: text }));
-      };
-      reader.readAsText(file);
+        const text = reader.result as string
+        setFormData(prev => ({ ...prev, jobDescription: text }))
+      }
+      reader.readAsText(file)
     }
   }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
@@ -279,7 +306,6 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
-          </div>
             <div className="grid gap-2">
               <Label htmlFor="jobTitle">Job Title</Label>
               <Input
@@ -288,21 +314,57 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
                 value={formData.jobTitle}
                 onChange={(e) => setFormData(prev => ({ ...prev, jobTitle: e.target.value }))}
               />
+            </div>
 
             <div className="grid gap-2">
               <Label htmlFor="client">Client</Label>
-              <Select
-                value={formData.client}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, client: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select client" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="client1">Client 1</SelectItem>
-                  <SelectItem value="client2">Client 2</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-2">
+                <Select
+                  value={formData.client}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, client: value }))}
+                  disabled={isLoadingClients || !!clientError}
+                >
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder={
+                      isLoadingClients ? "Loading clients..." :
+                      clientError ? clientError :
+                      "Select client"
+                    } />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clientError ? (
+                      <div className="px-4 py-2 text-gray-500 flex items-center justify-between">
+                        <span>{clientError}</span>
+                        <Button
+                          variant="link"
+                          size="sm"
+                          onClick={fetchClients}
+                          className="text-blue-500"
+                        >
+                          Retry
+                        </Button>
+                      </div>
+                    ) : clients.length === 0 && !isLoadingClients ? (
+                      <div className="px-4 py-2 text-gray-500">No clients available</div>
+                    ) : (
+                      clients.map((client) => (
+                        <SelectItem key={client._id} value={client._id}>
+                          {client.name}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={fetchClients}
+                  disabled={isLoadingClients}
+                  title="Refresh clients"
+                >
+                  <RefreshCw className={`h-4 w-4 ${isLoadingClients ? 'animate-spin' : ''}`} />
+                </Button>
+              </div>
             </div>
 
             <div className="grid gap-2">
@@ -324,29 +386,12 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
                 <SelectContent>
-                    {jobTypes.map((type: string) => (
+                  {jobTypes.map((type: string) => (
                     <SelectItem key={type} value={type.toLowerCase()}>{type}</SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* <div className="grid gap-2">
-              <Label htmlFor="stage">Job Stage</Label>
-              <Select
-                value={formData.stage}
-                onValueChange={(value: JobStage) => setFormData(prev => ({ ...prev, stage: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select stage" />
-                </SelectTrigger>
-                <SelectContent>
-                  {jobStages.map(stage => (
-                    <SelectItem key={stage} value={stage}>{stage}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-            </div> */}
+            </div>
 
             <div className="grid gap-2">
               <Label>Deadline (by client)</Label>
@@ -598,40 +643,40 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
               <div className="flex flex-col gap-4">
                 <div className="border-2 border-dashed rounded-lg p-6 text-center">
                   <input
-                  type="file"
-                  ref={fileInputRef as React.RefObject<HTMLInputElement>}
-                  onChange={handleFileUpload as React.ChangeEventHandler<HTMLInputElement>}
-                  accept=".pdf"
-                  className="hidden"
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileUpload}
+                    accept=".pdf"
+                    className="hidden"
                   />
                   <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => fileInputRef.current?.click()}
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
                   >
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload PDF
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload PDF
                   </Button>
                   <p className="text-sm text-muted-foreground mt-2">
-                  Or write the description below
+                    Or write the description below
                   </p>
-                {selectedFile && (
-                  <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-blue-500" />
-                    <span>{selectedFile.name}</span>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleRemoveFile as React.MouseEventHandler<HTMLButtonElement>}
-                    type="button"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                  </div>
-                )}
-
+                  {selectedFile && (
+                    <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-5 w-5 text-blue-500" />
+                        <span>{selectedFile.name}</span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleRemoveFile}
+                        type="button"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
                 <Textarea
                   placeholder="Enter job description..."
                   value={formData.jobDescription}
@@ -639,9 +684,8 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
                   className="min-h-[200px]"
                   disabled={!!selectedFile}
                 />
-                </div>
+              </div>
             </div>
-          </div>
           </div>
 
           <DialogFooter>

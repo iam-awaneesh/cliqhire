@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Job, JobStage } from "@/types/job"
-import { getSampleJobs } from "@/app/clients/data/sample-jobs"
+import { getSampleJobs } from "../../clients/data/sample-jobs"
 import { ClientStageBadge } from "@/components/client-stage-badge"
 import { CreateJobModal } from "@/components/jobs/create-job-modal"
 

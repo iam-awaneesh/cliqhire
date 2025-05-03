@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Plus, SlidersHorizontal, RefreshCcw } from "lucide-react"
-import { getSampleJobs } from "@/app/clients/data/sample-jobs"
+import { getSampleJobs } from "../../clients/data/sample-jobs";
 import { JobStageBadge } from "@/components/jobs/job-stage-badge"
 import { notFound } from "next/navigation"
 import { useState, useEffect } from "react"
