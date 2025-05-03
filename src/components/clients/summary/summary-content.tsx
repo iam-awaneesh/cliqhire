@@ -102,7 +102,13 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
     const fetchClientData = async () => {
       try {
         const response = await getClientById(clientId);
-        setClientDetails(response);
+        setClientDetails({
+          ...response,
+          incorporationDate: response.incorporationDate ?? undefined,
+          gstTinDocument: response.gstTinDocument ?? undefined,
+          crCopy: response.crCopy ?? undefined,
+          vatCopy: response.vatCopy ?? undefined,
+        });
       } catch (error) {
         console.error("Error fetching client data:", error);
       }
