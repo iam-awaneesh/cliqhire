@@ -50,6 +50,8 @@ export function JobsEmptyState() {
       <CreateJobModal 
         open={open} 
         onOpenChange={() => setOpen(false)}
+        clientId={"your-client-id"} 
+        clientName={"Your Client Name"}
       />
     </>
   )

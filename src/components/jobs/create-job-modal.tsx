@@ -20,9 +20,14 @@ import { getClientNames } from "@/services/clientService"
 import { ClientResponse } from "@/services/clientService"
 
 interface CreateJobModalProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
+
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  clientId: string;
+  clientName: string;
+  // Add any other props your modal needs
 }
+
 
 interface LocationSuggestion {
   display_name: string

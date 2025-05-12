@@ -161,6 +161,8 @@ export default function Home() {
       <CreateJobModal 
         open={openJobModal} 
         onOpenChange={setJobModal}
+        clientId={""} // TODO: Replace with actual clientId
+        clientName={""} // TODO: Replace with actual clientName
       />
 
 

@@ -14,7 +14,9 @@ interface EditFieldModalProps {
   fieldName: string
   currentValue?: string
   onSave: (value: string) => void
-  isDate?: boolean
+  isDate?: boolean,
+  isNumber?: boolean
+  
 }
 
 export function EditFieldModal({ 
@@ -22,6 +24,7 @@ export function EditFieldModal({
   onClose, 
   fieldName, 
   currentValue = "", 
+  isNumber,
   onSave,
   isDate
 }: EditFieldModalProps) {

@@ -70,14 +70,16 @@ export function DetailRow({
         </span>
         <div className="flex items-center justify-between flex-1">
           {isSelect ? (
-            <select
-              className="w-full p-2 border rounded text-sm"
-              value={typeof value === "string" ? value : value instanceof Date ? value.toISOString() : ""}
-              onChange={(e) => onUpdate(e.target.value)}
+           <select
+            className="w-full p-2 border rounded text-sm"
+            value={typeof value === "string" ? value : value instanceof Date ? value.toISOString() : ""}
+            onChange={(e) => onUpdate(e.target.value)}
             >
-              {options?.map((option) => (
-                <option value={option.value}>{option.label}</option>
-              ))}
+            {options?.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
             </select>
           ) : (
             <span className="text-sm">
@@ -127,10 +129,6 @@ export function DetailRow({
           currentValue={value?.toString() || ""}
           onSave={onUpdate}
           isDate={isDate}
-          isNumber={isNumber}
-          min={min}
-          max={max}
-          suffix={suffix}
         />
       )}
     </div>

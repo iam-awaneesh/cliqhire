@@ -60,7 +60,8 @@ export default function JobsPage() {
 
   const router = useRouter();
 
-  const [clientList,  setClientList] = useState([]);
+  type Client = { id: string; name: string };
+  const [clientList, setClientList] = useState<Client[]>([]);
 
   useEffect(() => {
     const loadJobs = async () => {
@@ -304,6 +305,8 @@ export default function JobsPage() {
       <CreateJobModal 
         open={open} 
         onOpenChange={setOpen}
+        clientId={clientList[0]?.id || ""}
+        clientName={clientList[0]?.name || ""}
       />
       
       <ConfirmStageChangeDialog

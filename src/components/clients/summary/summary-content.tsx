@@ -78,7 +78,7 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
       try {
         setLoading(true);
         const response = await getClientById(clientId);
-        const clientData = (response as ApiResponse).data;
+        const clientData = ((response as unknown) as ApiResponse).data;
 
         // Map API response to our component state structure
         setClientDetails({
