@@ -13,9 +13,6 @@ import "react-datepicker/dist/react-datepicker.css"
 import axios from "axios"
 import * as Flags from 'country-flag-icons/react/3x2'
 import React from "react"
-import { useEditor, EditorContent } from '@tiptap/react'
-import StarterKit from '@tiptap/starter-kit'
-import Underline from '@tiptap/extension-underline'
 import { JobStage } from "@/types/job"
 import { Badge } from "@/components/ui/badge"
 import { X, FileText, Upload, RefreshCw } from "lucide-react"
@@ -52,7 +49,7 @@ const jobTypes = [
 const jobStages: JobStage[] = [
   "New",
   "Sourcing",
-  "Screening", 
+  "Screening",
   "Interviewing",
   "Shortlisted",
   "Offer",
@@ -89,9 +86,11 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
   const [clients, setClients] = useState<ClientResponse[]>([])
   const [isLoadingClients, setIsLoadingClients] = useState(false)
   const [clientError, setClientError] = useState<string | null>(null)
+  const [searchClient, setSearchClient] = useState("")
+  const [currentTab, setCurrentTab] = useState(0) // State for managing tabs
   
   const [formData, setFormData] = useState({
-    jobTitle: "",
+    jobTitle: "test",
     client: "",
     relationshipManager: "",
     jobTypes: "",
@@ -104,7 +103,7 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
     salaryRange: {
       min: "",
       max: "",
-      currency: "USD"
+      currency: "SAR"
     },
     nationalities: [] as string[],
     location: "",
@@ -114,12 +113,13 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
     reportingTo: "",
     teamSize: 0 as any,
     link: "",
-    keySkills: "", 
+    keySkills: "",
     jobDescription: ""
   })
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const fileInputRef = React.useRef<HTMLInputElement | null>(null)
+  const [isInputFocused, setIsInputFocused] = useState(false)
 
   const fetchClients = async () => {
     setIsLoadingClients(true)
@@ -142,20 +142,6 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
   useEffect(() => {
     fetchClients()
   }, [])
-
-  const editor = useEditor({
-    extensions: [
-      StarterKit,
-      Underline,
-    ],
-    content: formData.jobDescription,
-    onUpdate: ({ editor }) => {
-      setFormData(prev => ({
-        ...prev,
-        jobDescription: editor.getHTML()
-      }))
-    }
-  })
 
   useEffect(() => {
     const fetchCountrySuggestions = async () => {
@@ -236,6 +222,10 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
     }))
   }
 
+  const filteredClients = clients.filter((client) => {
+    return client.name.toLowerCase().includes(searchClient.toLowerCase())
+  })
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
@@ -274,6 +264,7 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
 
       const response = await createJob(jobData)
       console.log("Job created successfully:", response)
+      setCurrentTab(0) // Reset to first tab on successful submission
       onOpenChange(false)
     } catch (error: any) {
       console.error("Error creating job:", error)
@@ -298,398 +289,465 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
     }
   }
 
+  const handleNext = () => {
+    setCurrentTab(prev => Math.min(prev + 1, 2))
+  }
+
+  const handlePrevious = () => {
+    setCurrentTab(prev => Math.max(prev - 1, 0))
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-full md:max-w-3xl lg:max-w-4xl xl:max-w-5xl max-h-[90vh] overflow-y-auto p-4 md:p-6 lg:p-8">
         <DialogHeader>
           <DialogTitle>Create Job Requirement</DialogTitle>
         </DialogHeader>
+
+        <div className="flex flex-wrap justify-between border-b mb-4">
+          <button
+            className={`px-4 py-2 ${currentTab === 0 ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-500'}`}
+            onClick={() => setCurrentTab(0)}
+          >
+            General Information
+          </button>
+          <button
+            className={`px-4 py-2 ${currentTab === 1 ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-500'}`}
+            onClick={() => setCurrentTab(1)}
+          >
+            Details
+          </button>
+          <button
+            className={`px-4 py-2 ${currentTab === 2 ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-500'}`}
+            onClick={() => setCurrentTab(2)}
+          >
+            Description
+          </button>
+        </div>
+
         <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="jobTitle">Job Title</Label>
-              <Input
-                id="jobTitle"
-                placeholder="Type new job title here"
-                value={formData.jobTitle}
-                onChange={(e) => setFormData(prev => ({ ...prev, jobTitle: e.target.value }))}
-              />
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="client">Client</Label>
-              <div className="flex items-center gap-2">
-                <Select
-                  value={formData.client}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, client: value }))}
-                  disabled={isLoadingClients || !!clientError}
-                >
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder={
-                      isLoadingClients ? "Loading clients..." :
-                      clientError ? clientError :
-                      "Select client"
-                    } />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clientError ? (
-                      <div className="px-4 py-2 text-gray-500 flex items-center justify-between">
-                        <span>{clientError}</span>
-                        <Button
-                          variant="link"
-                          size="sm"
-                          onClick={fetchClients}
-                          className="text-blue-500"
-                        >
-                          Retry
-                        </Button>
-                      </div>
-                    ) : clients.length === 0 && !isLoadingClients ? (
-                      <div className="px-4 py-2 text-gray-500">No clients available</div>
-                    ) : (
-                      clients.map((client) => (
-                        <SelectItem key={client._id} value={client._id}>
-                          {client.name}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={fetchClients}
-                  disabled={isLoadingClients}
-                  title="Refresh clients"
-                >
-                  <RefreshCw className={`h-4 w-4 ${isLoadingClients ? 'animate-spin' : ''}`} />
-                </Button>
-              </div>
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="relationshipManager">Relationship Manager</Label>
-              <Input
-                id="relationshipManager"
-                value={formData.relationshipManager}
-                onChange={(e) => setFormData(prev => ({ ...prev, relationshipManager: e.target.value }))}
-              />
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="jobTypes">Job Types</Label>
-              <Select
-                value={formData.jobTypes}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, jobTypes: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {jobTypes.map((type: string) => (
-                    <SelectItem key={type} value={type.toLowerCase()}>{type}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid gap-2">
-              <Label>Deadline (by client)</Label>
-              <DatePicker
-                selected={formData.deadline}
-                onChange={(date) => setFormData(prev => ({ ...prev, deadline: date }))}
-                dateFormat="dd/MM/yyyy"
-                className="w-full p-2 border rounded-md"
-                placeholderText="Select deadline"
-              />
-            </div>
-
-            <div className="grid gap-2">
-              <Label>Date Range</Label>
-              <div className="flex gap-2 items-center">
-                <DatePicker
-                  selected={formData.dateRange.start}
-                  onChange={(date) => setFormData(prev => ({
-                    ...prev,
-                    dateRange: { ...prev.dateRange, start: date }
-                  }))}
-                  dateFormat="dd/MM/yyyy"
-                  className="w-full p-2 border rounded-md"
-                  placeholderText="Start date"
-                />
-                <span>to</span>
-                <DatePicker
-                  selected={formData.dateRange.end}
-                  onChange={(date) => setFormData(prev => ({
-                    ...prev,
-                    dateRange: { ...prev.dateRange, end: date }
-                  }))}
-                  dateFormat="dd/MM/yyyy"
-                  className="w-full p-2 border rounded-md"
-                  placeholderText="End date"
-                />
-              </div>
-            </div>
-
-            <div className="grid gap-2">
-              <Label>Salary Range</Label>
-              <div className="flex gap-2">
-                <Select
-                  value={formData.salaryRange.currency}
-                  onValueChange={(value) => setFormData(prev => ({
-                    ...prev,
-                    salaryRange: { ...prev.salaryRange, currency: value }
-                  }))}
-                >
-                  <SelectTrigger className="w-[140px]">
-                    <SelectValue>
-                      {formData.salaryRange.currency && (
-                        <div className="flex items-center gap-2">
-                          <div className="w-4 h-3">
-                            {currencies.find(c => c.code === formData.salaryRange.currency)?.flag && (
-                              // @ts-ignore
-                              React.createElement(Flags[currencies.find(c => c.code === formData.salaryRange.currency)?.flag || ''])
-                            )}
-                          </div>
-                          <span>{formData.salaryRange.currency}</span>
+          {currentTab === 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="client">Client</Label>
+                <div className="flex flex-col gap-2">
+                  <Input
+                    type="search"
+                    placeholder="Search clients..."
+                    value={searchClient}
+                    onChange={(e) => setSearchClient(e.target.value)}
+                    onFocus={() => setIsInputFocused(true)}
+                    onBlur={() => setTimeout(() => setIsInputFocused(false), 200)}
+                    className="w-full"
+                  />
+                  {isInputFocused && (
+                    <div className="max-h-[100px] overflow-y-auto border rounded-md text-sm" style={{ fontSize: '14px' }}>
+                      {clientError ? (
+                        <div className="px-4 py-2 text-gray-500 flex items-center justify-between">
+                          <span>{clientError}</span>
+                          <Button
+                            variant="link"
+                            size="sm"
+                            onClick={fetchClients}
+                            className="text-blue-500"
+                          >
+                            Retry
+                          </Button>
                         </div>
+                      ) : filteredClients.length === 0 && !isLoadingClients ? (
+                        <div className="px-4 py-2 text-gray-500">No clients available</div>
+                      ) : (
+                        filteredClients.map((client) => (
+                          <div
+                            key={client._id}
+                            className={`px-4 py-2 hover:bg-gray-100 cursor-pointer ${formData.client === client._id ? 'bg-gray-100' : ''}`}
+                            onClick={() => {
+                              setFormData(prev => ({ ...prev, client: client._id }))
+                              setIsInputFocused(false)
+                            }}
+                          >
+                            {client.name}
+                          </div>
+                        ))
                       )}
-                    </SelectValue>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="jobTitle">Job Title</Label>
+                <Input
+                  id="jobTitle"
+                  placeholder="Type new job title here"
+                  value={formData.jobTitle}
+                  onChange={(e) => setFormData(prev => ({ ...prev, jobTitle: e.target.value }))}
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="jobTypes">Job Types</Label>
+                <Select
+                  value={formData.jobTypes}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, jobTypes: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
-                    {currencies.map((currency) => (
-                      <SelectItem key={currency.code} value={currency.code}>
-                        <div className="flex items-center gap-2">
-                          <div className="w-4 h-3">
-                            {/* @ts-ignore */}
-                            {Flags[currency.flag] && React.createElement(Flags[currency.flag])}
-                          </div>
-                          <span>{currency.name}</span>
-                          <span className="text-muted-foreground ml-auto">{currency.symbol}</span>
-                        </div>
-                      </SelectItem>
+                    {jobTypes.map((type: string) => (
+                      <SelectItem key={type} value={type.toLowerCase()}>{type}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <Input
-                  placeholder="Min"
-                  type="number"
-                  value={formData.salaryRange.min}
-                  onChange={(e) => setFormData(prev => ({
-                    ...prev,
-                    salaryRange: { ...prev.salaryRange, min: e.target.value }
-                  }))}
-                />
-                <Input
-                  placeholder="Max"
-                  type="number"
-                  value={formData.salaryRange.max}
-                  onChange={(e) => setFormData(prev => ({
-                    ...prev,
-                    salaryRange: { ...prev.salaryRange, max: e.target.value }
-                  }))}
-                />
               </div>
-            </div>
 
-            <div className="grid gap-2">
-              <Label htmlFor="nationality">Nationalities</Label>
-              <div className="space-y-2">
-                <div className="flex flex-wrap gap-2 min-h-[2.5rem] p-2 border rounded-md">
-                  {selectedNationalities.map((nationality) => (
-                    <Badge key={nationality} variant="secondary" className="flex items-center gap-1">
-                      {nationality}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-auto p-0 hover:bg-transparent"
-                        onClick={() => removeNationality(nationality)}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </Badge>
-                  ))}
-                </div>
+              <div className="grid gap-2">
+                <Label htmlFor="location">Job Location</Label>
                 <div className="relative">
                   <Input
-                    value={searchNationality}
-                    onChange={(e) => setSearchNationality(e.target.value)}
-                    placeholder="Search and select nationalities"
+                    id="location"
+                    value={formData.location}
+                    onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                    onFocus={() => setShowLocationSuggestions(true)}
                   />
-                  {showCountrySuggestions && countrySuggestions.length > 0 && (
+                  {showLocationSuggestions && locationSuggestions.length > 0 && (
                     <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
-                      {countrySuggestions.map((country, index) => (
+                      {locationSuggestions.map((suggestion, index) => (
                         <div
                           key={index}
-                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2"
-                          onClick={() => handleNationalitySelect(country)}
+                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                          onClick={() => handleLocationSelect(suggestion)}
                         >
-                          <img src={country.flags.svg} alt={`${country.name.common} flag`} className="w-6 h-4 object-cover" />
-                          <span>{country.name.common}</span>
+                          {suggestion.display_name}
                         </div>
                       ))}
                     </div>
                   )}
                 </div>
               </div>
-            </div>
 
-            <div className="grid gap-2">
-              <Label htmlFor="location">Job Location</Label>
-              <div className="relative">
-                <Input
-                  id="location"
-                  value={formData.location}
-                  onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                  onFocus={() => setShowLocationSuggestions(true)}
-                />
-                {showLocationSuggestions && locationSuggestions.length > 0 && (
-                  <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
-                    {locationSuggestions.map((suggestion, index) => (
-                      <div
-                        key={index}
-                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                        onClick={() => handleLocationSelect(suggestion)}
-                      >
-                        {suggestion.display_name}
-                      </div>
+              <div className="grid gap-2">
+                <Label>Salary Range</Label>
+                <div className="flex gap-2">
+                  <Select
+                    value={formData.salaryRange.currency}
+                    onValueChange={(value) => setFormData(prev => ({
+                      ...prev,
+                      salaryRange: { ...prev.salaryRange, currency: value }
+                    }))}
+                  >
+                    <SelectTrigger className="w-[140px]">
+                      <SelectValue>
+                        {formData.salaryRange.currency && (
+                          <div className="flex items-center gap-2">
+                            <div className="w-4 h-3">
+                              {currencies.find(c => c.code === formData.salaryRange.currency)?.flag && (
+                                // @ts-ignore
+                                React.createElement(Flags[currencies.find(c => c.code === formData.salaryRange.currency)?.flag || ''])
+                              )}
+                            </div>
+                            <span>{formData.salaryRange.currency}</span>
+                          </div>
+                        )}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {currencies.map((currency) => (
+                        <SelectItem key={currency.code} value={currency.code}>
+                          <div className="flex items-center gap-2">
+                            <div className="w-4 h-3">
+                              {/* @ts-ignore */}
+                              {Flags[currency.flag] && React.createElement(Flags[currency.flag])}
+                            </div>
+                            <span>{currency.name}</span>
+                            <span className="text-muted-foreground ml-auto">{currency.symbol}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    placeholder="Min"
+                    type="number"
+                    value={formData.salaryRange.min}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      salaryRange: { ...prev.salaryRange, min: e.target.value }
+                    }))}
+                  />
+                  <Input
+                    placeholder="Max"
+                    type="number"
+                    value={formData.salaryRange.max}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      salaryRange: { ...prev.salaryRange, max: e.target.value }
+                    }))}
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="nationality">Nationalities</Label>
+                <div className="space-y-2">
+                                    <div className="flex flex-wrap gap-2 min-h-[2.5rem] p-2 border rounded-md">
+                    {selectedNationalities.map((nationality) => (
+                      <Badge key={nationality} variant="secondary" className="flex items-center gap-1">
+                        {nationality}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-auto p-0 hover:bg-transparent"
+                          onClick={() => removeNationality(nationality)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </Badge>
                     ))}
                   </div>
+                  <div className="relative">
+                    <Input
+                      value={searchNationality}
+                      onChange={(e) => setSearchNationality(e.target.value)}
+                      placeholder="Search and select nationalities"
+                      onFocus={() => setShowCountrySuggestions(true)}
+                    />
+                    {showCountrySuggestions && countrySuggestions.length > 0 && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
+                        {countrySuggestions.map((country, index) => (
+                          <div
+                            key={index}
+                            className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2"
+                            onClick={() => {
+                              handleNationalitySelect(country)
+                              setShowCountrySuggestions(false)
+                            }}
+                          >
+                            <img src={country.flags.svg} alt={`${country.name.common} flag`} className="w-6 h-4 object-cover" />
+                            <span>{country.name.common}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="gender">Gender</Label>
+                <Select
+                  value={formData.gender}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, gender: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                    <SelectItem value="any">Any</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="numberOfPositions">Number of Positions</Label>
+                <Input
+                  id="numberOfPositions"
+                  type="number"
+                  min="1"
+                  value={formData.numberOfPositions}
+                  onChange={(e) => setFormData(prev => ({ ...prev, numberOfPositions: e.target.value }))}
+                />
+              </div>
+            </div>
+          )}
+
+          {currentTab === 1 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="experience">Experience</Label>
+                <Input
+                  id="experience"
+                  value={formData.experience}
+                  onChange={(e) => setFormData(prev => ({ ...prev, experience: e.target.value }))}
+                  placeholder="e.g., 5 years"
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="reportingTo">Reporting To</Label>
+                <Input
+                  id="reportingTo"
+                  value={formData.reportingTo}
+                  onChange={(e) => setFormData(prev => ({ ...prev, reportingTo: e.target.value }))}
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="teamSize">Team Size</Label>
+                <Input
+                  id="teamSize"
+                  type="number"
+                  min="0"
+                  value={formData.teamSize}
+                  onChange={(e) => setFormData(prev => ({ ...prev, teamSize: e.target.value }))}
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label>Deadline (by client)</Label>
+                <DatePicker
+                  selected={formData.deadline}
+                  onChange={(date) => setFormData(prev => ({ ...prev, deadline: date }))}
+                  dateFormat="dd/MM/yyyy"
+                  className="w-full p-2 border rounded-md"
+                  placeholderText="Select deadline"
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label>Date Range</Label>
+                <div className="flex gap-2 items-center">
+                  <DatePicker
+                    selected={formData.dateRange.start}
+                    onChange={(date) => setFormData(prev => ({
+                      ...prev,
+                      dateRange: { ...prev.dateRange, start: date }
+                    }))}
+                    dateFormat="dd/MM/yyyy"
+                    className="w-full p-2 border rounded-md"
+                    placeholderText="Start date"
+                  />
+                  <span>to</span>
+                  <DatePicker
+                    selected={formData.dateRange.end}
+                    onChange={(date) => setFormData(prev => ({
+                      ...prev,
+                      dateRange: { ...prev.dateRange, end: date }
+                    }))}
+                    dateFormat="dd/MM/yyyy"
+                    className="w-full p-2 border rounded-md"
+                    placeholderText="End date"
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="keySkills">Key Skills</Label>
+                <Input
+                  id="keySkills"
+                  value={formData.keySkills}
+                  onChange={(e) => setFormData(prev => ({ ...prev, keySkills: e.target.value }))}
+                  placeholder="Enter key skills required"
+                />
+              </div>
+            </div>
+          )}
+
+          {currentTab === 2 && (
+            <div className="grid grid-cols-1 gap-6 py-4">
+              <div className="grid gap-2">
+                <Label>Job Description</Label>
+                <div className="flex flex-col gap-4">
+                  <div className="border-2 border-dashed rounded-lg p-6 text-center">
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileUpload}
+                      accept=".pdf"
+                      className="hidden"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload PDF
+                    </Button>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Or write the description below
+                    </p>
+                    {selectedFile && (
+                      <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-5 w-5 text-blue-500" />
+                          <span>{selectedFile.name}</span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleRemoveFile}
+                          type="button"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                  <Textarea
+                    placeholder="Enter job description..."
+                    value={formData.jobDescription}
+                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFormData(prev => ({ ...prev, jobDescription: e.target.value }))}
+                    className="min-h-[200px]"
+                    disabled={!!selectedFile}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <div className="flex flex-wrap justify-between w-full">
+              <div>
+                {currentTab > 0 && (
+                  <Button 
+                    variant="outline" 
+                    type="button" 
+                    onClick={handlePrevious}
+                    className="mb-2 md:mb-0"
+                  >
+                    Previous
+                  </Button>
+                )}
+              </div>
+              <div className="flex space-x-2">
+                {currentTab < 2 && (
+                  <Button 
+                    variant="outline" 
+                    type="button" 
+                    onClick={() => onOpenChange(false)}
+                  >
+                    Cancel
+                  </Button>
+                )}
+                {currentTab < 2 ? (
+                  <Button 
+                    type="button" 
+                    onClick={handleNext}
+                  >
+                    Next
+                  </Button>
+                ) : (
+                  <>
+                    <Button 
+                      variant="outline" 
+                      type="button" 
+                      onClick={() => onOpenChange(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      type="submit"
+                    >
+                      Create Job Requirement
+                    </Button>
+                  </>
                 )}
               </div>
             </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="gender">Gender</Label>
-              <Select
-                value={formData.gender}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, gender: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select gender" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="male">Male</SelectItem>
-                  <SelectItem value="female">Female</SelectItem>
-                  <SelectItem value="any">Any</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="numberOfPositions">Number of Positions</Label>
-              <Input
-                id="numberOfPositions"
-                type="number"
-                min="1"
-                value={formData.numberOfPositions}
-                onChange={(e) => setFormData(prev => ({ ...prev, numberOfPositions: e.target.value }))}
-              />
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="experience">Experience</Label>
-              <Input
-                id="experience"
-                value={formData.experience}
-                onChange={(e) => setFormData(prev => ({ ...prev, experience: e.target.value }))}
-                placeholder="e.g. 5 years"
-              />
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="reportingTo">Reporting To</Label>
-              <Input
-                id="reportingTo"
-                value={formData.reportingTo}
-                onChange={(e) => setFormData(prev => ({ ...prev, reportingTo: e.target.value }))}
-              />
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="teamSize">Team Size</Label>
-              <Input
-                id="teamSize"
-                type="number"
-                min="0"
-                value={formData.teamSize}
-                onChange={(e) => setFormData(prev => ({ ...prev, teamSize: e.target.value }))}
-              />
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="link">Link</Label>
-              <Input
-                id="link"
-                type="url"
-                value={formData.link}
-                onChange={(e) => setFormData(prev => ({ ...prev, link: e.target.value }))}
-                placeholder="https://"
-              />
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="keySkills">Key Skills</Label>
-              <Input
-                id="keySkills"
-                value={formData.keySkills}
-                onChange={(e) => setFormData(prev => ({ ...prev, keySkills: e.target.value }))}
-                placeholder="Enter key skills required"
-              />
-            </div>
-
-            <div className="grid gap-2">
-              <Label>Job Description</Label>
-              <div className="flex flex-col gap-4">
-                <div className="border-2 border-dashed rounded-lg p-6 text-center">
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileUpload}
-                    accept=".pdf"
-                    className="hidden"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <Upload className="h-4 w-4 mr-2" />
-                    Upload PDF
-                  </Button>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Or write the description below
-                  </p>
-                  {selectedFile && (
-                    <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                      <div className="flex items-center gap-2">
-                        <FileText className="h-5 w-5 text-blue-500" />
-                        <span>{selectedFile.name}</span>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleRemoveFile}
-                        type="button"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
-                </div>
-                <Textarea
-                  placeholder="Enter job description..."
-                  value={formData.jobDescription}
-                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFormData(prev => ({ ...prev, jobDescription: e.target.value }))}
-                  className="min-h-[200px]"
-                  disabled={!!selectedFile}
-                />
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button type="submit">Create Job Requirement</Button>
           </DialogFooter>
         </form>
       </DialogContent>

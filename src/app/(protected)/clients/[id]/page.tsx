@@ -44,7 +44,7 @@ const stageColors = {
 } as const
 
 export default function ClientPage({ params }: PageProps) {
-  const { id } = params; // Remove the use() hook and directly destructure from params
+  const { id } = params;
   const [isLoading, setIsLoading] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isCreateJobOpen, setIsCreateJobOpen] = useState(false);
@@ -69,8 +69,14 @@ export default function ClientPage({ params }: PageProps) {
           }
           throw new Error("Failed to fetch client data");
         }
-        const data = await response.json();
-        setClient(data);
+        const responseData = await response.json();
+        
+        // Fix: Extract client data from the nested 'data' property
+        if (responseData.status === "success" && responseData.data) {
+          setClient(responseData.data);
+        } else {
+          throw new Error("Invalid client data format");
+        }
       } catch (error) {
         setError(error instanceof Error ? error.message : "An error occurred");
         console.error("Error fetching client:", error);
@@ -158,13 +164,24 @@ export default function ClientPage({ params }: PageProps) {
               <ClientStageBadge stage={client.clientStage} />
             </div>
           </div>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => window.open('https://wa.me/1234567890', '_blank')}
-          >
-            WhatsApp
-          </Button>
+          <div className="flex gap-2">
+            {client.website && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => window.open(client.website, '_blank')}
+              >
+                Website
+              </Button>
+            )}
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => window.open('https://wa.me/1234567890', '_blank')}
+            >
+              WhatsApp
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -205,18 +222,13 @@ export default function ClientPage({ params }: PageProps) {
                   value={filters.jobStage} 
                   onValueChange={value => {
                     setFilters(prev => ({ ...prev, jobStage: value as Job['stage'] }));
-                    clientJobs.forEach(job => {
-                      if (job.stage !== value) {
-                        console.log(job.id);
-                        console.log(value as Job['stage']);
-                      }
-                    });
                   }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select job stage" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="">All Stages</SelectItem>
                     {jobStages.map(stage => (
                       <SelectItem key={stage} value={stage}>
                         <Badge className={stageColors[stage]}>{stage}</Badge>
@@ -225,6 +237,52 @@ export default function ClientPage({ params }: PageProps) {
                   </SelectContent>
                 </Select>
               </div>
+              
+              <div className="space-y-2">
+                <Label>Location</Label>
+                <Input
+                  placeholder="Filter by location"
+                  value={filters.location}
+                  onChange={(e) => setFilters(prev => ({ ...prev, location: e.target.value }))}
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Min Salary</Label>
+                  <Input
+                    type="number"
+                    placeholder="Minimum"
+                    value={filters.minSalary}
+                    onChange={(e) => setFilters(prev => ({ ...prev, minSalary: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Max Salary</Label>
+                  <Input
+                    type="number"
+                    placeholder="Maximum"
+                    value={filters.maxSalary}
+                    onChange={(e) => setFilters(prev => ({ ...prev, maxSalary: e.target.value }))}
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex justify-end gap-2">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setFilters({ jobStage: '', location: '', minSalary: '', maxSalary: '' })}
+              >
+                Reset
+              </Button>
+              <Button 
+                type="button" 
+                onClick={() => setIsFilterOpen(false)}
+              >
+                Apply Filters
+              </Button>
             </div>
           </form>
         </DialogContent>
@@ -234,6 +292,8 @@ export default function ClientPage({ params }: PageProps) {
       <CreateJobModal 
         open={isCreateJobOpen}
         onOpenChange={setIsCreateJobOpen}
+        clientId={id}
+        clientName={client.name}
       />
     </div>
   );

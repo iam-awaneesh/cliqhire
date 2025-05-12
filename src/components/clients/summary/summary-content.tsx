@@ -1,42 +1,23 @@
-"use client"
-
 import { SectionHeader } from "./section-header";
 import { DetailRow } from "./detail-row";
 import { TeamMember } from "./team-member";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
-import { Input } from "@/components/ui/input";
 import { FileUploadRow } from "./file-upload-row";
 import { AddTeamMemberModal } from "../modals/add-team-member-modal";
 import { AddContactModal } from "../modals/add-contact-modal";
 import { EditDescriptionModal } from "../modals/edit-description-modal";
 import { Plus, Pencil } from "lucide-react";
 import { getClientById } from "@/services/clientService";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import * as Flags from 'country-flag-icons/react/3x2';
-import React from "react";
-
-// Currency options with flags
-const currencies = [
-  { code: 'USD', symbol: '$', name: 'US Dollar', flag: 'US' },
-  { code: 'EUR', symbol: '€', name: 'Euro', flag: 'EU' },
-  { code: 'GBP', symbol: '£', name: 'British Pound', flag: 'GB' },
-  { code: 'JPY', symbol: '¥', name: 'Japanese Yen', flag: 'JP' },
-  { code: 'AUD', symbol: 'A$', name: 'Australian Dollar', flag: 'AU' },
-  { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar', flag: 'CA' },
-  { code: 'CHF', symbol: 'Fr', name: 'Swiss Franc', flag: 'CH' },
-  { code: 'CNY', symbol: '¥', name: 'Chinese Yuan', flag: 'CN' },
-  { code: 'INR', symbol: '₹', name: 'Indian Rupee', flag: 'IN' },
-  { code: 'SAR', symbol: '﷼', name: 'Saudi Riyal', flag: 'SA' },
-  { code: 'AED', symbol: 'د.إ', name: 'UAE Dirham', flag: 'AE' },
-  { code: 'KWD', symbol: 'د.ك', name: 'Kuwaiti Dinar', flag: 'KW' },
-  { code: 'BHD', symbol: '.د.ب', name: 'Bahraini Dinar', flag: 'BH' },
-  { code: 'QAR', symbol: 'ر.ق', name: 'Qatari Riyal', flag: 'QA' },
-  { code: 'OMR', symbol: 'ر.ع.', name: 'Omani Rial', flag: 'OM' }
-];
+import { ContractSection } from "./contract-section"; // Import the new contract section
 
 interface SummaryContentProps {
   clientId: string;
+}
+
+interface ApiResponse {
+  status: string;
+  data: ClientDetails;
 }
 
 interface ClientDetails {
@@ -53,20 +34,15 @@ interface ClientDetails {
   referredBy?: string;
   linkedInProfile?: string;
   clientLinkedInPage?: string;
+  linkedInPage?: string; // Added to match API response
   gstTinDocument?: string;
   clientProfileImage?: string;
+  profileImage?: string; // Added to match API response
   crCopy?: string;
   vatCopy?: string;
   phoneNumber?: string;
   googleMapsLink?: string;
-  // Contract Information
-  contractStartDate?: string | null;
-  contractEndDate?: string | null;
-  feeAmount?: string;
-  feeCurrency?: string;
-  agreement?: string;
-  referralPercentage?: string;
-  lineOfBusiness?: string;
+  // Contract information removed from here - now handled by ContractSection component
 }
 
 interface TeamMemberType {
@@ -86,9 +62,6 @@ interface ContactType {
 export function SummaryContent({ clientId }: SummaryContentProps) {
   const [clientDetails, setClientDetails] = useState<ClientDetails>({
     name: "",
-    contractStartDate: null,
-    contractEndDate: null,
-    feeCurrency: "USD"
   });
   const [teamMembers, setTeamMembers] = useState<TeamMemberType[]>([
     { name: "Shaswat singh", role: "Admin", email: "shaswat@example.com", isActive: true },
@@ -97,52 +70,79 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [isDescriptionModalOpen, setIsDescriptionModalOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchClientData = async () => {
       try {
+        setLoading(true);
         const response = await getClientById(clientId);
+        const clientData = (response as ApiResponse).data;
+
+        // Map API response to our component state structure
         setClientDetails({
-          ...response,
-          incorporationDate: response.incorporationDate ?? undefined,
-          gstTinDocument: response.gstTinDocument ?? undefined,
-          crCopy: response.crCopy ?? undefined,
-          vatCopy: response.vatCopy ?? undefined,
+          name: clientData.name || "",
+          website: clientData.website || "",
+          industry: clientData.industry || "",
+          location: clientData.location || "",
+          address: clientData.address || "",
+          incorporationDate: clientData.incorporationDate || "",
+          countryOfRegistration: clientData.countryOfRegistration || "",
+          registrationNumber: clientData.registrationNumber || "",
+          countryOfBusiness: clientData.countryOfBusiness || "",
+          description: clientData.description || "",
+          referredBy: clientData.referredBy || "",
+          linkedInProfile: clientData.linkedInProfile || "",
+          clientLinkedInPage: clientData.linkedInPage || clientData.clientLinkedInPage || "",
+          gstTinDocument: clientData.gstTinDocument || "",
+          clientProfileImage: clientData.profileImage || clientData.clientProfileImage || "",
+          crCopy: clientData.crCopy || "",
+          vatCopy: clientData.vatCopy || "",
+          phoneNumber: clientData.phoneNumber || "",
+          googleMapsLink: clientData.googleMapsLink || "",
         });
+
+        setLoading(false);
       } catch (error) {
         console.error("Error fetching client data:", error);
+        setError("Failed to load client data. Please try again.");
+        setLoading(false);
       }
     };
-    fetchClientData();
+
+    if (clientId) {
+      fetchClientData();
+    }
   }, [clientId]);
 
   const updateClientDetails = async (fieldName: string, value: string) => {
     try {
       const response = await fetch(`https://aems-backend.onrender.com/api/clients/${clientId}`, {
         method: "PATCH",
-        body: JSON.stringify({[fieldName]: value }),
+        body: JSON.stringify({ [fieldName]: value }),
         headers: {
-          "Content-Type": "application/json"
-        }
-      })
+          "Content-Type": "application/json",
+        },
+      });
 
       if (!response.ok) {
-        throw new Error("Failed to update client details")
+        throw new Error("Failed to update client details");
       }
 
       // Update local state
-      setClientDetails(prev => ({
+      setClientDetails((prev) => ({
         ...prev,
-        [fieldName]: value
+        [fieldName]: value,
       }));
     } catch (error) {
-      console.error(error)
+      console.error(error);
     }
-  }
-  
+  };
+
   const handleUpdateField = (field: keyof ClientDetails) => (value: string) => {
-    updateClientDetails(field, value)
-  }
+    updateClientDetails(field, value);
+  };
 
   const handleFileUpload = (field: keyof ClientDetails) => (file: File) => {
     setClientDetails((prev) => ({ ...prev, [field]: file }));
@@ -158,14 +158,25 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
 
   const handleUpdateDescription = (description: string) => {
     setClientDetails((prev) => ({ ...prev, description }));
+    updateClientDetails("description", description);
   };
+
+  // Show loading or error state
+  if (loading) {
+    return <div className="p-8 text-center">Loading client details...</div>;
+  }
+
+  if (error) {
+    return <div className="p-8 text-center text-red-500">{error}</div>;
+  }
 
   return (
     <div className="grid grid-cols-2 gap-6 p-4">
       {/* Left Column - Client Details */}
       <div className="space-y-6">
         <div className="bg-white rounded-lg border shadow-sm p-4">
-          <SectionHeader title="Details" />
+          <h2 className="text-sm font-semibold">Details</h2>
+          {/* <SectionHeader title="Details" /> */}
           <div className="space-y-3 mt-4">
             <FileUploadRow
               label="Client Profile Image"
@@ -254,24 +265,49 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
             />
             <DetailRow
               label="Client LinkedIn Page"
-              value={clientDetails.clientLinkedInPage}
-              onUpdate={handleUpdateField("clientLinkedInPage")}
+              value={clientDetails.clientLinkedInPage || clientDetails.linkedInPage}
+              onUpdate={handleUpdateField(clientDetails.linkedInPage ? "linkedInPage" : "clientLinkedInPage")}
             />
           </div>
         </div>
       </div>
 
-      {/* Right Column - Team, Description, Contacts, AEMS */}
+      {/* Right Column - Team, Description, Contacts, Contract */}
       <div className="space-y-6">
+        {/* Contract Information Section - Now using the ContractSection component */}
+        <ContractSection clientId={clientId} />
+
+        {/* Contacts Section */}
+        <div className="bg-white rounded-lg border shadow-sm p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold">Contacts</h2>
+            <Button variant="outline" size="sm" onClick={() => setIsContactModalOpen(true)}>
+              + Add
+            </Button>
+          </div>
+          {contacts.length === 0 ? (
+            <div className="text-sm text-muted-foreground text-center py-4">No contacts added yet</div>
+          ) : (
+            <div className="space-y-3">
+              {contacts.map((contact, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                  <div>
+                    <div className="font-medium">{contact.name}</div>
+                    <div className="text-sm text-muted-foreground">{contact.position}</div>
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {contact.email} • {contact.phone}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
         {/* Team Section */}
         <div className="bg-white rounded-lg border shadow-sm p-4">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold">Team</h2>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsTeamModalOpen(true)}
-            >
+            <Button variant="outline" size="sm" onClick={() => setIsTeamModalOpen(true)}>
               + Add
             </Button>
           </div>
@@ -280,12 +316,7 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
               {teamMembers.length} team member{teamMembers.length !== 1 ? "s" : ""}
             </div>
             {teamMembers.map((member, index) => (
-              <TeamMember
-                key={index}
-                name={member.name}
-                role={member.role}
-                isActive={member.isActive}
-              />
+              <TeamMember key={index} name={member.name} role={member.role} isActive={member.isActive} />
             ))}
           </div>
         </div>
@@ -316,131 +347,8 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
             {clientDetails.description ? (
               <p className="text-sm whitespace-pre-wrap">{clientDetails.description}</p>
             ) : (
-              <div className="text-sm text-muted-foreground text-center py-4">
-                No description added yet
-              </div>
+              <div className="text-sm text-muted-foreground text-center py-4">No description added yet</div>
             )}
-          </div>
-        </div>
-
-        {/* Contacts Section */}
-        <div className="bg-white rounded-lg border shadow-sm p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold">Contacts</h2>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsContactModalOpen(true)}
-            >
-              + Add
-            </Button>
-          </div>
-          {contacts.length === 0 ? (
-            <div className="text-sm text-muted-foreground text-center py-4">
-              No contacts added yet
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {contacts.map((contact, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-3 bg-muted/30 rounded-lg"
-                >
-                  <div>
-                    <div className="font-medium">{contact.name}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {contact.position}
-                    </div>
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {contact.email} • {contact.phone}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Contract Information Section */}
-        <div className="bg-white rounded-lg border shadow-sm p-4">
-          <SectionHeader title="Contract Information" />
-          <div className="space-y-3 mt-4">
-            <DetailRow
-              label="Contract Start Date"
-              value={clientDetails.contractStartDate}
-              onUpdate={handleUpdateField("contractStartDate")}
-              isDate={true}
-            />
-            <DetailRow
-              label="Contract End Date"
-              value={clientDetails.contractEndDate}
-              onUpdate={handleUpdateField("contractEndDate")}
-              isDate={true}
-            />
-            <div className="flex items-center py-2 border-b last:border-b-0">
-              <span className="text-sm text-muted-foreground w-1/3">
-                Fee Amount
-              </span>
-              <div className="flex items-center gap-2 flex-1">
-                <Select
-                  value={clientDetails.feeCurrency || "USD"}
-                  onValueChange={(value) => updateClientDetails("feeCurrency", value)}
-                >
-                  <SelectTrigger className="w-[140px]">
-                    <SelectValue>
-                      {clientDetails.feeCurrency && (
-                        <div className="flex items-center gap-2">
-                          <div className="w-4 h-3">
-                            {currencies.find(c => c.code === clientDetails.feeCurrency)?.flag && (
-                              // @ts-ignore
-                              React.createElement(Flags[currencies.find(c => c.code === clientDetails.feeCurrency)?.flag || ''])
-                            )}
-                          </div>
-                          <span>{clientDetails.feeCurrency}</span>
-                        </div>
-                      )}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {currencies.map((currency) => (
-                      <SelectItem key={currency.code} value={currency.code}>
-                        <div className="flex items-center gap-2">
-                          <div className="w-4 h-3">
-                            {/* @ts-ignore */}
-                            {Flags[currency.flag] && React.createElement(Flags[currency.flag])}
-                          </div>
-                          <span>{currency.name}</span>
-                          <span className="text-muted-foreground ml-auto">{currency.symbol}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Input
-                  type="number"
-                  value={clientDetails.feeAmount || ''}
-                  onChange={(e) => updateClientDetails("feeAmount", e.target.value)}
-                  placeholder="Enter amount"
-                  className="flex-1"
-                />
-              </div>
-            </div>
-            <FileUploadRow
-              label="Agreement"
-              accept=".pdf,.doc,.docx"
-              onFileSelect={handleFileUpload("agreement")}
-              showFileName={false}
-            />
-            <DetailRow
-              label="Referral Percentage"
-              value={clientDetails.referralPercentage}
-              onUpdate={handleUpdateField("referralPercentage")}
-            />
-            <DetailRow
-              label="Line of Business"
-              value={clientDetails.lineOfBusiness}
-              onUpdate={handleUpdateField("lineOfBusiness")}
-            />
           </div>
         </div>
       </div>
