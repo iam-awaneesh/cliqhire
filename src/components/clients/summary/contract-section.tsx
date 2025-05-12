@@ -349,7 +349,8 @@ export function ContractSection({ clientId }: ContractSectionProps) {
           onUpdate={(value) => handleUpdateField("lineOfBusiness", value)}
         />
 
-        <FileUploadRow
+        
+         <FileUploadRow
           label="Agreement"
           accept=".pdf,.doc,.docx"
           onFileSelect={handleAgreementUpload}

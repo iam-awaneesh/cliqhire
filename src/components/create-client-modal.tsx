@@ -119,31 +119,31 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
   }, [formData.location])
 
   // Country suggestions
-  useEffect(() => {
-    const fetchCountrySuggestions = async () => {
-      if (formData.countryOfRegistration.length < 2 || countrySuggestions.length < 2) {
-        setCountrySuggestions([])
-        return
-      }
-
-      try {
-        const response = await axios.get(
-          `https://restcountries.com/v3.1/name/${encodeURIComponent(formData.countryOfRegistration)}`
-        )
-        setCountrySuggestions(response.data)
-        setShowCountrySuggestions(true)
-      } catch (error) {
-        if (axios.isAxiosError(error) && error.response?.status === 404) {
-          setCountrySuggestions([])
-        } else {
-          console.error("Error fetching country suggestions:", error)
-        }
-      }
+ useEffect(() => {
+  const fetchCountrySuggestions = async () => {
+    if (formData.countryOfRegistration.length < 2) {
+      setCountrySuggestions([])
+      return
     }
 
-    const debounceTimer = setTimeout(fetchCountrySuggestions, 300)
-    return () => clearTimeout(debounceTimer)
-  }, [formData.countryOfRegistration])
+    try {
+      const response = await axios.get(
+        `https://restcountries.com/v3.1/name/${encodeURIComponent(formData.countryOfRegistration)}`
+      )
+      setCountrySuggestions(response.data)
+      setShowCountrySuggestions(true)
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
+        setCountrySuggestions([])
+      } else {
+        console.error("Error fetching country suggestions:", error)
+      }
+    }
+  }
+
+  const debounceTimer = setTimeout(fetchCountrySuggestions, 300)
+  return () => clearTimeout(debounceTimer)
+}, [formData.countryOfRegistration])
 
   const handleLocationSelect = async (suggestion: LocationSuggestion) => {
     setFormData(prev => ({

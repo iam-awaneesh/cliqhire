@@ -12,6 +12,8 @@ interface FileUploadRowProps {
   currentFileName?: string
   showOnlyIfOverseas?: boolean
   showFileName?: boolean
+  onDownload?: () => Promise<void>; // Adding the onDownload prop here
+  onDelete?: () => Promise<void>;
 }
 
 export function FileUploadRow({

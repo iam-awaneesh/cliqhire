@@ -1,5 +1,5 @@
 "use client"
-
+import Image from "next/image"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -493,51 +493,57 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
                 </div>
               </div>
 
-              <div className="grid gap-2">
-                <Label htmlFor="nationality">Nationalities</Label>
-                <div className="space-y-2">
-                                    <div className="flex flex-wrap gap-2 min-h-[2.5rem] p-2 border rounded-md">
-                    {selectedNationalities.map((nationality) => (
-                      <Badge key={nationality} variant="secondary" className="flex items-center gap-1">
-                        {nationality}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-auto p-0 hover:bg-transparent"
-                          onClick={() => removeNationality(nationality)}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </Badge>
-                    ))}
-                  </div>
-                  <div className="relative">
-                    <Input
-                      value={searchNationality}
-                      onChange={(e) => setSearchNationality(e.target.value)}
-                      placeholder="Search and select nationalities"
-                      onFocus={() => setShowCountrySuggestions(true)}
-                    />
-                    {showCountrySuggestions && countrySuggestions.length > 0 && (
-                      <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
-                        {countrySuggestions.map((country, index) => (
-                          <div
-                            key={index}
-                            className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2"
-                            onClick={() => {
-                              handleNationalitySelect(country)
-                              setShowCountrySuggestions(false)
-                            }}
-                          >
-                            <img src={country.flags.svg} alt={`${country.name.common} flag`} className="w-6 h-4 object-cover" />
-                            <span>{country.name.common}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
+             <div className="grid gap-2">
+  <Label htmlFor="nationality">Nationalities</Label>
+  <div className="space-y-2">
+    <div className="flex flex-wrap gap-2 min-h-[2.5rem] p-2 border rounded-md">
+      {selectedNationalities.map((nationality) => (
+        <Badge key={nationality} variant="secondary" className="flex items-center gap-1">
+          {nationality}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-auto p-0 hover:bg-transparent"
+            onClick={() => removeNationality(nationality)}
+          >
+            <X className="h-3 w-3" />
+          </Button>
+        </Badge>
+      ))}
+    </div>
+    <div className="relative">
+      <Input
+        value={searchNationality}
+        onChange={(e) => setSearchNationality(e.target.value)}
+        placeholder="Search and select nationalities"
+        onFocus={() => setShowCountrySuggestions(true)}
+      />
+      {showCountrySuggestions && countrySuggestions.length > 0 && (
+        <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
+          {countrySuggestions.map((country, index) => (
+            <div
+              key={index}
+              className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2"
+              onClick={() => {
+                handleNationalitySelect(country)
+                setShowCountrySuggestions(false)
+              }}
+            >
+              <Image
+                src={country.flags.svg}
+                alt={`${country.name.common} flag`}
+                width={24}
+                height={16}
+                className="object-cover"
+              />
+              <span>{country.name.common}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  </div>
+</div>
 
               <div className="grid gap-2">
                 <Label htmlFor="gender">Gender</Label>
