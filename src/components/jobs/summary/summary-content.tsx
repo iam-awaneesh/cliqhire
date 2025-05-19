@@ -1,11 +1,12 @@
-"use client"
+"use client";
 
-import { Button } from "@/components/ui/button"
-import { Pencil, Plus } from "lucide-react"
-import { useEffect, useState } from "react"
-import { getJobById, updateJobById } from "@/services/jobService"
-import { EditFieldDialog } from "@/components/jobs/summary/edit-field-dialog"
-import { EditSalaryDialog } from "@/components/jobs/summary/edit-salary-dialog" 
+import { Button } from "@/components/ui/button";
+import { Pencil, Plus } from "lucide-react";
+import { useEffect, useState } from "react";
+import { getJobById, updateJobById } from "@/services/jobService";
+import { EditFieldDialog } from "@/components/jobs/summary/edit-field-dialog";
+import { EditSalaryDialog } from "@/components/jobs/summary/edit-salary-dialog";
+import type { JobResponse } from "@/types/job";
 
 interface SummaryContentProps {
   jobId: string;
@@ -31,8 +32,8 @@ interface JobDetails {
   teamSize: number;
   link: string;
   keySkills: string;
-  jobPosition: string; 
-  stage: string; 
+  jobPosition: string;
+  stage: string;
   salaryRange: {
     min: number;
     max: number;
@@ -54,91 +55,102 @@ interface EditingField {
 }
 
 export function SummaryContent({ jobId }: SummaryContentProps) {
-  const [jobDetails, setJobDetails] = useState<JobDetails | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [editingField, setEditingField] = useState<EditingField | null>(null)
-  const [isSalaryDialogOpen, setIsSalaryDialogOpen] = useState(false)
+  const [jobDetails, setJobDetails] = useState<JobDetails | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [editingField, setEditingField] = useState<EditingField | null>(null);
+  const [isSalaryDialogOpen, setIsSalaryDialogOpen] = useState(false);
 
   useEffect(() => {
     const fetchJobDetails = async () => {
       try {
-        const response = await getJobById(jobId)
-        setJobDetails({
-          jobTitle: response.jobTitle,
-          department: response.department,
-          client: response.client?.name || 'N/A',
-          location: response.location,
-          headcount: response.headcount,
-          minimumSalary: response.minimumSalary || response.salaryRange?.min,
-          maximumSalary: response.maximumSalary || response.salaryRange?.max,
-          salaryCurrency: response.salaryCurrency || 'USD',
-          jobType: response.jobType,
-          experience: response.experience,
-          jobDescription: response.jobDescription || 'No description available',
-          nationalities: response.nationalities || [],
-          gender: response.gender,
-          deadline: response.deadline,
-          relationshipManager: response.relationshipManager,
-          reportingTo: response.reportingTo,
-          teamSize: response.teamSize,
-          link: response.link,
-          keySkills: response.keySkills,
-          jobPosition: response.jobPosition, 
-          stage: response.stage,
+        const response: JobResponse = await getJobById(jobId);
+
+        const mappedDetails: JobDetails = {
+          jobTitle: response.jobTitle ?? '',
+          department: response.department ?? '',
+          client: response.client?.name ?? 'N/A',
+          location: response.location ?? '',
+          headcount: response.headcount ?? 0,
+          minimumSalary: response.minimumSalary ?? response.salaryRange?.min ?? 0,
+          maximumSalary: response.maximumSalary ?? response.salaryRange?.max ?? 0,
+          salaryCurrency: response.salaryCurrency ?? 'USD',
+          jobType: response.jobType ?? '',
+          experience: response.experience ?? '',
+          jobDescription: response.jobDescription ?? 'No description available',
+          nationalities: response.nationalities ?? [],
+          gender: response.gender ?? '',
+          deadline: response.deadline ?? '',
+          relationshipManager: response.relationshipManager ?? '',
+          reportingTo: response.reportingTo ?? '',
+          teamSize: response.teamSize ?? 0,
+          link: response.link ?? '',
+          keySkills: response.keySkills ?? '',
+          jobPosition: response.jobPosition ?? '',
+          stage: response.stage ?? '',
           salaryRange: {
-            min: response.salaryRange?.min || 0,
-            max: response.salaryRange?.max || 0,
-            currency: response.salaryCurrency || 'USD'
+            min: response.salaryRange?.min ?? 0,
+            max: response.salaryRange?.max ?? 0,
+            currency: response.salaryCurrency ?? 'USD'
           },
           dateRange: {
-            start: response.dateRange?.start || '',
-            end: response.dateRange?.end || ''
+            start: response.dateRange?.start ?? '',
+            end: response.dateRange?.end ?? ''
           }
-        })
+        };
+
+        setJobDetails(mappedDetails);
       } catch (error) {
-        console.error("Error fetching job details:", error)
-        setError("Failed to load job details")
+        console.error("Error fetching job details:", error);
+        setError("Failed to load job details");
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
+    };
+
+    fetchJobDetails();
+  }, [jobId]);
+
+  const handleFieldEdit = (
+    field: keyof JobDetails,
+    value: string,
+    options?: {
+      isDate?: boolean;
+      isTextArea?: boolean;
+      isSelect?: boolean;
+      selectOptions?: { value: string; label: string }[];
     }
-
-    fetchJobDetails()
-  }, [jobId])
-
-  const handleFieldEdit = (field: keyof JobDetails, value: string, options?: {
-    isDate?: boolean;
-    isTextArea?: boolean;
-    isSelect?: boolean;
-    selectOptions?: { value: string; label: string }[];
-  }) => {
+  ) => {
     setEditingField({
       name: field,
       value: value,
       ...options
-    })
-  }
+    });
+  };
 
   const handleFieldSave = async (newValue: string) => {
-    if (!editingField || !jobDetails) return
+    if (!editingField || !jobDetails) return;
 
     try {
       const updatedDetails = {
         ...jobDetails,
         [editingField.name]: editingField.isDate ? new Date(newValue).toISOString() : newValue
-      }
+      };
 
-      await updateJobById(jobId, updatedDetails)
-      setJobDetails(updatedDetails)
-      setEditingField(null)
+      await updateJobById(jobId, updatedDetails);
+      setJobDetails(updatedDetails);
+      setEditingField(null);
     } catch (error) {
-      console.error("Error updating field:", error)
+      console.error("Error updating field:", error);
     }
-  }
+  };
 
-  const handleSalarySave = async (values: { minSalary: number; maxSalary: number; currency: string }) => {
-    if (!jobDetails) return
+  const handleSalarySave = async (values: {
+    minSalary: number;
+    maxSalary: number;
+    currency: string;
+  }) => {
+    if (!jobDetails) return;
 
     try {
       const updatedDetails = {
@@ -146,39 +158,37 @@ export function SummaryContent({ jobId }: SummaryContentProps) {
         minimumSalary: values.minSalary,
         maximumSalary: values.maxSalary,
         salaryCurrency: values.currency
-      }
+      };
 
-      await updateJobById(jobId, updatedDetails)
-      setJobDetails(updatedDetails)
+      await updateJobById(jobId, updatedDetails);
+      setJobDetails(updatedDetails);
     } catch (error) {
-      console.error("Error updating salary details:", error)
+      console.error("Error updating salary details:", error);
     }
-  }
+  };
 
-  if (loading) {
-    return <div>Loading...</div>
-  }
-
-  if (error) {
-    return <div className="text-red-600">{error}</div>
-  }
-
-  if (!jobDetails) {
-    return <div>No job details found</div>
-  }
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div className="text-red-600">{error}</div>;
+  if (!jobDetails) return <div>No job details found</div>;
 
   return (
     <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-
-      {/* Right Column - Job Details */}
+      {/* Left Column */}
       <div>
         <div className="bg-gray-50 rounded-lg p-4">
           <h2 className="text-lg font-semibold mb-4">Job Details</h2>
           <div className="bg-white rounded border p-4 space-y-4">
             {Object.entries(jobDetails).map(([key, value]) => {
-              if (key === 'dateRange' || key === 'salaryCurrency' || key === 'minimumSalary' || key === 'maximumSalary' || key === 'salaryRange' || key === 'jobDescription') return null;
+              if (
+                key === 'dateRange' ||
+                key === 'salaryCurrency' ||
+                key === 'minimumSalary' ||
+                key === 'maximumSalary' ||
+                key === 'salaryRange' ||
+                key === 'jobDescription'
+              ) return null;
 
-              const isDateField = ['deadline', 'dateRange.start', 'dateRange.end'].includes(key);
+              const isDateField = ['deadline'].includes(key);
 
               return (
                 <DetailRow
@@ -194,21 +204,19 @@ export function SummaryContent({ jobId }: SummaryContentProps) {
               );
             })}
           </div>
-
-          
         </div>
       </div>
 
-      {/* Left Column - Job Description */}
+      {/* Right Column */}
       <div>
         <div className="bg-gray-50 rounded-lg p-4">
           <h2 className="text-lg font-semibold mb-4">Job Description</h2>
           <div className="bg-white rounded border p-4">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm text-muted-foreground">Job Description</h3>
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 className="h-8 text-black"
                 onClick={() => handleFieldEdit('jobDescription', jobDetails.jobDescription, { isTextArea: true })}
               >
@@ -220,23 +228,22 @@ export function SummaryContent({ jobId }: SummaryContentProps) {
               {jobDetails.jobDescription}
             </div>
           </div>
-        </div>
 
-          {/* Package Details Section */}
+          {/* Salary Range Section */}
           <div className="mt-6">
             <h2 className="text-lg font-semibold mb-4">Package Details</h2>
             <div className="bg-white rounded border p-4">
-              <DetailRow 
-                label="Salary Range" 
+              <DetailRow
+                label="Salary Range"
                 value={`${jobDetails.salaryCurrency} ${jobDetails.minimumSalary.toLocaleString()} - ${jobDetails.maximumSalary.toLocaleString()} per annum`}
                 onEdit={() => setIsSalaryDialogOpen(true)}
               />
             </div>
           </div>
+        </div>
       </div>
 
-      
-
+      {/* Edit Dialogs */}
       {editingField && (
         <EditFieldDialog
           open={true}
@@ -261,26 +268,27 @@ export function SummaryContent({ jobId }: SummaryContentProps) {
         onSave={handleSalarySave}
       />
     </div>
-  )
+  );
 }
 
 interface DetailRowProps {
-  label: string
-  value?: string
-  onEdit?: () => void
+  label: string;
+  value?: string;
+  onEdit?: () => void;
 }
 
 function DetailRow({ label, value, onEdit }: DetailRowProps) {
   const hasValue = value && value !== "undefined" && value !== "null";
-  
+
   return (
     <div className="flex items-center py-2 border-b last:border-b-0">
       <span className="text-sm text-muted-foreground w-1/3">{label}</span>
       <div className="flex items-center justify-between flex-1">
         <span className="text-sm">{hasValue ? value : "No Details"}</span>
-        <Button 
-          variant="outline" 
-          size="sm" 
+        <Button
+          variant="outline"
+          size="sm"
+          
           className="h-8 text-black"
           onClick={onEdit}
         >
@@ -298,5 +306,5 @@ function DetailRow({ label, value, onEdit }: DetailRowProps) {
         </Button>
       </div>
     </div>
-  )
+  );
 }

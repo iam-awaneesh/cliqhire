@@ -12,15 +12,20 @@ const getSampleJobs = async (): Promise<Job[]> => {
     if (!Array.isArray(jobs)) {
       console.error('Jobs data is not an array:', jobs);
       return [];
+      
     }
     
     return jobs.map((job: any) => ({
-      id: job._id,
+      _id: job._id,
       positionName: job.jobTitle,
       client: job.client?._id,
       location: job.location,
       headcount: job.headcount.toString(),
       stage: job.stage,
+      salaryRange: {
+          min: job.minSalary,
+          max: job.maxSalary,
+              },
       minSalary: job.minimumSalary || job.salaryRange?.min,
       maxSalary: job.maximumSalary || job.salaryRange?.max,
       status: job.status || JobStatus.OPEN,

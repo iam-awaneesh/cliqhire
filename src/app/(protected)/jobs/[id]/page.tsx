@@ -8,6 +8,7 @@ import { notFound } from "next/navigation"
 import { useState, useEffect } from "react"
 import { Badge } from "@/components/ui/badge"
 import { JobTabs } from "@/components/jobs/job-tabs"
+import { Job } from "@/types/job";
 
 interface PageProps {
   params: { id: string }
@@ -29,7 +30,7 @@ export default function JobPage({ params }: PageProps) {
           throw new Error('Invalid jobs data received')
         }
         
-        const job = jobs.find(j => j.id === id)
+        const job = jobs.find(j => j._id === id)
         if (!job) {
           notFound()
           return

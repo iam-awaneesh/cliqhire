@@ -54,7 +54,7 @@ export function JobsTable({ jobs, clientId, clientName }: JobsTableProps) {
     setJobId(pendingChange.jobId)
     setNewStage(pendingChange.stage)
     setLocalJobs(prev => prev.map(job => 
-      job.id === pendingChange.jobId ? { ...job, stage: pendingChange.stage } : job
+      job._id === pendingChange.jobId ? { ...job, stage: pendingChange.stage } : job
     ))
     setShowConfirmDialog(false)
   }
@@ -85,7 +85,7 @@ export function JobsTable({ jobs, clientId, clientName }: JobsTableProps) {
         console.log(error);
         // Revert the local state if the API call fails
         setLocalJobs(prev => prev.map(job => 
-          job.id === jobId ? { ...job, stage: job.stage } : job
+          job._id === jobId ? { ...job, stage: job.stage } : job
         ))
       } finally {
         setIsLoading(false);
@@ -134,7 +134,7 @@ export function JobsTable({ jobs, clientId, clientName }: JobsTableProps) {
 
         <TableBody>
           {filteredJobs.map((job) => (
-            <TableRow key={job.id} className="hover:bg-muted/50 cursor-pointer">
+            <TableRow key={job._id} className="hover:bg-muted/50 cursor-pointer">
               <TableCell>
                 <Checkbox />
               </TableCell>
@@ -145,7 +145,7 @@ export function JobsTable({ jobs, clientId, clientName }: JobsTableProps) {
               <TableCell>
                 <JobStageBadge 
                   stage={job.stage} 
-                  onStageChange={(newStage) => handleStageChange(job.id, newStage)}
+                  onStageChange={(newStage) => handleStageChange(job._id, newStage)}
                 />
               </TableCell>
               <TableCell>{job.minSalary}</TableCell>

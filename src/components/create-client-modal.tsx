@@ -45,6 +45,7 @@ interface ClientForm {
   referredBy: string
   linkedInProfile: string
   linkedInPage: string
+  countryCode: string;
 }
 
 interface LocationSuggestion {
@@ -77,6 +78,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     referredBy: "",
     linkedInProfile: "",
     linkedInPage: "",
+     countryCode: "",
   })
 
   const [selectedYear, setSelectedYear] = useState<Date | null>(null)
@@ -176,118 +178,125 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
   }
 
   const handleInputChange = (field: keyof ClientForm) => (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    let value = e.target.value;
-    
-    if (field === 'website' && value && !value.match(/^https?:\/\//)) {
-      value = `https://${value}`;
+  e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+) => {
+  let value = e.target.value;
+
+  if (field === 'website' && value && !value.match(/^https?:\/\//)) {
+    value = `https://${value}`;
+  }
+
+  setFormData((prev) => ({
+    ...prev,
+    [field]: value,
+  }));
+
+  if (field === 'location') {
+    setShowLocationSuggestions(true);
+  }
+
+  if (field === 'countryOfRegistration') {
+    setShowCountrySuggestions(true);
+  }
+
+  setError(null);
+};
+
+const handleFileChange = (field: string) => (
+  event: React.ChangeEvent<HTMLInputElement>
+) => {
+  if (event.target.files && event.target.files[0]) {
+    const file = event.target.files[0];
+
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      setError(`File ${file.name} is too large. Maximum size is 5MB.`);
+      return;
     }
 
-    setFormData((prev) => ({
+    const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
+    if (!allowedTypes.includes(file.type)) {
+      setError(`Invalid file type. Allowed types are: JPEG, PNG, PDF`);
+      return;
+    }
+
+    setUploadedFiles((prev) => ({
       ...prev,
-      [field]: value,
-    }))
+      [field]: file,
+    }));
 
-    if (field === 'location') {
-      setShowLocationSuggestions(true)
-    }
-    if (field === 'countryOfRegistration') {
-      setShowCountrySuggestions(true)
-    }
-    setError(null)
+    setError(null);
   }
+};
 
-  const handleFileChange = (field: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files[0]) {
-      const file = event.target.files[0]
-      
-      const maxSize = 5 * 1024 * 1024
-      if (file.size > maxSize) {
-        setError(`File ${file.name} is too large. Maximum size is 5MB.`)
-        return
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setLoading(true);
+  setError(null);
+
+  try {
+    const formDataToSend = new FormData();
+
+    Object.entries(formData).forEach(([key, value]) => {
+      if (value) {
+        formDataToSend.append(key, value);
       }
+    });
 
-      const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf']
-      if (!allowedTypes.includes(file.type)) {
-        setError(`Invalid file type. Allowed types are: JPEG, PNG, PDF`)
-        return
+    Object.entries(uploadedFiles).forEach(([key, file]) => {
+      if (file) {
+        formDataToSend.append(key, file, file.name);
       }
+    });
 
-      setUploadedFiles((prev) => ({
-        ...prev,
-        [field]: file,
-      }))
-      setError(null)
-    }
+    const result = await createClient(formDataToSend);
+    console.log("Client created successfully:", result);
+
+    setFormData({
+      name: "",
+      email: "",
+      phoneNumber: "",
+      website: "",
+      industry: "",
+      location: "",
+      address: "",
+      googleMapsLink: "",
+      incorporationDate: "",
+      countryOfRegistration: "",
+      registrationNumber: "",
+      lineOfBusiness: [],
+      countryOfBusiness: "",
+      referredBy: "",
+      linkedInProfile: "",
+      linkedInPage: "",
+      countryCode: "",
+    });
+
+    setUploadedFiles({
+      profileImage: null,
+      crCopy: null,
+      vatCopy: null,
+      gstTinDocument: null,
+    });
+
+    setCurrentTab(0);
+    onOpenChange(false);
+  } catch (error: any) {
+    console.error("Failed to create client:", error);
+    setError(error.message || 'Failed to create client. Please try again.');
+  } finally {
+    setLoading(false);
   }
+};
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError(null)
+const handleNext = () => {
+  setCurrentTab((prev) => Math.min(prev + 1, 2));
+};
 
-    try {
-      const formDataToSend = new FormData()
+const handlePrevious = () => {
+  setCurrentTab((prev) => Math.max(prev - 1, 0));
+};
 
-      Object.entries(formData).forEach(([key, value]) => {
-        if (value) {
-          formDataToSend.append(key, value)
-        }
-      })
-
-      Object.entries(uploadedFiles).forEach(([key, file]) => {
-        if (file) {
-          formDataToSend.append(key, file, file.name)
-        }
-      })
-
-      const result = await createClient(formDataToSend)
-      console.log("Client created successfully:", result)
-      
-      setFormData({
-        name: "",
-        email: "",
-        phoneNumber: "",
-        website: "",
-        industry: "",
-        location: "",
-        address: "",
-        googleMapsLink: "",
-        incorporationDate: "",
-        countryOfRegistration: "",
-        registrationNumber: "",
-        lineOfBusiness: [],
-        countryOfBusiness: "",
-        referredBy: "",
-        linkedInProfile: "",
-        linkedInPage: "",
-      })
-      
-      setUploadedFiles({
-        profileImage: null,
-        crCopy: null,
-        vatCopy: null,
-        gstTinDocument: null,
-      })
-      
-      setCurrentTab(0)
-      onOpenChange(false)
-    } catch (error: any) {
-      console.error("Failed to create client:", error)
-      setError(error.message || 'Failed to create client. Please try again.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleNext = () => {
-    setCurrentTab(prev => Math.min(prev + 1, 2))
-  }
-
-  const handlePrevious = () => {
-    setCurrentTab(prev => Math.max(prev - 1, 0))
-  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -350,27 +359,41 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                 />
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="phoneNumber">Phone Number *</Label>
-                <Input
-                  id="phoneNumber"
-                  type="tel"
-                  value={formData.phoneNumber}
-                  onChange={handleInputChange("phoneNumber")}
-                  placeholder="Enter phone number ex: +966 50 123 4567"
-                  required
-                />
-              </div>
+             <div className="space-y-2">
+  <Label htmlFor="phoneNumber">Phone Number *</Label>
+  <div className="flex space-x-2">
+    <select
+      className="border rounded px-2 py-1"
+      value={formData.countryCode}
+      onChange={handleInputChange("countryCode")}
+      required
+    >
+      <option value="+966">+966 (Saudi Arabia)</option>
+      <option value="+91">+91 (India)</option>
+      <option value="+1">+1 (USA)</option>
+      <option value="+44">+44 (UK)</option>
+      {/* Add more country codes as needed */}
+    </select>
+    <Input
+      id="phoneNumber"
+      type="tel"
+      value={formData.phoneNumber}
+      onChange={handleInputChange("phoneNumber")}
+      placeholder="50 123 4567"
+      required
+    />
+  </div>
+</div>
 
               <div className="space-y-2">
-                <Label htmlFor="website">Client Website *</Label>
+                <Label htmlFor="website">Client Website</Label>
                 <Input
                   id="website"
                   type="url"
                   value={formData.website}
                   onChange={handleInputChange("website")}
                   placeholder="www.example.com"
-                  required
+                
                 />
               </div>
 
@@ -398,12 +421,12 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
               
 
               <div className="space-y-2">
-                <Label htmlFor="linkedInProfile">LinkedIn Profile *</Label>
+                <Label htmlFor="linkedInProfile">LinkedIn Profile</Label>
                 <Input
                   id="linkedInProfile"
                   value={formData.linkedInProfile}
                   onChange={handleInputChange("linkedInProfile")}
-                  required
+                
                 />
               </div>
 
@@ -457,18 +480,18 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
 
 
               <div className="space-y-2">
-                <Label htmlFor="googleMapsLink">Google Maps Link *</Label>
+                <Label htmlFor="googleMapsLink">Google Maps Link</Label>
                 <Input
                   id="googleMapsLink"
                   value={formData.googleMapsLink}
                   onChange={handleInputChange("googleMapsLink")}
                   placeholder="Enter Google Maps link"
-                  required
+                
                 />
               </div>
 
               <div className="space-y-2 flex flex-col">
-                <Label htmlFor="incorporationDate">Client Incorporation Year *</Label>
+                <Label htmlFor="incorporationDate">Client Incorporation Year</Label>
                 <DatePicker
                   selected={selectedYear}
                   onChange={(date) => setSelectedYear(date)}
@@ -476,18 +499,17 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                   dateFormat="yyyy"
                   className="w-full p-2 border rounded-md"
                   placeholderText="Select Year"
-                  required
+                
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="countryOfRegistration">Country of Registration *</Label>
+                <Label htmlFor="countryOfRegistration">Country of Registration</Label>
                 <div className="relative">
                   <Input
                     id="countryOfRegistration"
                     value={formData.countryOfRegistration}
                     onChange={handleInputChange("countryOfRegistration")}
-                    required
                     placeholder="Search for country"
                   />
                   {showCountrySuggestions && countrySuggestions.length > 0 && (
@@ -504,6 +526,16 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                     </div>
                   )}
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="countryOfBusiness">Country of Business</Label>
+                <Input
+                  id="countryOfBusiness"
+                  value={formData.countryOfBusiness}
+                  onChange={handleInputChange("countryOfBusiness")}
+                
+                />
               </div>
 
               <div className="space-y-2">
@@ -535,15 +567,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="countryOfBusiness">Country of Business *</Label>
-                <Input
-                  id="countryOfBusiness"
-                  value={formData.countryOfBusiness}
-                  onChange={handleInputChange("countryOfBusiness")}
-                  required
-                />
-              </div>
+              
 
               
             </div>

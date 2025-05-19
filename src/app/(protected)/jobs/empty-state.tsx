@@ -52,6 +52,7 @@ export function JobsEmptyState() {
         onOpenChange={() => setOpen(false)}
         clientId={"your-client-id"} 
         clientName={"Your Client Name"}
+        onJobCreated={(open)=>console.log("job created")}
       />
     </>
   )

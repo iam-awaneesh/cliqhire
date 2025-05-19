@@ -56,6 +56,15 @@ interface Filters {
   maxAge: string;
 }
 
+interface JobCountResponse {
+  success: boolean;
+  data: {
+    _id: string;
+    count: number;
+    clientName: string;
+  }[];
+}
+
 export default function ClientsPage() {
   const router = useRouter();
   const params = useParams();
@@ -79,7 +88,22 @@ export default function ClientsPage() {
     const fetchClients = async () => {
       try {
         const data = await getSampleClients();
-        setClients(data);
+        console.log('Fetched clients:', data);
+        const response = await fetch('https://aems-backend.onrender.com/api/jobs/count/67fcd97be14a5de37110a5b6');
+        const jobCountData = await response.json();
+        console.log('Fetched job counts:', jobCountData);
+        if (jobCountData.success) {
+          const updatedClients = data.map(client => {
+            const jobCount = jobCountData.data.find((job: { _id: string; count: number })=> job._id === client.id);
+            console.log(`Client ${client.id} has job count: ${jobCount ? jobCount.count : 0}`);
+            return { ...client, jobCount: jobCount ? jobCount.count : 0 };
+          });
+          console.log('Updated clients:', updatedClients);
+          setClients(updatedClients);
+        } else {
+          console.log('Failed to fetch job counts');
+          setClients(data.map(client => ({ ...client, jobCount: 0 })));
+        }
       } catch (error) {
         console.error("Error fetching clients:", error);
       } finally {
@@ -306,6 +330,7 @@ export default function ClientsPage() {
                       onClick={(e) => {
                         if (!(e.target as HTMLElement).closest('.client-stage-badge')) {
                           router.push(`/clients/${client.id}`);
+                          <>asd</>
                         }
                       }}
                     >

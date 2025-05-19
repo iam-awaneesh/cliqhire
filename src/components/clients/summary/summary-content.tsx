@@ -178,12 +178,7 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
           <h2 className="text-sm font-semibold">Details</h2>
           {/* <SectionHeader title="Details" /> */}
           <div className="space-y-3 mt-4">
-            <FileUploadRow
-              label="Client Profile Image"
-              accept="image/*"
-              onFileSelect={handleFileUpload("clientProfileImage")}
-              currentFileName={clientDetails.clientProfileImage}
-            />
+            
             <DetailRow
               label="Client Name"
               value={clientDetails.name}
@@ -209,18 +204,7 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
               value={clientDetails.googleMapsLink}
               onUpdate={handleUpdateField("googleMapsLink")}
             />
-            <FileUploadRow
-              label="VAT Copy"
-              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-              onFileSelect={handleFileUpload("vatCopy")}
-              currentFileName={clientDetails.vatCopy}
-            />
-            <FileUploadRow
-              label="CR Copy"
-              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-              onFileSelect={handleFileUpload("crCopy")}
-              currentFileName={clientDetails.crCopy}
-            />
+           
             <DetailRow
               label="Client Location"
               value={clientDetails.location}
@@ -268,6 +252,26 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
               value={clientDetails.clientLinkedInPage || clientDetails.linkedInPage}
               onUpdate={handleUpdateField(clientDetails.linkedInPage ? "linkedInPage" : "clientLinkedInPage")}
             />
+               <FileUploadRow
+              label="VAT Copy"
+              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+              onFileSelect={handleFileUpload("vatCopy")}
+              currentFileName={clientDetails.vatCopy}
+            />
+            <FileUploadRow
+              label="CR Copy"
+              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+              onFileSelect={handleFileUpload("crCopy")}
+              currentFileName={clientDetails.crCopy}
+            />
+
+            <FileUploadRow
+              label="Client Profile Image"
+              accept="image/*"
+              onFileSelect={handleFileUpload("clientProfileImage")}
+              currentFileName={clientDetails.clientProfileImage}
+            />
+
           </div>
         </div>
       </div>

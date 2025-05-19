@@ -4,7 +4,6 @@ import { Plus, LayoutGrid, List, SlidersHorizontal, RefreshCcw, MoreVertical } f
 import { JobsEmptyState } from "./empty-state"
 import { useState, useEffect } from "react"
 import { CreateJobModal } from "@/components/jobs/create-job-modal"
-import { getSampleJobs } from "../clients/data/sample-jobs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useRouter } from "next/navigation"
 import { JobStageBadge } from "@/components/jobs/job-stage-badge"
@@ -47,6 +46,31 @@ function ConfirmStageChangeDialog({
   )
 }
 
+type Client = { 
+  _id: string
+  name: string 
+}
+
+type ApiJob = {
+  _id: string
+  jobTitle: string
+  department: string
+  client: string
+  jobPosition?: string
+  location: string
+  headcount: number
+  stage: JobStage
+  minimumSalary: number
+  maximumSalary: number
+  jobType?: string
+  experience?: string
+  salaryRange?: {
+    min: number
+    max: number
+  }
+  jobOwner?: string
+}
+
 export default function JobsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,23 +81,33 @@ export default function JobsPage() {
     jobId: string;
     newStage: JobStage;
   } | null>(null);
+  const [clientList, setClientList] = useState<Client[]>([]);
 
   const router = useRouter();
-
-  type Client = { id: string; name: string };
-  const [clientList, setClientList] = useState<Client[]>([]);
 
   useEffect(() => {
     const loadJobs = async () => {
       try {
-        const fetchedJobs = await getSampleJobs();
-        if (Array.isArray(fetchedJobs)) {
-          const convertedJobs = fetchedJobs.map(job => ({
-            ...job,
-            headcount: String(job.headcount),
-            minSalary: Number(job.minSalary),
-            maxSalary: Number(job.maxSalary),
-            jobStatus: job.jobStatus || undefined,
+        const response = await fetch("https://aems-backend.onrender.com/api/jobs");
+        if (!response.ok) {
+          throw new Error("Failed to fetch jobs");
+        }
+        const data = await response.json();
+        
+        if (data.success && Array.isArray(data.data)) {
+          const convertedJobs = data.data.map((job: ApiJob) => ({
+            id: job._id,
+            positionName: job.jobTitle,
+            department: job.department,
+            client: job.client,
+            location: job.location,
+            headcount: job.headcount.toString(),
+            stage: job.stage,
+            minSalary: job.minimumSalary ?? job.salaryRange?.min ?? 0,
+          maxSalary: job.maximumSalary ?? job.salaryRange?.max ?? 0,
+            jobType: job.jobType || 'Full Time',
+            experience: job.experience || 'Not specified',
+            jobOwner: job.jobOwner || 'Unassigned'
           }));
           setJobs(convertedJobs);
         }
@@ -91,17 +125,20 @@ export default function JobsPage() {
           throw new Error("Failed to fetch clients");
         }
         const data = await response.json();
-        setClientList(data);
+        setClientList(data.data); // Update to data.data
       } catch (error) {
         console.error("Error fetching clients:", error);
       }
     };
+
     loadClients();
-    
     loadJobs();
   }, []);
 
-  console.log(clientList);
+  const getClientName = (clientId: string) => {
+    const client = clientList.find((client) => client._id === clientId);
+    return client ? client.name : 'Unknown';
+  };
 
   const handleStageChange = (jobId: string, newStage: JobStage) => {
     setPendingStageChange({ jobId, newStage });
@@ -116,7 +153,7 @@ export default function JobsPage() {
     try {
       // Update local state immediately for better UX
       setJobs(prev => prev.map(job => 
-        job.id === jobId ? { ...job, stage: newStage } : job
+        job._id === jobId ? { ...job, stage: newStage } : job
       ));
 
       // Make API call to update the stage
@@ -133,11 +170,44 @@ export default function JobsPage() {
       console.error('Error updating job stage:', error);
       // Revert the local state if the API call fails
       setJobs(prev => prev.map(job => 
-        job.id === jobId ? { ...job, stage: job.stage } : job
+        job._id === jobId ? { ...job, stage: job.stage } : job
       ));
     } finally {
       setPendingStageChange(null);
       setConfirmOpen(false);
+    }
+  };
+
+  const refreshJobs = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch("https://aems-backend.onrender.com/api/jobs");
+      if (!response.ok) {
+        throw new Error("Failed to fetch jobs");
+      }
+      const data = await response.json();
+      
+      if (data.success && Array.isArray(data.data)) {
+        const convertedJobs = data.data.map((job: ApiJob) => ({
+          id: job._id,
+          positionName: job.jobTitle,
+          department: job.department,
+          client: job.client,
+          location: job.location,
+          headcount: job.headcount.toString(),
+          stage: job.stage,
+          minSalary: job.minimumSalary,
+          maxSalary: job.maximumSalary,
+          jobType: job.jobType || 'Full Time',
+          experience: job.experience || 'Not specified',
+          jobOwner: job.jobOwner || 'Unassigned'
+        }));
+        setJobs(convertedJobs);
+      }
+    } catch (error) {
+      console.error("Error refreshing jobs:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -194,7 +264,7 @@ export default function JobsPage() {
                   <TableHead className="text-xs uppercase text-muted-foreground font-medium">Position Name</TableHead>
                   <TableHead className="text-xs uppercase text-muted-foreground font-medium">Job Department</TableHead>
                   <TableHead className="text-xs uppercase text-muted-foreground font-medium">Job location</TableHead>
-                  <TableHead className="text-xs uppercase text-muted-foreground font-medium">Job Status</TableHead>
+                  <TableHead className="text-xs uppercase text-muted-foreground font-medium">Headcount</TableHead>
                   <TableHead className="text-xs uppercase text-muted-foreground font-medium">Job Stage</TableHead>
                   <TableHead className="text-xs uppercase text-muted-foreground font-medium">Minimum salary</TableHead>
                   <TableHead className="text-xs uppercase text-muted-foreground font-medium">Maximum salary</TableHead>
@@ -244,7 +314,11 @@ export default function JobsPage() {
                 <SlidersHorizontal className="h-4 w-4 mr-2" />
                 Filters
               </Button>
-              <Button variant="outline" size="sm">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={refreshJobs}
+              >
                 <RefreshCcw className="h-4 w-4 mr-2" />
                 Refresh
               </Button>
@@ -256,14 +330,14 @@ export default function JobsPage() {
 
         {/* Content */}
         {jobs.length > 0 ? (
-          <div className="flex-1">
+          <div className="flex-1 overflow-auto">
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
                   <TableHead className="text-xs uppercase text-muted-foreground font-medium">Position Name</TableHead>
                   <TableHead className="text-xs uppercase text-muted-foreground font-medium">Job Department</TableHead>
                   <TableHead className="text-xs uppercase text-muted-foreground font-medium">Job location</TableHead>
-                  <TableHead className="text-xs uppercase text-muted-foreground font-medium">Job Status</TableHead>
+                  <TableHead className="text-xs uppercase text-muted-foreground font-medium">Headcount</TableHead>
                   <TableHead className="text-xs uppercase text-muted-foreground font-medium">Job Stage</TableHead>
                   <TableHead className="text-xs uppercase text-muted-foreground font-medium">Minimum salary</TableHead>
                   <TableHead className="text-xs uppercase text-muted-foreground font-medium">Maximum salary</TableHead>
@@ -273,9 +347,9 @@ export default function JobsPage() {
               <TableBody>
                 {jobs.map((job: Job) => (
                   <TableRow 
-                    key={job.id} 
+                    key={job._id} 
                     className="hover:bg-muted/50 cursor-pointer"
-                    onClick={() => router.push(`/jobs/${job.id}`)}
+                    onClick={() => router.push(`/jobs/${job._id}`)}
                   >
                     <TableCell className="text-sm font-medium">{job.positionName}</TableCell>
                     <TableCell className="text-sm">{job.department}</TableCell>
@@ -284,12 +358,12 @@ export default function JobsPage() {
                     <TableCell className="text-sm">
                       <JobStageBadge 
                         stage={job.stage} 
-                        onStageChange={(newStage) => handleStageChange(job.id, newStage)}
+                        onStageChange={(newStage) => handleStageChange(job._id, newStage)}
                       />
                     </TableCell>
-                    <TableCell className="text-sm">{job.minSalary}</TableCell>
-                    <TableCell className="text-sm">{job.maxSalary}</TableCell>
-                    <TableCell className="text-sm">{}</TableCell>
+                    <TableCell className="text-sm">{(job.minSalary)}</TableCell>
+                    <TableCell className="text-sm">{(job.maxSalary)}</TableCell>
+                    <TableCell className="text-sm">{getClientName(job.client)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -305,8 +379,10 @@ export default function JobsPage() {
       <CreateJobModal 
         open={open} 
         onOpenChange={setOpen}
-        clientId={clientList[0]?.id || ""}
+        clientId={clientList[0]?._id || ""}
         clientName={clientList[0]?.name || ""}
+        refreshJobs={refreshJobs}
+        onJobCreated = {()=>console.log("")}
       />
       
       <ConfirmStageChangeDialog

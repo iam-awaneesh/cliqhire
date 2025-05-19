@@ -1,151 +1,222 @@
-import { Job } from "@/types/job";
 import axios from "axios";
-import exp from "constants";
 
-interface JobData {
-  jobTitle: string;
-  department: string;
-  client: string;
-  jobPosition: string;
-  location: string;
-  headcount: number;
-  stage: string;
-  minimumSalary: number;
-  maximumSalary: number;
-  jobType: string;
-  experience: string;
-  salaryRange: {
-    min: number;
-    max: number;
-    currency: string;
-  };
-  nationalities: string[];
-  gender: string;
-  deadline: string;
-  relationshipManager: string;
-  reportingTo: string;
-  teamSize: number;
-  link: string;
-  keySkills: string;
-  jobDescription: string;
-  dateRange: {
-    start: string;
-    end: string;
-  };
+interface SalaryRange {
+  min: number;
+  max: number;
+  currency: string;
 }
 
-export interface Jobs {
-  _id: string;
+interface WorkVisa {
+  workVisa: string;
+  visaCountries: string[];
+}
+
+export interface JobData {
   jobTitle: string;
-  department: string;
-  client: {
-    _id: string;
-    name: string;
-  };
-  jobPosition: string;
-  location: string;
-  headcount: number;
-  stage: string;
-  minimumSalary: number;
-  maximumSalary: number;
-  salaryCurrency: string;
+  jobPosition?: string[];
+  department?: string;
+  client: string | ClientRef;
+  location?: string[];
+  headcount?: number;
+  stage?: string;
+  workVisa?: WorkVisa;
+  minimumSalary?: number;
+  maximumSalary?: number;
+  salaryCurrency?: string;
+  salaryRange?: SalaryRange;
   jobType: string;
   experience: string;
-  salaryRange: {
-    min: number;
-    max: number;
-    currency: string;
-  };
-  nationalities: string[];
-  gender: string;
-  deadline: string;
-  relationshipManager: string;
-  reportingTo: string;
-  teamSize: number;
-  link: string;
-  keySkills: string;
-  jobDescription: string;
-  dateRange: {
-    start: string;
-    end: string;
-  };
+  education?: string[];
+  specialization?: string[];
+  certifications?: string[];
+  benefits?: string[];
+  jobDescription?: string;
+  jobDescriptionPdf?: string;
+  nationalities?: string[];
+  gender?: string;
+  deadlineclient?: string | Date | null;
+  deadlineinternal?: string | Date | null;
+  reportingTo?: string;
+  teamSize?: number;
+  link?: string;
+  keySkills?: string;
+  numberOfPositions?: number;
+}
+
+export interface ClientRef {
+  _id: string;
+  name: string;
+}
+
+export interface Job extends JobData {
+  _id: string;
+  client: ClientRef;
   createdAt: string;
+  updatedAt: string;
+  isActive?: boolean;
 }
 
 export interface JobResponse {
-  jobs: Jobs[]
+  success: boolean;
+  data?: Job | Job[];
+  message?: string;
+  count?: number;
+  total?: number;
+  page?: number;
+  pages?: number;
+}
+
+export interface PaginatedJobResponse extends JobResponse {
+  jobs: Job[];
+  total: number;
+  page: number;
+  pages: number;
 }
 
 const API_URL = "https://aems-backend.onrender.com/api";
 
-const createJob = async (jobData: JobData) => {
-  try {
-    const response = await axios.post(`${API_URL}/jobs`, jobData);
-    return response.data;
-  } catch (error: any) {
-    if (error.response) {
-      const errorMessage = error.response.data?.message || 'Unknown error occurred';
-      console.error('Server response:', error.response.data);
-      throw new Error(`Error creating job: ${errorMessage}`);
-    }
-    throw new Error(`Error creating job: ${error.message}`);
+// Utility function to handle API errors consistently
+const handleApiError = (error: any, context: string) => {
+  if (error.response) {
+    const status = error.response.status;
+    const errorMessage = error.response.data?.message || 'Unknown error occurred';
+    
+    console.error(`API Error (${context}):`, {
+      status,
+      message: errorMessage,
+      url: error.config.url,
+      data: error.response.data
+    });
+
+    throw new Error(`${context} failed: ${errorMessage} (Status: ${status})`);
+  } else if (error.request) {
+    console.error(`Network Error (${context}):`, error.request);
+    throw new Error(`Network error during ${context}: No response received`);
+  } else {
+    console.error(`Request Setup Error (${context}):`, error.message);
+    throw new Error(`Error setting up ${context} request: ${error.message}`);
   }
 };
 
-const getJobs = async (): Promise<JobResponse> => {
+// Process job data before sending to API
+const processJobData = (jobData: JobData | Partial<JobData>) => {
+  return {
+    ...jobData,
+    deadlineclient: jobData.deadlineclient ? new Date(jobData.deadlineclient).toISOString() : null,
+    deadlineinternal: jobData.deadlineinternal ? new Date(jobData.deadlineinternal).toISOString() : null,
+    jobType: jobData.jobType?.toLowerCase(),
+    gender: jobData.gender?.toLowerCase(),
+    salaryRange: jobData.salaryRange || (jobData.minimumSalary !== undefined || jobData.maximumSalary !== undefined ? {
+      min: jobData.minimumSalary || 0,
+      max: jobData.maximumSalary || 0,
+      currency: jobData.salaryCurrency || 'SAR'
+    } : undefined)
+  };
+};
+
+const createJob = async (jobData: JobData): Promise<JobResponse> => {
   try {
-    const response = await axios.get(`${API_URL}/jobs`);
+    const processedData = processJobData(jobData);
+    const response = await axios.post<JobResponse>(`${API_URL}/jobs`, processedData);
+    
+    console.log('Job created successfully:', response.data);
     return response.data;
-  } catch (error: any) {
-    if (error.response) {
-      const errorMessage = error.response.data?.message || 'Unknown error occurred';
-      console.error('Server response:', error.response.data);
-      throw new Error(`Error fetching jobs: ${errorMessage}`);
-    }
-    throw new Error(`Error fetching jobs: ${error.message}`);
+  } catch (error) {
+    handleApiError(error, 'job creation');
+    throw error; // This line is actually unreachable because handleApiError throws
   }
 };
 
-const getJobById = async (id: string): Promise<Jobs> => {
+const getJobs = async (
+  params?: {
+    stage?: string;
+    jobType?: string;
+    location?: string;
+    client?: string;
+    minSalary?: number;
+    maxSalary?: number;
+    currency?: string;
+    gender?: string;
+    search?: string;
+    page?: number;
+    limit?: number;
+    sort?: string;
+  }
+): Promise<PaginatedJobResponse> => {
   try {
-    const response = await axios.get(`${API_URL}/jobs/${id}`);
+    // Process query parameters
+    const processedParams = {
+      ...params,
+      ...(params?.jobType && { jobType: params.jobType.toLowerCase() }),
+      ...(params?.gender && { gender: params.gender.toLowerCase() })
+    };
+
+    const response = await axios.get<PaginatedJobResponse>(`${API_URL}/jobs`, {
+      params: processedParams
+    });
+
     return response.data;
-  } catch (error: any) {
-    if (error.response) {
-      const errorMessage = error.response.data?.message || 'Unknown error occurred';
-      console.error('Server response:', error.response.data);
-      throw new Error(`Error fetching job: ${errorMessage}`);
-    }
-    throw new Error(`Error fetching job: ${error.message}`);
+  } catch (error) {
+    handleApiError(error, 'jobs fetching');
+    throw error; // This line is actually unreachable because handleApiError throws
   }
 };
 
-const updateJobById = async (id: string, jobData: JobData) => {
+const getJobById = async (id: string): Promise<JobResponse> => {
   try {
-    const response = await axios.patch(`${API_URL}/jobs/${id}`, jobData);
+    const response = await axios.get<JobResponse>(`${API_URL}/jobs/${id}`);
     return response.data;
-  } catch (error: any) {
-    if (error.response) {
-      const errorMessage = error.response.data?.message || 'Unknown error occurred';
-      console.error('Server response:', error.response.data);
-      throw new Error(`Error updating job: ${errorMessage}`);
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 404) {
+      throw new Error('Job not found');
     }
-    throw new Error(`Error updating job: ${error.message}`);
+    handleApiError(error, 'job fetching');
+    throw error; // This line is actually unreachable because handleApiError throws
   }
 };
 
-const deleteJobById = async (id: string) => {
+const updateJobById = async (id: string, jobData: Partial<JobData>): Promise<JobResponse> => {
   try {
-    const response = await axios.delete(`${API_URL}/jobs/${id}`);
+    const processedData = processJobData(jobData);
+    const response = await axios.put<JobResponse>(`${API_URL}/jobs/${id}`, processedData);
+    
+    console.log('Job updated successfully:', response.data);
     return response.data;
-  } catch (error: any) {
-    if (error.response) {
-      const errorMessage = error.response.data?.message || 'Unknown error occurred';
-      console.error('Server response:', error.response.data);
-      throw new Error(`Error deleting job: ${errorMessage}`);
-    }
-    throw new Error(`Error deleting job: ${error.message}`);
+  } catch (error) {
+    handleApiError(error, 'job update');
+    throw error; // This line is actually unreachable because handleApiError throws
   }
 };
 
-export { createJob, getJobs, getJobById, updateJobById, deleteJobById };
+const deleteJobById = async (id: string): Promise<JobResponse> => {
+  try {
+    const response = await axios.delete<JobResponse>(`${API_URL}/jobs/${id}`);
+    console.log('Job deleted successfully:', response.data);
+    return response.data;
+  } catch (error) {
+    handleApiError(error, 'job deletion');
+    throw error; // This line is actually unreachable because handleApiError throws
+  }
+};
+
+// New function to get job counts by client
+const getJobCountsByClient = async (): Promise<{_id: string, count: number}[]> => {
+  try {
+    const response = await axios.get<{data: {_id: string, count: number}[]}>(
+      `${API_URL}/jobs/clients/count`
+    );
+    return response.data.data;
+  } catch (error) {
+    handleApiError(error, 'fetching job counts by client');
+    throw error; // This line is actually unreachable because handleApiError throws
+  }
+};
+
+export { 
+  createJob, 
+  getJobs, 
+  getJobById, 
+  updateJobById, 
+  deleteJobById,
+  getJobCountsByClient 
+};

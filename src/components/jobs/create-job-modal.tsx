@@ -15,41 +15,36 @@ import * as Flags from 'country-flag-icons/react/3x2'
 import React from "react"
 import { JobStage } from "@/types/job"
 import { Badge } from "@/components/ui/badge"
-import { X, FileText, Upload, RefreshCw } from "lucide-react"
+import { X, Upload, FileText } from "lucide-react"
 import { getClientNames } from "@/services/clientService"
 import { ClientResponse } from "@/services/clientService"
+import { cn } from "@/lib/utils"
 
 interface CreateJobModalProps {
-
   open: boolean;
   onOpenChange: (open: boolean) => void;
   clientId: string;
   clientName: string;
-  // Add any other props your modal needs
+  onJobCreated: (open: boolean) => void;
+  refreshJobs?: () => void;
 }
 
-
 interface LocationSuggestion {
-  display_name: string
-  lat: string
-  lon: string
+  display_name: string;
+  lat: string;
+  lon: string;
 }
 
 interface CountrySuggestion {
   name: {
-    common: string
-  }
+    common: string;
+  };
   flags: {
-    svg: string
-  }
+    svg: string;
+  };
 }
 
-const jobTypes = [
-  "Full time",
-  "Part time",
-  "Project based",
-  "Outsourcing"
-]
+const jobTypes = ["Full time", "Part time", "Project based", "Outsourcing"]
 
 const jobStages: JobStage[] = [
   "New",
@@ -65,7 +60,7 @@ const jobStages: JobStage[] = [
 
 const currencies = [
   { code: 'USD', symbol: '$', name: 'US Dollar', flag: 'US' },
-  { code: 'EUR', symbol: '€', name: 'Euro', flag: 'EU Appeals Court' },
+  { code: 'EUR', symbol: '€', name: 'Euro', flag: 'EU' },
   { code: 'GBP', symbol: '£', name: 'British Pound', flag: 'GB' },
   { code: 'JPY', symbol: '¥', name: 'Japanese Yen', flag: 'JP' },
   { code: 'AUD', symbol: 'A$', name: 'Australian Dollar', flag: 'AU' },
@@ -81,6 +76,40 @@ const currencies = [
   { code: 'OMR', symbol: 'ر.ع.', name: 'Omani Rial', flag: 'OM' }
 ]
 
+const educationQualifications = [
+  "High School Diploma",
+  "Associate Degree",
+  "Bachelor's Degree",
+  "Master's Degree",
+  "Doctorate",
+  "Professional Certification"
+]
+
+const workVisa = [
+  "Transferrable Iqama",
+  "Client Sponsored Visa",
+  "Both"
+]
+
+const specialization = [
+  "B.Sc. in Computer Science",
+  "B.Sc. in Dietetics",
+  "B.Sc. in Electronic",
+  "B.Sc. in Fashion Technology",
+  "B.Sc. in Food Technology",
+  "Master of Computer Applications",
+  "Master of Computer Science",
+  "Master of Data Science",
+  "Master of Computational Finance"
+]
+
+const otherBenefits = [
+  "Health Insurance",
+  "Relocation Allowance",
+  "Flexible Working Hours",
+  "Remote Work Option"
+]
+
 export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
   const [locationSuggestions, setLocationSuggestions] = useState<LocationSuggestion[]>([])
   const [showLocationSuggestions, setShowLocationSuggestions] = useState(false)
@@ -88,12 +117,17 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
   const [showCountrySuggestions, setShowCountrySuggestions] = useState(false)
   const [selectedNationalities, setSelectedNationalities] = useState<string[]>([])
   const [searchNationality, setSearchNationality] = useState("")
+  const [nationalityMode, setNationalityMode] = useState<'all' | 'specific'>('specific')
   const [clients, setClients] = useState<ClientResponse[]>([])
   const [isLoadingClients, setIsLoadingClients] = useState(false)
   const [clientError, setClientError] = useState<string | null>(null)
   const [searchClient, setSearchClient] = useState("")
-  const [currentTab, setCurrentTab] = useState(0) // State for managing tabs
-  
+  const [currentTab, setCurrentTab] = useState(0)
+  const [selectedLocations, setSelectedLocations] = useState<string[]>([])
+  const [locationInput, setLocationInput] = useState("")
+  const [certificationInput, setCertificationInput] = useState("")
+  const [selectedCertifications, setSelectedCertifications] = useState<string[]>([])
+
   const [formData, setFormData] = useState({
     jobTitle: "test",
     client: "",
@@ -101,6 +135,9 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
     jobTypes: "",
     stage: "New" as JobStage,
     deadline: null as Date | null,
+    clientDeadline: null as Date | null,
+    internalDeadline: null as Date | null,
+    
     dateRange: {
       start: "" as any,
       end: "" as any,
@@ -112,6 +149,7 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
     },
     nationalities: [] as string[],
     location: "",
+    locations: [] as string[],
     gender: "",
     numberOfPositions: "",
     experience: "",
@@ -119,7 +157,9 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
     teamSize: 0 as any,
     link: "",
     keySkills: "",
-    jobDescription: ""
+    jobDescription: "",
+    otherBenefits: [] as string[],
+    certifications: [] as string[]
   })
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -139,7 +179,6 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
     } catch (error: any) {
       console.error("Error fetching client names:", error.message)
       setClientError(`Failed to load clients: ${error.message}`)
-    } finally {
       setIsLoadingClients(false)
     }
   }
@@ -176,14 +215,14 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
 
   useEffect(() => {
     const fetchLocationSuggestions = async () => {
-      if (formData.location.length < 3) {
+      if (locationInput.length < 3) {
         setLocationSuggestions([])
         return
       }
 
       try {
         const response = await axios.get(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(formData.location)}`
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(locationInput)}`
         )
         setLocationSuggestions(response.data)
         setShowLocationSuggestions(true)
@@ -194,14 +233,54 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
 
     const debounceTimer = setTimeout(fetchLocationSuggestions, 300)
     return () => clearTimeout(debounceTimer)
-  }, [formData.location])
+  }, [locationInput])
 
   const handleLocationSelect = (suggestion: LocationSuggestion) => {
+    const location = suggestion.display_name
+    const numberOfPositions = parseInt(formData.numberOfPositions) || 1
+    if (numberOfPositions > 1) {
+      if (!selectedLocations.includes(location)) {
+        setSelectedLocations(prev => [...prev, location])
+        setFormData(prev => ({
+          ...prev,
+          locations: [...prev.locations, location]
+        }))
+      }
+      setLocationInput("")
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        location: suggestion.display_name
+      }))
+    }
+    setShowLocationSuggestions(false)
+  }
+
+  const addLocation = () => {
+    if (locationInput.trim() && !selectedLocations.includes(locationInput.trim())) {
+      setSelectedLocations(prev => [...prev, locationInput.trim()])
+      setFormData(prev => ({
+        ...prev,
+        locations: [...prev.locations, locationInput.trim()]
+      }))
+      setLocationInput("")
+      setShowLocationSuggestions(false)
+    }
+  }
+
+  const handleLocationKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault()
+      addLocation()
+    }
+  }
+
+  const removeLocation = (locationToRemove: string) => {
+    setSelectedLocations(prev => prev.filter(location => location !== locationToRemove))
     setFormData(prev => ({
       ...prev,
-      location: suggestion.display_name
+      locations: prev.locations.filter(location => location !== locationToRemove)
     }))
-    setShowLocationSuggestions(false)
   }
 
   const handleNationalitySelect = (country: CountrySuggestion) => {
@@ -217,13 +296,77 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
     setShowCountrySuggestions(false)
   }
 
+  const addNationality = (nationality: string) => {
+    if (!selectedNationalities.includes(nationality)) {
+      setSelectedNationalities(prev => [...prev, nationality])
+      setFormData(prev => ({
+        ...prev,
+        nationalities: [...prev.nationalities, nationality]
+      }))
+    }
+  }
+
   const removeNationality = (nationalityToRemove: string) => {
-    setSelectedNationalities(prev => 
+    setSelectedNationalities(prev =>
       prev.filter(nationality => nationality !== nationalityToRemove)
     )
     setFormData(prev => ({
       ...prev,
       nationalities: prev.nationalities.filter(n => n !== nationalityToRemove)
+    }))
+  }
+
+  const handleNationalityModeChange = (mode: 'all' | 'specific') => {
+    setNationalityMode(mode)
+    if (mode === 'all') {
+      setSelectedNationalities(['Open For All Nationals'])
+      setFormData(prev => ({
+        ...prev,
+        nationalities: ['Open For All Nationals']
+      }))
+      setSearchNationality("")
+    } else {
+      setSelectedNationalities([])
+      setFormData(prev => ({
+        ...prev,
+        nationalities: []
+      }))
+    }
+  }
+
+  const handleBenefitToggle = (benefit: string) => {
+    setFormData(prev => {
+      const currentBenefits = prev.otherBenefits
+      const updatedBenefits = currentBenefits.includes(benefit)
+        ? currentBenefits.filter(b => b !== benefit)
+        : [...currentBenefits, benefit]
+      return { ...prev, otherBenefits: updatedBenefits }
+    })
+  }
+
+  const addCertification = () => {
+    if (certificationInput.trim() && !selectedCertifications.includes(certificationInput.trim())) {
+      setSelectedCertifications(prev => [...prev, certificationInput.trim()])
+      setFormData(prev => ({
+        ...prev,
+        certifications: [...prev.certifications, certificationInput.trim()]
+      }))
+      setCertificationInput("")
+    }
+  }
+
+  const handleCertificationKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault()
+      addCertification()
+    }
+  }
+
+  const removeCertification = (certificationToRemove: string) => {
+    setSelectedCertifications(prev => prev.filter(cert => cert !== certificationToRemove))
+    setFormData(prev => ({
+      ...prev,
+      certifications: prev.certifications.filter(cert => cert !== certificationToRemove)
     }))
   }
 
@@ -234,13 +377,16 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
+      const numberOfPositions = parseInt(formData.numberOfPositions) || 1
+      const location = numberOfPositions > 1 ? formData.locations.join(", ") : formData.location
       const jobData = {
         jobTitle: formData.jobTitle,
         department: "General",
         client: formData.client,
-        jobPosition: formData.jobTitle,
-        location: formData.location,
-        headcount: parseInt(formData.numberOfPositions) || 1,
+        // jobPosition: formData.jobTitle,
+        jobPosition: [formData.jobTitle], // Convert to array
+        location:[],
+        headcount: numberOfPositions,
         stage: formData.stage,
         minimumSalary: parseInt(formData.salaryRange.min) || 0,
         maximumSalary: parseInt(formData.salaryRange.max) || 0,
@@ -264,12 +410,14 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
         dateRange: {
           start: formData.dateRange.start,
           end: formData.dateRange.end
-        }
+        },
+        otherBenefits: formData.otherBenefits,
+        certifications: formData.certifications
       }
 
       const response = await createJob(jobData)
       console.log("Job created successfully:", response)
-      setCurrentTab(0) // Reset to first tab on successful submission
+      setCurrentTab(0)
       onOpenChange(false)
     } catch (error: any) {
       console.error("Error creating job:", error)
@@ -332,21 +480,26 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
 
         <form onSubmit={handleSubmit}>
           {currentTab === 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-4">
               <div className="grid gap-2">
-                <Label htmlFor="client">Client</Label>
+                <Label htmlFor="client">Client* </Label>
                 <div className="flex flex-col gap-2">
                   <Input
                     type="search"
                     placeholder="Search clients..."
                     value={searchClient}
-                    onChange={(e) => setSearchClient(e.target.value)}
+                    onChange={(e) => {
+                      setSearchClient(e.target.value);
+                      setFormData(prev => ({ ...prev, client: '' }));
+                    }}
                     onFocus={() => setIsInputFocused(true)}
                     onBlur={() => setTimeout(() => setIsInputFocused(false), 200)}
                     className="w-full"
+                    required
                   />
+
                   {isInputFocused && (
-                    <div className="max-h-[100px] overflow-y-auto border rounded-md text-sm" style={{ fontSize: '14px' }}>
+                    <div className="max-h-[150px] overflow-y-auto border rounded-md text-sm bg-white z-50">
                       {clientError ? (
                         <div className="px-4 py-2 text-gray-500 flex items-center justify-between">
                           <span>{clientError}</span>
@@ -366,9 +519,10 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
                           <div
                             key={client._id}
                             className={`px-4 py-2 hover:bg-gray-100 cursor-pointer ${formData.client === client._id ? 'bg-gray-100' : ''}`}
-                            onClick={() => {
-                              setFormData(prev => ({ ...prev, client: client._id }))
-                              setIsInputFocused(false)
+                            onMouseDown={() => {
+                              setFormData(prev => ({ ...prev, client: client._id }));
+                              setSearchClient(client.name);
+                              setIsInputFocused(false);
                             }}
                           >
                             {client.name}
@@ -381,20 +535,22 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="jobTitle">Job Title</Label>
+                <Label htmlFor="jobTitle">Job Title *</Label>
                 <Input
                   id="jobTitle"
                   placeholder="Type new job title here"
                   value={formData.jobTitle}
                   onChange={(e) => setFormData(prev => ({ ...prev, jobTitle: e.target.value }))}
+                  required
                 />
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="jobTypes">Job Types</Label>
+                <Label htmlFor="jobTypes">Job Types *</Label>
                 <Select
                   value={formData.jobTypes}
                   onValueChange={(value) => setFormData(prev => ({ ...prev, jobTypes: value }))}
+                  required
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select type" />
@@ -408,28 +564,82 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="location">Job Location</Label>
-                <div className="relative">
-                  <Input
-                    id="location"
-                    value={formData.location}
-                    onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                    onFocus={() => setShowLocationSuggestions(true)}
-                  />
-                  {showLocationSuggestions && locationSuggestions.length > 0 && (
-                    <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
-                      {locationSuggestions.map((suggestion, index) => (
-                        <div
-                          key={index}
-                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                          onClick={() => handleLocationSelect(suggestion)}
-                        >
-                          {suggestion.display_name}
-                        </div>
+                <Label htmlFor="location">Job Location *</Label>
+                {parseInt(formData.numberOfPositions) > 1 ? (
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap gap-2 min-h-[2.5rem] p-2 border rounded-md">
+                      {selectedLocations.map((location) => (
+                        <Badge key={location} variant="secondary" className="flex items-center gap-1">
+                          {location}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-auto p-0 hover:bg-transparent"
+                            onClick={() => removeLocation(location)}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </Badge>
                       ))}
                     </div>
-                  )}
-                </div>
+                    <div className="relative flex gap-2">
+                      <Input
+                        id="location"
+                        value={locationInput}
+                        onChange={(e) => setLocationInput(e.target.value)}
+                        onFocus={() => setShowLocationSuggestions(true)}
+                        onKeyDown={handleLocationKeyDown}
+                        placeholder="Type location and press Enter"
+                        required={selectedLocations.length === 0}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={addLocation}
+                        disabled={!locationInput.trim()}
+                      >
+                        Add
+                      </Button>
+                      {showLocationSuggestions && locationSuggestions.length > 0 && (
+                        <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto top-full">
+                          {locationSuggestions.map((suggestion, index) => (
+                            <div
+                              key={index}
+                              className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                              onClick={() => handleLocationSelect(suggestion)}
+                            >
+                              {suggestion.display_name}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <Input
+                      id="location"
+                      value={formData.location}
+                      onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                      onFocus={() => setShowLocationSuggestions(true)}
+                      required
+                    />
+                    {showLocationSuggestions && locationSuggestions.length > 0 && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
+                        {locationSuggestions.map((suggestion, index) => (
+                          <div
+                            key={index}
+                            className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                            onClick={() => handleLocationSelect(suggestion)}
+                          >
+                            {suggestion.display_name}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="grid gap-2">
@@ -493,59 +703,131 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
                 </div>
               </div>
 
-             <div className="grid gap-2">
-  <Label htmlFor="nationality">Nationalities</Label>
-  <div className="space-y-2">
-    <div className="flex flex-wrap gap-2 min-h-[2.5rem] p-2 border rounded-md">
-      {selectedNationalities.map((nationality) => (
-        <Badge key={nationality} variant="secondary" className="flex items-center gap-1">
-          {nationality}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-auto p-0 hover:bg-transparent"
-            onClick={() => removeNationality(nationality)}
-          >
-            <X className="h-3 w-3" />
-          </Button>
-        </Badge>
-      ))}
-    </div>
-    <div className="relative">
-      <Input
-        value={searchNationality}
-        onChange={(e) => setSearchNationality(e.target.value)}
-        placeholder="Search and select nationalities"
-        onFocus={() => setShowCountrySuggestions(true)}
-      />
-      {showCountrySuggestions && countrySuggestions.length > 0 && (
-        <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
-          {countrySuggestions.map((country, index) => (
-            <div
-              key={index}
-              className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2"
-              onClick={() => {
-                handleNationalitySelect(country)
-                setShowCountrySuggestions(false)
-              }}
-            >
-              <Image
-                src={country.flags.svg}
-                alt={`${country.name.common} flag`}
-                width={24}
-                height={16}
-                className="object-cover"
-              />
-              <span>{country.name.common}</span>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  </div>
-</div>
+              <div className="grid gap-2">
+                <Label htmlFor="otherBenefits">Other Benefits</Label>
+                <div className="space-y-2">
+                  <Select
+                    onValueChange={(value) => handleBenefitToggle(value)}
+                    value=""
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select benefits" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {otherBenefits.map((benefit) => (
+                        <SelectItem key={benefit} value={benefit}>
+                          <div className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={formData.otherBenefits.includes(benefit)}
+                              readOnly
+                              className="mr-2"
+                            />
+                            {benefit}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <div className="flex flex-wrap gap-2">
+                    {formData.otherBenefits.map((benefit) => (
+                      <Badge key={benefit} variant="secondary" className="flex items-center gap-1">
+                        {benefit}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-auto p-0 hover:bg-transparent"
+                          onClick={() => handleBenefitToggle(benefit)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
 
               <div className="grid gap-2">
+                <Label htmlFor="nationality">Nationalities</Label>
+                <div className="space-y-2">
+                  <div className="flex flex-wrap gap-2 min-h-[2.5rem] p-2 border rounded-md">
+                    {selectedNationalities.map((nationality) => (
+                      <Badge key={nationality} variant="secondary" className="flex items-center gap-1">
+                        {nationality}
+                        {nationalityMode === 'specific' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-auto p-0 hover:bg-transparent"
+                            onClick={() => removeNationality(nationality)}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </Badge>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        id="all-mode"
+                        value="all"
+                        checked={nationalityMode === 'all'}
+                        onChange={() => handleNationalityModeChange('all')}
+                      />
+                      <Label htmlFor="all-mode">Open For All Nationals</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        id="specific-mode"
+                        value="specific"
+                        checked={nationalityMode === 'specific'}
+                        onChange={() => handleNationalityModeChange('specific')}
+                      />
+                      <Label htmlFor="specific-mode">Specific Nationalities</Label>
+                    </div>
+                  </div>
+
+                  {nationalityMode === 'specific' && (
+                    <div className="relative">
+                      <Input
+                        value={searchNationality}
+                        onChange={(e) => setSearchNationality(e.target.value)}
+                        placeholder="Search and select nationalities"
+                        onFocus={() => setShowCountrySuggestions(true)}
+                      />
+                      {showCountrySuggestions && countrySuggestions.length > 0 && (
+                        <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
+                          {countrySuggestions.map((country, index) => (
+                            <div
+                              key={index}
+                              className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2"
+                              onClick={() => {
+                                handleNationalitySelect(country)
+                                setShowCountrySuggestions(false)
+                              }}
+                            >
+                              <Image
+                                src={country.flags.svg}
+                                alt={`${country.name.common} flag`}
+                                width={24}
+                                height={16}
+                                className="object-cover"
+                              />
+                              <span>{country.name.common}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid gap- mt-0">
                 <Label htmlFor="gender">Gender</Label>
                 <Select
                   value={formData.gender}
@@ -576,7 +858,7 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
           )}
 
           {currentTab === 1 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-2">
               <div className="grid gap-2">
                 <Label htmlFor="experience">Experience</Label>
                 <Input
@@ -586,6 +868,77 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
                   placeholder="e.g., 5 years"
                 />
               </div>
+              <span>
+                <div className="inline-block">
+                  <Label htmlFor="educationQualification">Education Qualification *</Label>
+                  <Select required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Qualification" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {educationQualifications.map((qualification) => (
+                        <SelectItem key={qualification} value={qualification}>
+                          {qualification}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="inline-block ml-3">
+                  <Label htmlFor="Speslisation">Speslisation *</Label>
+                  <Select required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Specialization" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {specialization.map((specialization) => (
+                        <SelectItem key={specialization} value={specialization}>
+                          {specialization}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </span>
+
+              <div className="grid gap-2">
+                <Label htmlFor="certifications">Certifications</Label>
+                <div className="space-y-2">
+                  <div className="flex flex-wrap gap-2 min-h-[2.5rem] p-2 border rounded-md">
+                    {selectedCertifications.map((certification) => (
+                      <Badge key={certification} variant="secondary" className="flex items-center gap-1">
+                        {certification}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-auto p-0 hover:bg-transparent"
+                          onClick={() => removeCertification(certification)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </Badge>
+                    ))}
+                  </div>
+                  <div className="relative flex gap-2">
+                    <Input
+                      id="certifications"
+                      value={certificationInput}
+                      onChange={(e) => setCertificationInput(e.target.value)}
+                      onKeyDown={handleCertificationKeyDown}
+                      placeholder="Type certification and press Enter"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={addCertification}
+                      disabled={!certificationInput.trim()}
+                    >
+                      Add
+                    </Button>
+                  </div>
+                </div>
+              </div>
 
               <div className="grid gap-2">
                 <Label htmlFor="reportingTo">Reporting To</Label>
@@ -593,6 +946,28 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
                   id="reportingTo"
                   value={formData.reportingTo}
                   onChange={(e) => setFormData(prev => ({ ...prev, reportingTo: e.target.value }))}
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label>Deadline (Client)</Label>
+                <DatePicker
+                  selected={formData.deadline}
+                  onChange={(date) => setFormData(prev => ({ ...prev, deadline: date }))}
+                  dateFormat="dd/MM/yyyy"
+                  className="w-full p-2 border rounded-md"
+                  placeholderText="Select deadline"
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label>Deadline (Internal)</Label>
+                <DatePicker
+                  selected={formData.internalDeadline}
+                  onChange={(date) => setFormData(prev => ({ ...prev, internalDeadline: date }))}
+                  dateFormat="dd/MM/yyyy"
+                  className="w-full p-2 border rounded-md"
+                  placeholderText="Select deadline"
                 />
               </div>
 
@@ -608,41 +983,19 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
               </div>
 
               <div className="grid gap-2">
-                <Label>Deadline (by client)</Label>
-                <DatePicker
-                  selected={formData.deadline}
-                  onChange={(date) => setFormData(prev => ({ ...prev, deadline: date }))}
-                  dateFormat="dd/MM/yyyy"
-                  className="w-full p-2 border rounded-md"
-                  placeholderText="Select deadline"
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label>Date Range</Label>
-                <div className="flex gap-2 items-center">
-                  <DatePicker
-                    selected={formData.dateRange.start}
-                    onChange={(date) => setFormData(prev => ({
-                      ...prev,
-                      dateRange: { ...prev.dateRange, start: date }
-                    }))}
-                    dateFormat="dd/MM/yyyy"
-                    className="w-full p-2 border rounded-md"
-                    placeholderText="Start date"
-                  />
-                  <span>to</span>
-                  <DatePicker
-                    selected={formData.dateRange.end}
-                    onChange={(date) => setFormData(prev => ({
-                      ...prev,
-                      dateRange: { ...prev.dateRange, end: date }
-                    }))}
-                    dateFormat="dd/MM/yyyy"
-                    className="w-full p-2 border rounded-md"
-                    placeholderText="End date"
-                  />
-                </div>
+                <Label htmlFor="educationQualification">Work Visa</Label>
+                <Select required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Work Visa" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {workVisa.map((visa) => (
+                      <SelectItem key={visa} value={visa}>
+                        {visa}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="grid gap-2">
@@ -667,7 +1020,6 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
                       type="file"
                       ref={fileInputRef}
                       onChange={handleFileUpload}
-                      accept=".pdf"
                       className="hidden"
                     />
                     <Button
@@ -675,8 +1027,8 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
                       variant="outline"
                       onClick={() => fileInputRef.current?.click()}
                     >
-                      <Upload className="h-4 w-4 mr-2" />
-                      Upload PDF
+                      <Upload className="h-4 w-4 compromiso mr-2" />
+                      Upload File
                     </Button>
                     <p className="text-sm text-muted-foreground mt-2">
                       Or write the description below
@@ -698,14 +1050,15 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
                       </div>
                     )}
                   </div>
-                  <Textarea
-                    placeholder="Enter job description..."
-                    value={formData.jobDescription}
-                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFormData(prev => ({ ...prev, jobDescription: e.target.value }))}
-                    className="min-h-[200px]"
-                    disabled={!!selectedFile}
-                  />
                 </div>
+
+                <Textarea
+                  placeholder="Enter job description..."
+                  value={formData.jobDescription}
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFormData(prev => ({ ...prev, jobDescription: e.target.value }))}
+                  className="min-h-[200px]"
+                  disabled={!!selectedFile}
+                />
               </div>
             </div>
           )}
@@ -714,9 +1067,9 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
             <div className="flex flex-wrap justify-between w-full">
               <div>
                 {currentTab > 0 && (
-                  <Button 
-                    variant="outline" 
-                    type="button" 
+                  <Button
+                    variant="outline"
+                    type="button"
                     onClick={handlePrevious}
                     className="mb-2 md:mb-0"
                   >
@@ -726,31 +1079,31 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
               </div>
               <div className="flex space-x-2">
                 {currentTab < 2 && (
-                  <Button 
-                    variant="outline" 
-                    type="button" 
+                  <Button
+                    variant="outline"
+                    type="button"
                     onClick={() => onOpenChange(false)}
                   >
                     Cancel
                   </Button>
                 )}
                 {currentTab < 2 ? (
-                  <Button 
-                    type="button" 
+                  <Button
+                    type="button"
                     onClick={handleNext}
                   >
                     Next
                   </Button>
                 ) : (
                   <>
-                    <Button 
-                      variant="outline" 
-                      type="button" 
+                    <Button
+                      variant="outline"
+                      type="button"
                       onClick={() => onOpenChange(false)}
                     >
                       Cancel
                     </Button>
-                    <Button 
+                    <Button
                       type="submit"
                     >
                       Create Job Requirement
