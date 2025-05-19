@@ -332,7 +332,6 @@ export function ContractSection({ clientId }: ContractSectionProps) {
             />
           </div>
         )}
-
         {/* <DetailRow
           label="Referral Percentage"
           value={contractDetails.referralPercentage}
