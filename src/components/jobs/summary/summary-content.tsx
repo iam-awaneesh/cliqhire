@@ -16,7 +16,7 @@ interface JobDetails {
   jobTitle: string;
   department: string;
   client: string;
-  location: string;
+  location: string[]; // Changed from string to string[]
   headcount: number;
   minimumSalary: number;
   maximumSalary: number;
@@ -32,7 +32,7 @@ interface JobDetails {
   teamSize: number;
   link: string;
   keySkills: string;
-  jobPosition: string;
+  jobPosition: string[]; // Changed from string to string[]
   stage: string;
   salaryRange: {
     min: number;
@@ -70,7 +70,7 @@ export function SummaryContent({ jobId }: SummaryContentProps) {
           jobTitle: response.jobTitle ?? '',
           department: response.department ?? '',
           client: response.client?.name ?? 'N/A',
-          location: response.location ?? '',
+          location: Array.isArray(response.location) ? response.location : (response.location ? [response.location] : []), // Handle both string and string[] cases
           headcount: response.headcount ?? 0,
           minimumSalary: response.minimumSalary ?? response.salaryRange?.min ?? 0,
           maximumSalary: response.maximumSalary ?? response.salaryRange?.max ?? 0,
@@ -86,7 +86,7 @@ export function SummaryContent({ jobId }: SummaryContentProps) {
           teamSize: response.teamSize ?? 0,
           link: response.link ?? '',
           keySkills: response.keySkills ?? '',
-          jobPosition: response.jobPosition ?? '',
+          jobPosition: Array.isArray(response.jobPosition) ? response.jobPosition : (response.jobPosition ? [response.jobPosition] : []), // Handle both string and string[] cases
           stage: response.stage ?? '',
           salaryRange: {
             min: response.salaryRange?.min ?? 0,
@@ -132,9 +132,19 @@ export function SummaryContent({ jobId }: SummaryContentProps) {
     if (!editingField || !jobDetails) return;
 
     try {
+      let processedValue: any = newValue;
+      
+      // Handle different field types
+      if (editingField.isDate) {
+        processedValue = new Date(newValue).toISOString();
+      } else if (editingField.name === 'jobPosition' || editingField.name === 'location') {
+        // Handle jobPosition and location as arrays - split by comma if it's a comma-separated string
+        processedValue = newValue.split(',').map(item => item.trim()).filter(item => item.length > 0);
+      }
+
       const updatedDetails = {
         ...jobDetails,
-        [editingField.name]: editingField.isDate ? new Date(newValue).toISOString() : newValue
+        [editingField.name]: processedValue
       };
 
       await updateJobById(jobId, updatedDetails);
@@ -189,15 +199,33 @@ export function SummaryContent({ jobId }: SummaryContentProps) {
               ) return null;
 
               const isDateField = ['deadline'].includes(key);
+              
+              // Handle display value for different types
+              let displayValue: string;
+              if ((key === 'jobPosition' || key === 'location') && Array.isArray(value)) {
+                displayValue = value.join(', ');
+              } else if (isDateField && value) {
+                displayValue = new Date(value as string).toLocaleDateString();
+              } else {
+                displayValue = value?.toString() || '';
+              }
+
+              // Handle edit value for different types
+              let editValue: string;
+              if ((key === 'jobPosition' || key === 'location') && Array.isArray(value)) {
+                editValue = value.join(', ');
+              } else {
+                editValue = value?.toString() || '';
+              }
 
               return (
                 <DetailRow
                   key={key}
                   label={key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
-                  value={isDateField ? new Date(value as string).toLocaleDateString() : value?.toString()}
+                  value={displayValue}
                   onEdit={() => handleFieldEdit(
                     key as keyof JobDetails,
-                    value?.toString() || '',
+                    editValue,
                     { isDate: isDateField }
                   )}
                 />
