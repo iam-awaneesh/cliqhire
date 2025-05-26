@@ -16,6 +16,7 @@ interface FileUploadRowProps {
   showDownloadButton?: boolean
   onPreview?: () => void
   onDownload?: () => void
+  onDelete?: () => Promise<void>;
 }
 
 export function FileUploadRow({

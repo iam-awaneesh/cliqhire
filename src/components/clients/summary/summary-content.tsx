@@ -25,6 +25,13 @@ interface ApiResponse {
   data: ClientDetails;
 }
 
+interface ClientResponse {
+  client?: ClientDetails;
+  result?: ClientDetails;
+  data?: ClientDetails;
+  name?: string;
+}
+
 interface ClientDetails {
   name: string;
   website?: string;
@@ -97,7 +104,7 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
         setLoading(true);
         setError(""); // Clear previous errors
 
-        const response = await getClientById(clientId);
+        const response: ClientResponse = await getClientById(clientId);
 
         // Add detailed logging to debug the response structure
         console.log("Raw response:", response);
@@ -110,7 +117,7 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
         if (response && typeof response === 'object') {
           // Check if response has a 'data' property
           if ('data' in response && response.data) {
-            clientData = response.data as ClientDetails;
+            clientData = response.data;
           }
           // Check if response itself is the client data
           else if ('name' in response) {
@@ -118,11 +125,11 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
           }
           // Check if response is wrapped in another structure
           else if (response.client) {
-            clientData = response.client as ClientDetails;
+            clientData = response.client;
           }
           // Check for other possible structures
           else if (response.result) {
-            clientData = response.result as ClientDetails;
+            clientData = response.result;
           }
           else {
             console.error("Unexpected response structure:", response);

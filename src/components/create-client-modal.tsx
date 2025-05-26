@@ -1,4 +1,3 @@
-//create-client-modal.tsx
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -60,8 +59,8 @@ interface ClientForm {
   linkedInPage?: string;
   countryCode?: string;
   primaryContacts: PrimaryContact[];
-  clientStage?: string;
-  clientTeam?: string;
+  clientStage?: "Lead" | "Engaged" | "Negotiation" | "Signed" | "Prospect"; // Fixed type
+  clientTeam?: "Enterprise" | "SMB" | "Mid-Market"; // Fixed type
   clientRm?: string;
   clientAge?: number;
 }
@@ -416,11 +415,8 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
         ...formData,
         incorporationDate: formData.incorporationDate || undefined,
         emails: formData.emails.length > 0 ? formData.emails : undefined,
-        lineOfBusiness:
-          formData.lineOfBusiness && formData.lineOfBusiness.length > 0
-            ? formData.lineOfBusiness.join(", ")
-            : undefined,
-        primaryContacts: JSON.stringify(formData.primaryContacts), // Ensure this is an array of objects
+        lineOfBusiness: formData.lineOfBusiness.length > 0 ? formData.lineOfBusiness : undefined,
+        primaryContacts: formData.primaryContacts,
         profileImage: uploadedFiles.profileImage || undefined,
         crCopy: uploadedFiles.crCopy || undefined,
         vatCopy: uploadedFiles.vatCopy || undefined,

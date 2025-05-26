@@ -1,4 +1,3 @@
-// clientService.ts
 import axios, { AxiosError } from "axios";
 
 // Interface for Primary Contact
@@ -166,7 +165,7 @@ const prepareClientJsonData = (data: {
     // Convert null values to undefined or empty string as needed
     incorporationDate: data.incorporationDate || undefined,
     emails: data.emails || [],
-    lineOfBusiness: data.lineOfBusiness ? [data.lineOfBusiness] : [],
+    lineOfBusiness: data.lineOfBusiness || [], // Fixed to pass array directly
   };
 };
 

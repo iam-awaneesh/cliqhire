@@ -20,6 +20,13 @@ import { getClientNames } from "@/services/clientService"
 import { ClientResponse } from "@/services/clientService"
 import { cn } from "@/lib/utils"
 
+// Define new type for client data returned by getClientNames
+interface ClientData {
+  _id: string;
+  name: string;
+  jobCount: number;
+}
+
 interface CreateJobModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -118,7 +125,7 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
   const [selectedNationalities, setSelectedNationalities] = useState<string[]>([])
   const [searchNationality, setSearchNationality] = useState("")
   const [nationalityMode, setNationalityMode] = useState<'all' | 'specific'>('specific')
-  const [clients, setClients] = useState<ClientResponse[]>([])
+  const [clients, setClients] = useState<ClientData[]>([]) // Updated to use ClientData
   const [isLoadingClients, setIsLoadingClients] = useState(false)
   const [clientError, setClientError] = useState<string | null>(null)
   const [searchClient, setSearchClient] = useState("")
@@ -137,7 +144,6 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
     deadline: null as Date | null,
     clientDeadline: null as Date | null,
     internalDeadline: null as Date | null,
-    
     dateRange: {
       start: "" as any,
       end: "" as any,
@@ -383,9 +389,8 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
         jobTitle: formData.jobTitle,
         department: "General",
         client: formData.client,
-        // jobPosition: formData.jobTitle,
         jobPosition: [formData.jobTitle], // Convert to array
-        location:[],
+        location: [],
         headcount: numberOfPositions,
         stage: formData.stage,
         minimumSalary: parseInt(formData.salaryRange.min) || 0,
