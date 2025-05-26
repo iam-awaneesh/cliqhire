@@ -12,8 +12,10 @@ interface FileUploadRowProps {
   currentFileName?: string
   showOnlyIfOverseas?: boolean
   showFileName?: boolean
-  onDownload?: () => Promise<void>; // Adding the onDownload prop here
-  onDelete?: () => Promise<void>;
+  showPreviewButton?: boolean
+  showDownloadButton?: boolean
+  onPreview?: () => void
+  onDownload?: () => void
 }
 
 export function FileUploadRow({
@@ -22,7 +24,11 @@ export function FileUploadRow({
   onFileSelect,
   currentFileName,
   showOnlyIfOverseas,
-  showFileName = true
+  showFileName = true,
+  showPreviewButton = false,
+  showDownloadButton = false,
+  onPreview,
+  onDownload
 }: FileUploadRowProps) {
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -32,8 +38,10 @@ export function FileUploadRow({
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (file) {
-      onFileSelect(file)
+    if (file && typeof onFileSelect === "function") {
+      onFileSelect(file);
+    } else {
+      console.error("onFileSelect is not a function or no file selected");
     }
   }
 
@@ -55,15 +63,37 @@ export function FileUploadRow({
         ) : (
           <span className="text-sm text-muted-foreground">Upload file</span>
         )}
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="h-8"
-          onClick={handleClick}
-        >
-          <Upload className="h-3 w-3 mr-1" />
-          Upload
-        </Button>
+        <div className="flex items-center gap-2">
+          {currentFileName && showPreviewButton && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-8"
+              onClick={onPreview}
+            >
+              Preview
+            </Button>
+          )}
+          {currentFileName && showDownloadButton && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-8"
+              onClick={onDownload}
+            >
+              Download
+            </Button>
+          )}
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-8"
+            onClick={handleClick}
+          >
+            <Upload className="h-3 w-3 mr-1" />
+            Upload
+          </Button>
+        </div>
       </div>
       <input
         type="file"

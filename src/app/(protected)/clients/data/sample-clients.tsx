@@ -14,13 +14,13 @@ const fetchClients = async () => {
       id: client._id,
       name: client.name,
       jobCount: client.jobCount,
-      industry: client.industry,
-      location: client.location,
-      stage: client.clientStage === "Prospect" ? "Lead" : client.clientStage,
-      owner: client.clientRm || "",
-      team: client.clientTeam || "",
+      industry: client.industry || "", // Default to empty string if undefined
+      location: client.location || "", // Default to empty string if undefined
+      stage: client.clientStage === "Prospect" ? "Lead" : client.clientStage || "Lead", // Default to "Lead" if undefined
+      owner: client.clientRm || "", // Default to empty string if undefined
+      team: client.clientTeam || "", // Default to empty string if undefined
       createdAt: client.createdAt,
-      incorporationDate: client.incorporationDate || "",
+      incorporationDate: client.incorporationDate || "", // Default to empty string if undefined
     }));
     return sampleClients;
   } catch (error) {

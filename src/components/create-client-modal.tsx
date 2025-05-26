@@ -1,6 +1,7 @@
-"use client"
+//create-client-modal.tsx
+"use client";
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -8,62 +9,84 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useState, useEffect } from "react"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Upload } from "lucide-react"
-import { createClient } from "@/services/clientService"
-import DatePicker from "react-datepicker"
-import "react-datepicker/dist/react-datepicker.css"
-import axios from "axios"
-import * as Flags from 'country-flag-icons/react/3x2'
-import React from "react"
-import { INDUSTRIES } from "@/lib/constants"
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useState, useEffect } from "react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Upload, Plus } from "lucide-react";
+import { createClient } from "@/services/clientService";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import axios from "axios";
+import * as Flags from "country-flag-icons/react/3x2";
+import { INDUSTRIES } from "@/lib/constants";
 
-interface CreateClientModalProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
+// Interfaces from clientService
+interface PrimaryContact {
+  name: string;
+  email: string;
+  phone: string;
+  countryCode?: string;
+  position?: string;
+  linkedin?: string;
 }
 
 interface ClientForm {
-  name: string
-  email: string
-  phoneNumber: string
-  website: string
-  industry: string
-  location: string
-  address: string
-  googleMapsLink: string
-  incorporationDate: string
-  countryOfRegistration: string
-  registrationNumber: string
-  lineOfBusiness: Array<string>
-  countryOfBusiness: string
-  referredBy: string
-  linkedInProfile: string
-  linkedInPage: string
-  countryCode: string;
+  name: string;
+  emails: string[];
+  phoneNumber: string;
+  website?: string;
+  industry?: string;
+  location?: string;
+  address?: string;
+  googleMapsLink?: string;
+  incorporationDate?: string;
+  countryOfRegistration?: string;
+  registrationNumber?: string;
+  lineOfBusiness?: string[];
+  countryOfBusiness?: string;
+  referredBy?: string;
+  linkedInProfile?: string;
+  linkedInPage?: string;
+  countryCode?: string;
+  primaryContacts: PrimaryContact[];
+  clientStage?: string;
+  clientTeam?: string;
+  clientRm?: string;
+  clientAge?: number;
+}
+
+interface CreateClientModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 interface LocationSuggestion {
-  display_name: string
-  lat: string
-  lon: string
+  display_name: string;
+  lat: string;
+  lon: string;
 }
 
 interface CountrySuggestion {
   name: {
-    common: string
-  }
+    common: string;
+  };
 }
 
 export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps) {
   const [formData, setFormData] = useState<ClientForm>({
     name: "",
-    email: "",
+    emails: [],
     phoneNumber: "",
     website: "",
     industry: "",
@@ -78,225 +101,392 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     referredBy: "",
     linkedInProfile: "",
     linkedInPage: "",
-     countryCode: "",
-  })
+    countryCode: "+966",
+    primaryContacts: [],
+  });
 
-  const [selectedYear, setSelectedYear] = useState<Date | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [locationSuggestions, setLocationSuggestions] = useState<LocationSuggestion[]>([])
-  const [showLocationSuggestions, setShowLocationSuggestions] = useState(false)
-  const [countrySuggestions, setCountrySuggestions] = useState<CountrySuggestion[]>([])
-  const [showCountrySuggestions, setShowCountrySuggestions] = useState(false)
-  const [currentTab, setCurrentTab] = useState(0) // State for managing tabs
-  
+  const [emailInput, setEmailInput] = useState<string>("");
+  const [selectedYear, setSelectedYear] = useState<Date | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [locationSuggestions, setLocationSuggestions] = useState<LocationSuggestion[]>([]);
+  const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
+  const [countrySuggestions, setCountrySuggestions] = useState<CountrySuggestion[]>([]);
+  const [showCountrySuggestions, setShowCountrySuggestions] = useState(false);
+  const [currentTab, setCurrentTab] = useState(0);
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+  const [newContact, setNewContact] = useState<PrimaryContact>({
+    name: "",
+    email: "",
+    phone: "",
+    countryCode: "+966",
+    position: "",
+    linkedin: "",
+  });
+
   const [uploadedFiles, setUploadedFiles] = useState<{ [key: string]: File | null }>({
     profileImage: null,
     crCopy: null,
     vatCopy: null,
     gstTinDocument: null,
-  })
+  });
 
   // Location suggestions
   useEffect(() => {
     const fetchLocationSuggestions = async () => {
-      if (formData.location.length < 3) {
-        setLocationSuggestions([])
-        return
+      if (!formData.location || formData.location.length < 3) {
+        setLocationSuggestions([]);
+        return;
       }
 
       try {
         const response = await axios.get(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(formData.location)}`
-        )
-        setLocationSuggestions(response.data)
-        setShowLocationSuggestions(true)
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+            formData.location
+          )}`
+        );
+        setLocationSuggestions(response.data);
+        setShowLocationSuggestions(true);
       } catch (error) {
-        console.error("Error fetching location suggestions:", error)
+        console.error("Error fetching location suggestions:", error);
       }
-    }
+    };
 
-    const debounceTimer = setTimeout(fetchLocationSuggestions, 300)
-    return () => clearTimeout(debounceTimer)
-  }, [formData.location])
+    const debounceTimer = setTimeout(fetchLocationSuggestions, 300);
+    return () => clearTimeout(debounceTimer);
+  }, [formData.location]);
 
   // Country suggestions
- useEffect(() => {
-  const fetchCountrySuggestions = async () => {
-    if (formData.countryOfRegistration.length < 2) {
-      setCountrySuggestions([])
-      return
-    }
-
-    try {
-      const response = await axios.get(
-        `https://restcountries.com/v3.1/name/${encodeURIComponent(formData.countryOfRegistration)}`
-      )
-      setCountrySuggestions(response.data)
-      setShowCountrySuggestions(true)
-    } catch (error) {
-      if (axios.isAxiosError(error) && error.response?.status === 404) {
-        setCountrySuggestions([])
-      } else {
-        console.error("Error fetching country suggestions:", error)
+  useEffect(() => {
+    const fetchCountrySuggestions = async () => {
+      if (!formData.countryOfRegistration || formData.countryOfRegistration.length < 2) {
+        setCountrySuggestions([]);
+        return;
       }
-    }
-  }
 
-  const debounceTimer = setTimeout(fetchCountrySuggestions, 300)
-  return () => clearTimeout(debounceTimer)
-}, [formData.countryOfRegistration])
+      try {
+        const response = await axios.get(
+          `https://restcountries.com/v3.1/name/${encodeURIComponent(
+            formData.countryOfRegistration
+          )}`
+        );
+        setCountrySuggestions(response.data);
+        setShowCountrySuggestions(true);
+      } catch (error) {
+        if (axios.isAxiosError(error) && error.response?.status === 404) {
+          setCountrySuggestions([]);
+        } else {
+          console.error("Error fetching country suggestions:", error);
+        }
+      }
+    };
+
+    const debounceTimer = setTimeout(fetchCountrySuggestions, 300);
+    return () => clearTimeout(debounceTimer);
+  }, [formData.countryOfRegistration]);
 
   const handleLocationSelect = async (suggestion: LocationSuggestion) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       location: suggestion.display_name,
-    }))
-    setShowLocationSuggestions(false)
+      googleMapsLink: `https://www.google.com/maps?q=${suggestion.lat},${suggestion.lon}`,
+    }));
+    setShowLocationSuggestions(false);
 
     try {
       const response = await axios.get(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${suggestion.lat}&lon=${suggestion.lon}`
-      )
-      const addressData = response.data.address
-      
-      setFormData(prev => ({
+      );
+      const addressData = response.data.address;
+
+      setFormData((prev) => ({
         ...prev,
-        countryOfBusiness: addressData.country || prev.countryOfBusiness
-      }))
+        countryOfBusiness: addressData.country || prev.countryOfBusiness,
+        address: addressData.road || prev.address || suggestion.display_name,
+      }));
     } catch (error) {
-      console.error("Error fetching address details:", error)
+      console.error("Error fetching address details:", error);
     }
-  }
+  };
 
   const handleCountrySelect = (countryName: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      countryOfRegistration: countryName
-    }))
-    setShowCountrySuggestions(false)
-  }
+      countryOfRegistration: countryName,
+    }));
+    setShowCountrySuggestions(false);
+  };
+
+  // Email validation
+  const validateEmails = (emails: string[]): string[] => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emails.filter((email) => email && !emailRegex.test(email));
+  };
 
   const handleInputChange = (field: keyof ClientForm) => (
-  e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-) => {
-  let value = e.target.value;
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    let value: string | string[] = e.target.value;
 
-  if (field === 'website' && value && !value.match(/^https?:\/\//)) {
-    value = `https://${value}`;
-  }
-
-  setFormData((prev) => ({
-    ...prev,
-    [field]: value,
-  }));
-
-  if (field === 'location') {
-    setShowLocationSuggestions(true);
-  }
-
-  if (field === 'countryOfRegistration') {
-    setShowCountrySuggestions(true);
-  }
-
-  setError(null);
-};
-
-const handleFileChange = (field: string) => (
-  event: React.ChangeEvent<HTMLInputElement>
-) => {
-  if (event.target.files && event.target.files[0]) {
-    const file = event.target.files[0];
-
-    const maxSize = 5 * 1024 * 1024;
-    if (file.size > maxSize) {
-      setError(`File ${file.name} is too large. Maximum size is 5MB.`);
-      return;
+    if (field === "emails") {
+      setEmailInput(e.target.value);
+      const emails = e.target.value
+        .split(",")
+        .map((email) => email.trim())
+        .filter((email) => email);
+      value = emails;
+    } else if (field === "website" && value && !value.match(/^https?:\/\//)) {
+      value = `https://${value}`;
     }
 
-    const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
-    if (!allowedTypes.includes(file.type)) {
-      setError(`Invalid file type. Allowed types are: JPEG, PNG, PDF`);
-      return;
-    }
-
-    setUploadedFiles((prev) => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: file,
+      [field]: value,
     }));
 
+    if (field === "location") {
+      setShowLocationSuggestions(true);
+    }
+
+    if (field === "countryOfRegistration") {
+      setShowCountrySuggestions(true);
+    }
+
+    if (field !== "emails") {
+      setError(null);
+    }
+  };
+
+  const handleEmailBlur = () => {
+    const emails = emailInput
+      .split(",")
+      .map((email) => email.trim())
+      .filter((email) => email);
+
+    const invalidEmails = validateEmails(emails);
+    if (invalidEmails.length > 0) {
+      setError(`Invalid email(s): ${invalidEmails.join(", ")}`);
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        emails,
+      }));
+      setError(null);
+    }
+  };
+
+  const handleFileChange = (field: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      const file = event.target.files[0];
+
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (file.size > maxSize) {
+        setError(`File ${file.name} is too large. Maximum size is 5MB.`);
+        return;
+      }
+
+      const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
+      if (!allowedTypes.includes(file.type)) {
+        setError(`Invalid file type for ${file.name}. Allowed types are: JPEG, PNG, PDF`);
+        return;
+      }
+
+      setUploadedFiles((prev) => ({
+        ...prev,
+        [field]: file,
+      }));
+      setError(null);
+    }
+  };
+
+  const handleAddContact = (contact: PrimaryContact) => {
+    if (!contact.name) {
+      setError("Contact name is required");
+      return;
+    }
+    if (contact.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email)) {
+      setError(`Invalid contact email: ${contact.email}`);
+      return;
+    }
+    if (!contact.phone) {
+      setError("Contact phone number is required");
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      primaryContacts: [...prev.primaryContacts, { ...contact }],
+    }));
+    setNewContact({ name: "", email: "", phone: "", countryCode: "+966", position: "", linkedin: "" });
+    setIsContactModalOpen(false);
     setError(null);
-  }
-};
+  };
 
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setLoading(true);
-  setError(null);
+  const countryCodes = [
+    { code: "+966", label: "+966 (Saudi Arabia)" },
+    { code: "+1", label: "+1 (USA)" },
+    { code: "+91", label: "+91 (India)" },
+    { code: "+44", label: "+44 (UK)" },
+    { code: "+86", label: "+86 (China)" },
+    { code: "+81", label: "+81 (Japan)" },
+  ];
 
-  try {
-    const formDataToSend = new FormData();
+  const positionOptions = [
+    { value: "HR", label: "HR" },
+    { value: "Senior HR", label: "Senior HR" },
+    { value: "Manager", label: "Manager" },
+    { value: "Director", label: "Director" },
+    { value: "Executive", label: "Executive" },
+  ];
 
-    Object.entries(formData).forEach(([key, value]) => {
-      if (value) {
-        formDataToSend.append(key, value);
+  const getCountryCodeLabel = (code: string) => {
+    const country = countryCodes.find((option) => option.code === code);
+    return country ? country.label : code;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Validate required fields
+      if (!formData.name) {
+        setError("Client Name is required");
+        setLoading(false);
+        return;
       }
-    });
-
-    Object.entries(uploadedFiles).forEach(([key, file]) => {
-      if (file) {
-        formDataToSend.append(key, file, file.name);
+      if (!formData.phoneNumber) {
+        setError("Phone Number is required");
+        setLoading(false);
+        return;
       }
-    });
+      if (!formData.address) {
+        setError("Client Address is required");
+        setLoading(false);
+        return;
+      }
+      if (!formData.referredBy) {
+        setError("Referred By is required");
+        setLoading(false);
+        return;
+      }
+      if (!formData.industry) {
+        setError("Client Industry is required");
+        setLoading(false);
+        return;
+      }
+      if (!formData.lineOfBusiness || formData.lineOfBusiness.length === 0) {
+        setError("Line of Business is required");
+        setLoading(false);
+        return;
+      }
+      if (!formData.countryOfRegistration) {
+        setError("Country of Registration is required");
+        setLoading(false);
+        return;
+      }
 
-    const result = await createClient(formDataToSend);
-    console.log("Client created successfully:", result);
+      // Validate emails
+      const emails = formData.emails.filter((email) => email);
+      const invalidEmails = validateEmails(emails);
+      if (invalidEmails.length > 0) {
+        setError(`Invalid email(s): ${invalidEmails.join(", ")}`);
+        setLoading(false);
+        return;
+      }
 
-    setFormData({
-      name: "",
-      email: "",
-      phoneNumber: "",
-      website: "",
-      industry: "",
-      location: "",
-      address: "",
-      googleMapsLink: "",
-      incorporationDate: "",
-      countryOfRegistration: "",
-      registrationNumber: "",
-      lineOfBusiness: [],
-      countryOfBusiness: "",
-      referredBy: "",
-      linkedInProfile: "",
-      linkedInPage: "",
-      countryCode: "",
-    });
+      // Validate primary contacts
+      if (formData.primaryContacts.length === 0) {
+        setError("At least one primary contact is required");
+        setLoading(false);
+        return;
+      }
+      const invalidContactEmails = formData.primaryContacts.filter(
+        (contact) => contact.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email)
+      );
+      if (invalidContactEmails.length > 0) {
+        setError(`Invalid contact email(s): ${invalidContactEmails.map((c) => c.email).join(", ")}`);
+        setLoading(false);
+        return;
+      }
 
-    setUploadedFiles({
-      profileImage: null,
-      crCopy: null,
-      vatCopy: null,
-      gstTinDocument: null,
-    });
+      // Prepare payload for createClient
+      const clientPayload = {
+        ...formData,
+        incorporationDate: formData.incorporationDate || undefined,
+        emails: formData.emails.length > 0 ? formData.emails : undefined,
+        lineOfBusiness:
+          formData.lineOfBusiness && formData.lineOfBusiness.length > 0
+            ? formData.lineOfBusiness.join(", ")
+            : undefined,
+        primaryContacts: JSON.stringify(formData.primaryContacts), // Ensure this is an array of objects
+        profileImage: uploadedFiles.profileImage || undefined,
+        crCopy: uploadedFiles.crCopy || undefined,
+        vatCopy: uploadedFiles.vatCopy || undefined,
+        gstTinDocument: uploadedFiles.gstTinDocument || undefined,
+        clientStage: formData.clientStage || "Lead",
+        clientTeam: formData.clientTeam || "Enterprise",
+        clientRm: formData.clientRm || "",
+        clientAge: formData.clientAge || 0,
+      };
 
-    setCurrentTab(0);
-    onOpenChange(false);
-  } catch (error: any) {
-    console.error("Failed to create client:", error);
-    setError(error.message || 'Failed to create client. Please try again.');
-  } finally {
-    setLoading(false);
-  }
-};
+      console.log("Submitting payload:", clientPayload); // Debug log
 
-const handleNext = () => {
-  setCurrentTab((prev) => Math.min(prev + 1, 2));
-};
+      const result = await createClient(clientPayload);
+      console.log("Client created successfully:", result);
 
-const handlePrevious = () => {
-  setCurrentTab((prev) => Math.max(prev - 1, 0));
-};
+      // Reset form
+      setFormData({
+        name: "",
+        emails: [],
+        phoneNumber: "",
+        website: "",
+        industry: "",
+        location: "",
+        address: "",
+        googleMapsLink: "",
+        incorporationDate: "",
+        countryOfRegistration: "",
+        registrationNumber: "",
+        lineOfBusiness: [],
+        countryOfBusiness: "",
+        referredBy: "",
+        linkedInProfile: "",
+        linkedInPage: "",
+        countryCode: "+966",
+        primaryContacts: [],
+      });
+      setEmailInput("");
+      setSelectedYear(null);
+      setUploadedFiles({
+        profileImage: null,
+        crCopy: null,
+        vatCopy: null,
+        gstTinDocument: null,
+      });
+      setNewContact({ name: "", email: "", phone: "", countryCode: "+966", position: "", linkedin: "" });
+      setCurrentTab(0);
+      setIsContactModalOpen(false);
+      onOpenChange(false);
+    } catch (error: any) {
+      console.error("Failed to create client:", error);
+      const errorMessage = error.message.includes("Client validation failed")
+        ? "Invalid data provided. Please check all fields and try again."
+        : error.message || "Failed to create client. Please try again.";
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  const handleNext = () => {
+    setCurrentTab((prev) => Math.min(prev + 1, 2));
+  };
+
+  const handlePrevious = () => {
+    setCurrentTab((prev) => Math.max(prev - 1, 0));
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -310,19 +500,19 @@ const handlePrevious = () => {
 
         <div className="flex flex-wrap justify-between border-b mb-4">
           <button
-            className={`px-4 py-2 ${currentTab === 0 ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-500'}`}
+            className={`px-4 py-2 ${currentTab === 0 ? "border-b-2 border-blue-500 text-blue-500" : "text-gray-500"}`}
             onClick={() => setCurrentTab(0)}
           >
             Client Information
           </button>
           <button
-            className={`px-4 py-2 ${currentTab === 1 ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-500'}`}
+            className={`px-4 py-2 ${currentTab === 1 ? "border-b-2 border-blue-500 text-blue-500" : "text-gray-500"}`}
             onClick={() => setCurrentTab(1)}
           >
             Client Details
           </button>
           <button
-            className={`px-4 py-2 ${currentTab === 2 ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-500'}`}
+            className={`px-4 py-2 ${currentTab === 2 ? "border-b-2 border-blue-500 text-blue-500" : "text-gray-500"}`}
             onClick={() => setCurrentTab(2)}
           >
             Documents
@@ -347,43 +537,112 @@ const handlePrevious = () => {
                   required
                 />
               </div>
-              
+
               <div className="space-y-2">
-                <Label htmlFor="email">Client Email *</Label>
+                <Label htmlFor="referredBy">Referred By *</Label>
                 <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleInputChange("email")}
+                  id="referredBy"
+                  value={formData.referredBy}
+                  onChange={handleInputChange("referredBy")}
                   required
                 />
               </div>
-              
-             <div className="space-y-2">
-  <Label htmlFor="phoneNumber">Phone Number *</Label>
-  <div className="flex space-x-2">
-    <select
-      className="border rounded px-2 py-1"
-      value={formData.countryCode}
-      onChange={handleInputChange("countryCode")}
-      required
-    >
-      <option value="+966">+966 (Saudi Arabia)</option>
-      <option value="+91">+91 (India)</option>
-      <option value="+1">+1 (USA)</option>
-      <option value="+44">+44 (UK)</option>
-      {/* Add more country codes as needed */}
-    </select>
-    <Input
-      id="phoneNumber"
-      type="tel"
-      value={formData.phoneNumber}
-      onChange={handleInputChange("phoneNumber")}
-      placeholder="50 123 4567"
-      required
-    />
-  </div>
-</div>
+
+              <div className="space-y-2">
+                <div className="bg-white rounded-lg border shadow-sm p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <Label>Primary Contacts *</Label>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setNewContact({
+                          name: "",
+                          email: "",
+                          phone: "",
+                          countryCode: "+966",
+                          position: "",
+                          linkedin: "",
+                        });
+                        setIsContactModalOpen(true);
+                      }}
+                      type="button"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add
+                    </Button>
+                  </div>
+                  {formData.primaryContacts.length === 0 ? (
+                    <div className="text-sm text-muted-foreground text-center py-4">
+                      No contacts added.
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {formData.primaryContacts.map((contact, index) => (
+                        <div key={index} className="p-3 bg-muted/30 rounded-lg">
+                          <div className="block space-y-1">
+                            <div className="font-medium">{contact.name || "Unnamed Contact"}</div>
+                            <div className="text-sm text-muted-foreground">
+                              {contact.position || "No position"}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {contact.email || "No email"}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {getCountryCodeLabel(contact.countryCode || "+966")} {contact.phone || "No phone"}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {contact.linkedin || "No LinkedIn"}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="emails">Client Email(s)</Label>
+                <Input
+                  id="emails"
+                  type="text"
+                  value={emailInput}
+                  onChange={handleInputChange("emails")}
+                  onBlur={handleEmailBlur}
+                  placeholder="email1@example.com,email2@example.com"
+                  autoComplete="off"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Enter multiple emails separated by commas
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phoneNumber">Phone Number *</Label>
+                <div className="flex space-x-2">
+                  <select
+                    className="border rounded px-2 py-1"
+                    value={formData.countryCode}
+                    onChange={handleInputChange("countryCode")}
+                    required
+                  >
+                    {countryCodes.map((option) => (
+                      <option key={option.code} value={option.code}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  <Input
+                    id="phoneNumber"
+                    type="tel"
+                    value={formData.phoneNumber}
+                    onChange={handleInputChange("phoneNumber")}
+                    placeholder="50 123 4567"
+                    required
+                  />
+                </div>
+              </div>
 
               <div className="space-y-2">
                 <Label htmlFor="website">Client Website</Label>
@@ -392,8 +651,7 @@ const handlePrevious = () => {
                   type="url"
                   value={formData.website}
                   onChange={handleInputChange("website")}
-                  placeholder="www.example.com"
-                
+                  placeholder="https://www.example.com"
                 />
               </div>
 
@@ -409,36 +667,14 @@ const handlePrevious = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="referredBy">Referred By *</Label>
-                <Input
-                  id="referredBy"
-                  value={formData.referredBy}
-                  onChange={handleInputChange("referredBy")}
-                  required
-                />
-              </div>
-
-              
-
-              <div className="space-y-2">
-                <Label htmlFor="linkedInProfile">LinkedIn Profile</Label>
+                <Label htmlFor="linkedInProfile">Client LinkedIn Profile</Label>
                 <Input
                   id="linkedInProfile"
                   value={formData.linkedInProfile}
                   onChange={handleInputChange("linkedInProfile")}
-                
+                  placeholder="https://www.linkedin.com/in/..."
                 />
               </div>
-
-              {/* <div className="space-y-2">
-                <Label htmlFor="linkedInPage">Client LinkedIn Page *</Label>
-                <Input
-                  id="linkedInPage"
-                  value={formData.linkedInPage}
-                  onChange={handleInputChange("linkedInPage")}
-                  required
-                />
-              </div> */}
             </div>
           )}
 
@@ -448,7 +684,7 @@ const handlePrevious = () => {
                 <Label htmlFor="industry">Client Industry *</Label>
                 <Select
                   value={formData.industry}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, industry: value }))}
+                  onValueChange={(value) => setFormData((prev) => ({ ...prev, industry: value }))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select industry" />
@@ -467,17 +703,6 @@ const handlePrevious = () => {
                   </SelectContent>
                 </Select>
               </div>
-              
-              {/* <div className="space-y-2">
-                <Label htmlFor="registrationNumber">Registration Number *</Label>
-                <Input
-                  id="registrationNumber"
-                  value={formData.registrationNumber}
-                  onChange={handleInputChange("registrationNumber")}
-                  required
-                />
-              </div> */}
-
 
               <div className="space-y-2">
                 <Label htmlFor="googleMapsLink">Google Maps Link</Label>
@@ -485,32 +710,19 @@ const handlePrevious = () => {
                   id="googleMapsLink"
                   value={formData.googleMapsLink}
                   onChange={handleInputChange("googleMapsLink")}
-                  placeholder="Enter Google Maps link"
-                
-                />
-              </div>
-
-              <div className="space-y-2 flex flex-col">
-                <Label htmlFor="incorporationDate">Client Incorporation Year</Label>
-                <DatePicker
-                  selected={selectedYear}
-                  onChange={(date) => setSelectedYear(date)}
-                  showYearPicker
-                  dateFormat="yyyy"
-                  className="w-full p-2 border rounded-md"
-                  placeholderText="Select Year"
-                
+                  placeholder="https://maps.google.com/..."
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="countryOfRegistration">Country of Registration</Label>
+                <Label htmlFor="countryOfRegistration">Country of Registration *</Label>
                 <div className="relative">
                   <Input
                     id="countryOfRegistration"
                     value={formData.countryOfRegistration}
                     onChange={handleInputChange("countryOfRegistration")}
                     placeholder="Search for country"
+                    required
                   />
                   {showCountrySuggestions && countrySuggestions.length > 0 && (
                     <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
@@ -534,48 +746,77 @@ const handlePrevious = () => {
                   id="countryOfBusiness"
                   value={formData.countryOfBusiness}
                   onChange={handleInputChange("countryOfBusiness")}
-                
+                  placeholder="Enter country of business"
                 />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="lineOfBusiness">Line of Business *</Label>
                 <div className="space-y-2 border rounded-md p-2">
-                  {["Recruitment", "HR Consulting", "Mgt Consulting", "Outsourcing", "HR Managed Services"].map((option) => (
-                    <div key={option} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`lob-${option}`}
-                        checked={formData.lineOfBusiness?.includes(option)}
-                        onCheckedChange={(checked) => {
-                          setFormData(prev => {
-                            const current = prev.lineOfBusiness || [];
-
-                            return {
-                              ...prev,
-                              lineOfBusiness: checked
-                                ? [...current, option]
-                                : current.filter((item: string) => item !== option)
-                            };
-                          });
-                        }}
-                      />
-                      <label htmlFor={`lob-${option}`} className="text-sm font-medium leading-none">
-                        {option.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-                      </label>
-                    </div>
-                  ))}
+                  {["Recruitment", "HR Consulting", "Mgt Consulting", "Outsourcing", "HR Managed Services"].map(
+                    (option) => (
+                      <div key={option} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`lob-${option}`}
+                          checked={formData.lineOfBusiness?.includes(option)}
+                          onCheckedChange={(checked) => {
+                            setFormData((prev) => {
+                              const current = prev.lineOfBusiness || [];
+                              return {
+                                ...prev,
+                                lineOfBusiness: checked
+                                  ? [...current, option]
+                                  : current.filter((item: string) => item !== option),
+                              };
+                            });
+                          }}
+                        />
+                        <label htmlFor={`lob-${option}`} className="text-sm font-medium leading-none">
+                          {option
+                            .split("-")
+                            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                            .join(" ")}
+                        </label>
+                      </div>
+                    )
+                  )}
                 </div>
               </div>
 
-              
+              {/* <div className="space-y-2">
+                <Label htmlFor="incorporationDate">Incorporation Year</Label>
+                <DatePicker
+                  id="incorporationDate"
+                  selected={selectedYear}
+                  onChange={(date: Date | null) => {
+                    setSelectedYear(date);
+                    setFormData((prev) => ({
+                      ...prev,
+                      incorporationDate: date ? date.toISOString() : "",
+                    }));
+                  }}
+                  showYearPicker
+                  dateFormat="yyyy"
+                  className="border rounded px-2 py-1 w-full"
+                  placeholderText="Select year"
+                />
+              </div> */}
 
-              
+              {/* <div className="space-y-2">
+                <Label htmlFor="registrationNumber">Registration Number</Label>
+                <Input
+                  id="registrationNumber"
+                  value={formData.registrationNumber}
+                  onChange={handleInputChange("registrationNumber")}
+                  placeholder="Enter registration number"
+                />
+              </div> */}
             </div>
           )}
 
           {currentTab === 2 && (
             <div className="grid grid-cols-1 gap-6 py-4">
-              <div className="space-y-2">
+              {/* <div className="space-y-2">
                 <Label>Client Profile Image</Label>
                 <div
                   className="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:bg-muted/50"
@@ -583,29 +824,29 @@ const handlePrevious = () => {
                 >
                   <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
                   <p className="text-sm text-muted-foreground">
-                    Click to upload or drag and drop
+                    Click to upload or drag and drop (JPEG, PNG)
                   </p>
                 </div>
                 <input
                   id="profileImageInput"
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/png"
                   className="hidden"
                   onChange={handleFileChange("profileImage")}
                 />
                 {uploadedFiles.profileImage && (
                   <p className="text-sm mt-2">Selected file: {uploadedFiles.profileImage.name}</p>
                 )}
-              </div>
+              </div> */}
 
-                            <div className="space-y-2">
+              <div className="space-y-2">
                 <Label>CR Copy</Label>
                 <div
                   className="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:bg-muted/50"
                   onClick={() => document.getElementById("crCopyInput")?.click()}
                 >
                   <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">Upload CR Copy</p>
+                  <p className="text-sm text-muted-foreground">Upload CR Copy (PDF, JPEG, PNG)</p>
                 </div>
                 <input
                   id="crCopyInput"
@@ -626,7 +867,7 @@ const handlePrevious = () => {
                   onClick={() => document.getElementById("vatCopyInput")?.click()}
                 >
                   <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">Upload VAT Copy</p>
+                  <p className="text-sm text-muted-foreground">Upload VAT Copy (PDF, JPEG, PNG)</p>
                 </div>
                 <input
                   id="vatCopyInput"
@@ -647,7 +888,7 @@ const handlePrevious = () => {
                   onClick={() => document.getElementById("gstTinDocumentInput")?.click()}
                 >
                   <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">Upload GST/TIN Document</p>
+                  <p className="text-sm text-muted-foreground">Upload GST/TIN Document (PDF, JPEG, PNG)</p>
                 </div>
                 <input
                   id="gstTinDocumentInput"
@@ -667,9 +908,9 @@ const handlePrevious = () => {
             <div className="flex flex-wrap justify-between w-full">
               <div>
                 {currentTab > 0 && (
-                  <Button 
-                    variant="outline" 
-                    type="button" 
+                  <Button
+                    variant="outline"
+                    type="button"
                     onClick={handlePrevious}
                     disabled={loading}
                     className="mb-2 md:mb-0"
@@ -680,9 +921,9 @@ const handlePrevious = () => {
               </div>
               <div className="flex space-x-2">
                 {currentTab < 2 && (
-                  <Button 
-                    variant="outline" 
-                    type="button" 
+                  <Button
+                    variant="outline"
+                    type="button"
                     onClick={() => onOpenChange(false)}
                     disabled={loading}
                   >
@@ -690,27 +931,20 @@ const handlePrevious = () => {
                   </Button>
                 )}
                 {currentTab < 2 ? (
-                  <Button 
-                    type="button" 
-                    onClick={handleNext}
-                    disabled={loading}
-                  >
+                  <Button type="button" onClick={handleNext} disabled={loading}>
                     Next
                   </Button>
                 ) : (
                   <>
-                    <Button 
-                      variant="outline" 
-                      type="button" 
+                    <Button
+                      variant="outline"
+                      type="button"
                       onClick={() => onOpenChange(false)}
                       disabled={loading}
                     >
                       Cancel
                     </Button>
-                    <Button 
-                      type="submit" 
-                      disabled={loading}
-                    >
+                    <Button type="submit" disabled={loading}>
                       {loading ? "Creating..." : "Create Client"}
                     </Button>
                   </>
@@ -719,7 +953,110 @@ const handlePrevious = () => {
             </div>
           </DialogFooter>
         </form>
+
+        {isContactModalOpen && (
+          <Dialog open={isContactModalOpen} onOpenChange={setIsContactModalOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add Primary Contact</DialogTitle>
+                <DialogDescription>Enter the details for the primary contact.</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="contactName">Name *</Label>
+                  <Input
+                    id="contactName"
+                    value={newContact.name}
+                    onChange={(e) => setNewContact((prev) => ({ ...prev, name: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="contactEmail">Email</Label>
+                  <Input
+                    id="contactEmail"
+                    type="email"
+                    value={newContact.email}
+                    onChange={(e) => setNewContact((prev) => ({ ...prev, email: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="contactPhone">Phone Number *</Label>
+                  <div className="flex space-x-2">
+                    <select
+                      className="border rounded px-2 py-1"
+                      value={newContact.countryCode}
+                      onChange={(e) =>
+                        setNewContact((prev) => ({ ...prev, countryCode: e.target.value }))
+                      }
+                    >
+                      {countryCodes.map((option) => (
+                        <option key={option.code} value={option.code}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    <Input
+                      id="contactPhone"
+                      type="tel"
+                      value={newContact.phone}
+                      onChange={(e) => setNewContact((prev) => ({ ...prev, phone: e.target.value }))}
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="contactPosition">Position</Label>
+                  <Select
+                    value={newContact.position}
+                    onValueChange={(value) => setNewContact((prev) => ({ ...prev, position: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select position" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {positionOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="contactLinkedIn">LinkedIn</Label>
+                  <Input
+                    id="contactLinkedIn"
+                    type="text"
+                    value={newContact.linkedin}
+                    onChange={(e) => setNewContact((prev) => ({ ...prev, linkedin: e.target.value }))}
+                    placeholder="https://www.linkedin.com/in/..."
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setNewContact({
+                      name: "",
+                      email: "",
+                      phone: "",
+                      countryCode: "+966",
+                      position: "",
+                      linkedin: "",
+                    });
+                    setIsContactModalOpen(false);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button onClick={() => handleAddContact(newContact)}>Add Contact</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
       </DialogContent>
     </Dialog>
-  )
+  );
 }
