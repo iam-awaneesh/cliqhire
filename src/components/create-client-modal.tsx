@@ -535,6 +535,105 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="emails">Client Email(s)</Label>
+                <Input
+                  id="emails"
+                  type="text"
+                  value={emailInput}
+                  onChange={handleInputChange("emails")}
+                  onBlur={handleEmailBlur}
+                  placeholder="email1@example.com,email2@example.com"
+                  autoComplete="off"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Enter multiple emails separated by commas
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phoneNumber">Client Phone Number *</Label>
+                <div className="flex space-x-2">
+                  <select
+                    className="border rounded px-2 py-1"
+                    value={formData.countryCode}
+                    onChange={handleInputChange("countryCode")}
+                    required
+                  >
+                    {countryCodes.map((option) => (
+                      <option key={option.code} value={option.code}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  <Input
+                    id="phoneNumber"
+                    type="tel"
+                    value={formData.phoneNumber}
+                    onChange={handleInputChange("phoneNumber")}
+                    placeholder="50 123 4567"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="address">Client Address *</Label>
+                <Input
+                  id="address"
+                  value={formData.address}
+                  onChange={handleInputChange("address")}
+                  placeholder="Enter detailed address"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="website">Client Website</Label>
+                <Input
+                  id="website"
+                  type="url"
+                  value={formData.website}
+                  onChange={handleInputChange("website")}
+                  placeholder="https://www.example.com"
+                />
+              </div>
+
+
+              <div className="space-y-2">
+                <Label htmlFor="linkedInProfile">Client LinkedIn Profile</Label>
+                <Input
+                  id="linkedInProfile"
+                  value={formData.linkedInProfile}
+                  onChange={handleInputChange("linkedInProfile")}
+                  placeholder="https://www.linkedin.com/in/..."
+                />
+              </div>
+                
+                   <div className="space-y-2">
+                <Label htmlFor="industry">Client Industry *</Label>
+                <Select
+                  value={formData.industry}
+                  onValueChange={(value) => setFormData((prev) => ({ ...prev, industry: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select industry" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[300px]">
+                    {Object.entries(INDUSTRIES).map(([category, industries]) => (
+                      <SelectGroup key={category}>
+                        <SelectLabel className="font-semibold">{category}</SelectLabel>
+                        {industries.map((industry) => (
+                          <SelectItem key={industry} value={industry}>
+                            {industry}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+                 <div className="space-y-2">
                 <Label htmlFor="referredBy">Referred By *</Label>
                 <Input
                   id="referredBy"
@@ -542,9 +641,16 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                   onChange={handleInputChange("referredBy")}
                   required
                 />
-              </div>
+                 </div>
 
-              <div className="space-y-2">
+            </div>
+          )}
+
+          {currentTab === 1 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
+
+              {/* Primary Deatail */}
+                  <div className="space-y-2">
                 <div className="bg-white rounded-lg border shadow-sm p-4">
                   <div className="flex items-center justify-between mb-4">
                     <Label>Primary Contacts *</Label>
@@ -598,107 +704,6 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="emails">Client Email(s)</Label>
-                <Input
-                  id="emails"
-                  type="text"
-                  value={emailInput}
-                  onChange={handleInputChange("emails")}
-                  onBlur={handleEmailBlur}
-                  placeholder="email1@example.com,email2@example.com"
-                  autoComplete="off"
-                />
-                <p className="text-sm text-muted-foreground">
-                  Enter multiple emails separated by commas
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="phoneNumber">Phone Number *</Label>
-                <div className="flex space-x-2">
-                  <select
-                    className="border rounded px-2 py-1"
-                    value={formData.countryCode}
-                    onChange={handleInputChange("countryCode")}
-                    required
-                  >
-                    {countryCodes.map((option) => (
-                      <option key={option.code} value={option.code}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                  <Input
-                    id="phoneNumber"
-                    type="tel"
-                    value={formData.phoneNumber}
-                    onChange={handleInputChange("phoneNumber")}
-                    placeholder="50 123 4567"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="website">Client Website</Label>
-                <Input
-                  id="website"
-                  type="url"
-                  value={formData.website}
-                  onChange={handleInputChange("website")}
-                  placeholder="https://www.example.com"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="address">Client Address *</Label>
-                <Input
-                  id="address"
-                  value={formData.address}
-                  onChange={handleInputChange("address")}
-                  placeholder="Enter detailed address"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="linkedInProfile">Client LinkedIn Profile</Label>
-                <Input
-                  id="linkedInProfile"
-                  value={formData.linkedInProfile}
-                  onChange={handleInputChange("linkedInProfile")}
-                  placeholder="https://www.linkedin.com/in/..."
-                />
-              </div>
-            </div>
-          )}
-
-          {currentTab === 1 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="industry">Client Industry *</Label>
-                <Select
-                  value={formData.industry}
-                  onValueChange={(value) => setFormData((prev) => ({ ...prev, industry: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select industry" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[300px]">
-                    {Object.entries(INDUSTRIES).map(([category, industries]) => (
-                      <SelectGroup key={category}>
-                        <SelectLabel className="font-semibold">{category}</SelectLabel>
-                        {industries.map((industry) => (
-                          <SelectItem key={industry} value={industry}>
-                            {industry}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
 
               <div className="space-y-2">
                 <Label htmlFor="googleMapsLink">Google Maps Link</Label>
@@ -710,7 +715,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                 />
               </div>
 
-              <div className="space-y-2">
+              {/* <div className="space-y-2">
                 <Label htmlFor="countryOfRegistration">Country of Registration *</Label>
                 <div className="relative">
                   <Input
@@ -734,7 +739,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                     </div>
                   )}
                 </div>
-              </div>
+              </div> */}
 
               <div className="space-y-2">
                 <Label htmlFor="countryOfBusiness">Country of Business</Label>
@@ -749,7 +754,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
               <div className="space-y-2">
                 <Label htmlFor="lineOfBusiness">Line of Business *</Label>
                 <div className="space-y-2 border rounded-md p-2">
-                  {["Recruitment", "HR Consulting", "Mgt Consulting", "Outsourcing", "HR Managed Services"].map(
+                  {["Recruitment", "HR Consulting", "Mgt Consulting", "Outsourcing", "HR Managed Services " , "IT & Technology"].map(
                     (option) => (
                       <div key={option} className="flex items-center space-x-2">
                         <Checkbox
