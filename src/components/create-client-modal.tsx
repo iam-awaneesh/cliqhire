@@ -59,10 +59,14 @@ interface ClientForm {
   linkedInPage?: string;
   countryCode?: string;
   primaryContacts: PrimaryContact[];
-  clientStage?: "Lead" | "Engaged" | "Negotiation" | "Signed" | "Prospect"; // Fixed type
-  clientTeam?: "Enterprise" | "SMB" | "Mid-Market"; // Fixed type
+  clientStage?: "Lead" | "Engaged" | "Negotiation" | "Signed" | "Prospect";
+  clientTeam?: "Enterprise" | "SMB" | "Mid-Market";
   clientRm?: string;
   clientAge?: number;
+  contractNumber?: string; // Added for Contract Information
+  contractStartDate?: string; // Added for Contract Information
+  contractEndDate?: string; // Added for Contract Information
+  contractValue?: number; // Added for Contract Information
 }
 
 interface CreateClientModalProps {
@@ -102,6 +106,10 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     linkedInPage: "",
     countryCode: "+966",
     primaryContacts: [],
+    contractNumber: "", // Added
+    contractStartDate: "", // Added
+    contractEndDate: "", // Added
+    contractValue: 0, // Added
   });
 
   const [emailInput, setEmailInput] = useState<string>("");
@@ -225,7 +233,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
   const handleInputChange = (field: keyof ClientForm) => (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
-    let value: string | string[] = e.target.value;
+    let value: string | string[] | number = e.target.value;
 
     if (field === "emails") {
       setEmailInput(e.target.value);
@@ -236,6 +244,8 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
       value = emails;
     } else if (field === "website" && value && !value.match(/^https?:\/\//)) {
       value = `https://${value}`;
+    } else if (field === "contractValue") {
+      value = e.target.value ? parseFloat(e.target.value) : 0;
     }
 
     setFormData((prev) => ({
@@ -425,6 +435,10 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
         clientTeam: formData.clientTeam || "Enterprise",
         clientRm: formData.clientRm || "",
         clientAge: formData.clientAge || 0,
+        contractNumber: formData.contractNumber || undefined, // Added
+        contractStartDate: formData.contractStartDate || undefined, // Added
+        contractEndDate: formData.contractEndDate || undefined, // Added
+        contractValue: formData.contractValue || undefined, // Added
       };
 
       console.log("Submitting payload:", clientPayload); // Debug log
@@ -452,6 +466,10 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
         linkedInPage: "",
         countryCode: "+966",
         primaryContacts: [],
+        contractNumber: "", // Added
+        contractStartDate: "", // Added
+        contractEndDate: "", // Added
+        contractValue: 0, // Added
       });
       setEmailInput("");
       setSelectedYear(null);
@@ -477,7 +495,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
   };
 
   const handleNext = () => {
-    setCurrentTab((prev) => Math.min(prev + 1, 2));
+    setCurrentTab((prev) => Math.min(prev + 1, 3)); // Updated to account for 4 tabs (0 to 3)
   };
 
   const handlePrevious = () => {
@@ -510,6 +528,12 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
           <button
             className={`px-4 py-2 ${currentTab === 2 ? "border-b-2 border-blue-500 text-blue-500" : "text-gray-500"}`}
             onClick={() => setCurrentTab(2)}
+          >
+            Contract Information
+          </button>
+          <button
+            className={`px-4 py-2 ${currentTab === 3 ? "border-b-2 border-blue-500 text-blue-500" : "text-gray-500"}`}
+            onClick={() => setCurrentTab(3)}
           >
             Documents
           </button>
@@ -598,7 +622,6 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                 />
               </div>
 
-
               <div className="space-y-2">
                 <Label htmlFor="linkedInProfile">Client LinkedIn Profile</Label>
                 <Input
@@ -608,8 +631,8 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                   placeholder="https://www.linkedin.com/in/..."
                 />
               </div>
-                
-                   <div className="space-y-2">
+
+              <div className="space-y-2">
                 <Label htmlFor="industry">Client Industry *</Label>
                 <Select
                   value={formData.industry}
@@ -633,7 +656,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                 </Select>
               </div>
 
-                 <div className="space-y-2">
+              <div className="space-y-2">
                 <Label htmlFor="referredBy">Referred By *</Label>
                 <Input
                   id="referredBy"
@@ -641,16 +664,13 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                   onChange={handleInputChange("referredBy")}
                   required
                 />
-                 </div>
-
+              </div>
             </div>
           )}
 
           {currentTab === 1 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
-
-              {/* Primary Deatail */}
-                  <div className="space-y-2">
+              <div className="space-y-2">
                 <div className="bg-white rounded-lg border shadow-sm p-4">
                   <div className="flex items-center justify-between mb-4">
                     <Label>Primary Contacts *</Label>
@@ -704,7 +724,6 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                 </div>
               </div>
 
-
               <div className="space-y-2">
                 <Label htmlFor="googleMapsLink">Google Maps Link</Label>
                 <Input
@@ -714,32 +733,6 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                   placeholder="https://maps.google.com/..."
                 />
               </div>
-
-              {/* <div className="space-y-2">
-                <Label htmlFor="countryOfRegistration">Country of Registration *</Label>
-                <div className="relative">
-                  <Input
-                    id="countryOfRegistration"
-                    value={formData.countryOfRegistration}
-                    onChange={handleInputChange("countryOfRegistration")}
-                    placeholder="Search for country"
-                    required
-                  />
-                  {showCountrySuggestions && countrySuggestions.length > 0 && (
-                    <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
-                      {countrySuggestions.map((country, index) => (
-                        <div
-                          key={index}
-                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                          onClick={() => handleCountrySelect(country.name.common)}
-                        >
-                          {country.name.common}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div> */}
 
               <div className="space-y-2">
                 <Label htmlFor="countryOfBusiness">Country of Business</Label>
@@ -754,7 +747,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
               <div className="space-y-2">
                 <Label htmlFor="lineOfBusiness">Line of Business *</Label>
                 <div className="space-y-2 border rounded-md p-2">
-                  {["Recruitment", "HR Consulting", "Mgt Consulting", "Outsourcing", "HR Managed Services " , "IT & Technology"].map(
+                  {["Recruitment", "HR Consulting", "Mgt Consulting", "Outsourcing", "HR Managed Services ", "IT & Technology"].map(
                     (option) => (
                       <div key={option} className="flex items-center space-x-2">
                         <Checkbox
@@ -783,63 +776,70 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                   )}
                 </div>
               </div>
-
-              {/* <div className="space-y-2">
-                <Label htmlFor="incorporationDate">Incorporation Year</Label>
-                <DatePicker
-                  id="incorporationDate"
-                  selected={selectedYear}
-                  onChange={(date: Date | null) => {
-                    setSelectedYear(date);
-                    setFormData((prev) => ({
-                      ...prev,
-                      incorporationDate: date ? date.toISOString() : "",
-                    }));
-                  }}
-                  showYearPicker
-                  dateFormat="yyyy"
-                  className="border rounded px-2 py-1 w-full"
-                  placeholderText="Select year"
-                />
-              </div> */}
-
-              {/* <div className="space-y-2">
-                <Label htmlFor="registrationNumber">Registration Number</Label>
-                <Input
-                  id="registrationNumber"
-                  value={formData.registrationNumber}
-                  onChange={handleInputChange("registrationNumber")}
-                  placeholder="Enter registration number"
-                />
-              </div> */}
             </div>
           )}
 
           {currentTab === 2 && (
-            <div className="grid grid-cols-1 gap-6 py-4">
-              {/* <div className="space-y-2">
-                <Label>Client Profile Image</Label>
-                <div
-                  className="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:bg-muted/50"
-                  onClick={() => document.getElementById("profileImageInput")?.click()}
-                >
-                  <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">
-                    Click to upload or drag and drop (JPEG, PNG)
-                  </p>
-                </div>
-                <input
-                  id="profileImageInput"
-                  type="file"
-                  accept="image/jpeg,image/png"
-                  className="hidden"
-                  onChange={handleFileChange("profileImage")}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="contractNumber">Contract Number</Label>
+                <Input
+                  id="contractNumber"
+                  value={formData.contractNumber}
+                  onChange={handleInputChange("contractNumber")}
+                  placeholder="Enter contract number"
                 />
-                {uploadedFiles.profileImage && (
-                  <p className="text-sm mt-2">Selected file: {uploadedFiles.profileImage.name}</p>
-                )}
-              </div> */}
+              </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="contractStartDate">Contract Start Date</Label>
+                <DatePicker
+                  id="contractStartDate"
+                  selected={formData.contractStartDate ? new Date(formData.contractStartDate) : null}
+                  onChange={(date: Date | null) => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      contractStartDate: date ? date.toISOString() : "",
+                    }));
+                  }}
+                  dateFormat="MM/dd/yyyy"
+                  className="border rounded px-2 py-1 w-full"
+                  placeholderText="Select start date"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="contractEndDate">Contract End Date</Label>
+                <DatePicker
+                  id="contractEndDate"
+                  selected={formData.contractEndDate ? new Date(formData.contractEndDate) : null}
+                  onChange={(date: Date | null) => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      contractEndDate: date ? date.toISOString() : "",
+                    }));
+                  }}
+                  dateFormat="MM/dd/yyyy"
+                  className="border rounded px-2 py-1 w-full"
+                  placeholderText="Select end date"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="contractValue">Contract Value</Label>
+                <Input
+                  id="contractValue"
+                  type="number"
+                  value={formData.contractValue || ""}
+                  onChange={handleInputChange("contractValue")}
+                  placeholder="Enter contract value"
+                />
+              </div>
+            </div>
+          )}
+
+          {currentTab === 3 && (
+            <div className="grid grid-cols-1 gap-6 py-4">
               <div className="space-y-2">
                 <Label>CR Copy</Label>
                 <div
@@ -921,7 +921,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                 )}
               </div>
               <div className="flex space-x-2">
-                {currentTab < 2 && (
+                {currentTab < 3 && (
                   <Button
                     variant="outline"
                     type="button"
@@ -931,7 +931,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                     Cancel
                   </Button>
                 )}
-                {currentTab < 2 ? (
+                {currentTab < 3 ? (
                   <Button type="button" onClick={handleNext} disabled={loading}>
                     Next
                   </Button>
