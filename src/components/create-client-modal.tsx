@@ -26,6 +26,7 @@ import { Upload, Plus } from "lucide-react";
 import { createClient } from "@/services/clientService";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { Textarea } from "@/components/ui/textarea";
 import axios from "axios";
 import * as Flags from "country-flag-icons/react/3x2";
 import { INDUSTRIES } from "@/lib/constants";
@@ -63,10 +64,17 @@ interface ClientForm {
   clientTeam?: "Enterprise" | "SMB" | "Mid-Market";
   clientRm?: string;
   clientAge?: number;
-  contractNumber?: string; // Added for Contract Information
-  contractStartDate?: string; // Added for Contract Information
-  contractEndDate?: string; // Added for Contract Information
-  contractValue?: number; // Added for Contract Information
+  contractNumber?: string;
+  contractStartDate?: string;
+  contractEndDate?: string;
+  contractValue?: number;
+  contractType?: string;
+  cLevelPercentage?: number;
+  belowCLevelPercentage?: number;
+  fixedPercentageNotes?: string;
+  fixedPercentageAdvanceNotes?: string;
+  cLevelPercentageNotes?: string;
+  belowCLevelPercentageNotes?: string;
 }
 
 interface CreateClientModalProps {
@@ -106,10 +114,17 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     linkedInPage: "",
     countryCode: "+966",
     primaryContacts: [],
-    contractNumber: "", // Added
-    contractStartDate: "", // Added
-    contractEndDate: "", // Added
-    contractValue: 0, // Added
+    contractNumber: "",
+    contractStartDate: "",
+    contractEndDate: "",
+    contractValue: 0,
+    contractType: "",
+    cLevelPercentage: 0,
+    belowCLevelPercentage: 0,
+    fixedPercentageNotes: "",
+    fixedPercentageAdvanceNotes: "",
+    cLevelPercentageNotes: "",
+    belowCLevelPercentageNotes: "",
   });
 
   const [emailInput, setEmailInput] = useState<string>("");
@@ -130,12 +145,17 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     position: "",
     linkedin: "",
   });
+  const [variablePercentageSection, setVariablePercentageSection] = useState<"C-Level" | "Below C-Level" | null>(null);
 
   const [uploadedFiles, setUploadedFiles] = useState<{ [key: string]: File | null }>({
     profileImage: null,
     crCopy: null,
     vatCopy: null,
     gstTinDocument: null,
+    fixedPercentage: null,
+    fixedPercentageAdvance: null,
+    variablePercentageCLevel: null,
+    variablePercentageBelowCLevel: null,
   });
 
   // Location suggestions
@@ -231,7 +251,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
   };
 
   const handleInputChange = (field: keyof ClientForm) => (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     let value: string | string[] | number = e.target.value;
 
@@ -244,8 +264,15 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
       value = emails;
     } else if (field === "website" && value && !value.match(/^https?:\/\//)) {
       value = `https://${value}`;
-    } else if (field === "contractValue") {
+    } else if (field === "contractValue" || field === "cLevelPercentage" || field === "belowCLevelPercentage") {
       value = e.target.value ? parseFloat(e.target.value) : 0;
+    } else if (
+      field === "fixedPercentageNotes" ||
+      field === "fixedPercentageAdvanceNotes" ||
+      field === "cLevelPercentageNotes" ||
+      field === "belowCLevelPercentageNotes"
+    ) {
+      value = e.target.value;
     }
 
     setFormData((prev) => ({
@@ -305,6 +332,30 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
         [field]: file,
       }));
       setError(null);
+    }
+  };
+
+  const handlePreview = (file: File | null) => {
+    if (file) {
+      const url = URL.createObjectURL(file);
+      window.open(url, "_blank");
+    } else {
+      setError("No file uploaded to preview.");
+    }
+  };
+
+  const handleDownload = (file: File | null) => {
+    if (file) {
+      const url = URL.createObjectURL(file);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = file.name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } else {
+      setError("No file uploaded to download.");
     }
   };
 
@@ -435,14 +486,24 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
         clientTeam: formData.clientTeam || "Enterprise",
         clientRm: formData.clientRm || "",
         clientAge: formData.clientAge || 0,
-        contractNumber: formData.contractNumber || undefined, // Added
-        contractStartDate: formData.contractStartDate || undefined, // Added
-        contractEndDate: formData.contractEndDate || undefined, // Added
-        contractValue: formData.contractValue || undefined, // Added
+        contractNumber: formData.contractNumber || undefined,
+        contractStartDate: formData.contractStartDate || undefined,
+        contractEndDate: formData.contractEndDate || undefined,
+        contractValue: formData.contractValue || undefined,
+        contractType: formData.contractType || undefined,
+        cLevelPercentage: formData.cLevelPercentage || undefined,
+        belowCLevelPercentage: formData.belowCLevelPercentage || undefined,
+        fixedPercentage: uploadedFiles.fixedPercentage || undefined,
+        fixedPercentageAdvance: uploadedFiles.fixedPercentageAdvance || undefined,
+        variablePercentageCLevel: uploadedFiles.variablePercentageCLevel || undefined,
+        variablePercentageBelowCLevel: uploadedFiles.variablePercentageBelowCLevel || undefined,
+        fixedPercentageNotes: formData.fixedPercentageNotes || undefined,
+        fixedPercentageAdvanceNotes: formData.fixedPercentageAdvanceNotes || undefined,
+        cLevelPercentageNotes: formData.cLevelPercentageNotes || undefined,
+        belowCLevelPercentageNotes: formData.belowCLevelPercentageNotes || undefined,
       };
 
-      console.log("Submitting payload:", clientPayload); // Debug log
-
+      console.log("Submitting payload:", clientPayload);
       const result = await createClient(clientPayload);
       console.log("Client created successfully:", result);
 
@@ -466,10 +527,17 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
         linkedInPage: "",
         countryCode: "+966",
         primaryContacts: [],
-        contractNumber: "", // Added
-        contractStartDate: "", // Added
-        contractEndDate: "", // Added
-        contractValue: 0, // Added
+        contractNumber: "",
+        contractStartDate: "",
+        contractEndDate: "",
+        contractValue: 0,
+        contractType: "",
+        cLevelPercentage: 0,
+        belowCLevelPercentage: 0,
+        fixedPercentageNotes: "",
+        fixedPercentageAdvanceNotes: "",
+        cLevelPercentageNotes: "",
+        belowCLevelPercentageNotes: "",
       });
       setEmailInput("");
       setSelectedYear(null);
@@ -478,10 +546,15 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
         crCopy: null,
         vatCopy: null,
         gstTinDocument: null,
+        fixedPercentage: null,
+        fixedPercentageAdvance: null,
+        variablePercentageCLevel: null,
+        variablePercentageBelowCLevel: null,
       });
       setNewContact({ name: "", email: "", phone: "", countryCode: "+966", position: "", linkedin: "" });
       setCurrentTab(0);
       setIsContactModalOpen(false);
+      setVariablePercentageSection(null);
       onOpenChange(false);
     } catch (error: any) {
       console.error("Failed to create client:", error);
@@ -495,7 +568,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
   };
 
   const handleNext = () => {
-    setCurrentTab((prev) => Math.min(prev + 1, 3)); // Updated to account for 4 tabs (0 to 3)
+    setCurrentTab((prev) => Math.min(prev + 1, 3));
   };
 
   const handlePrevious = () => {
@@ -782,59 +855,294 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
           {currentTab === 2 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
               <div className="space-y-2">
-                <Label htmlFor="contractNumber">Contract Number</Label>
-                <Input
-                  id="contractNumber"
-                  value={formData.contractNumber}
-                  onChange={handleInputChange("contractNumber")}
-                  placeholder="Enter contract number"
-                />
-              </div>
-
-              <div className="space-y-2">
                 <Label htmlFor="contractStartDate">Contract Start Date</Label>
-                <DatePicker
-                  id="contractStartDate"
-                  selected={formData.contractStartDate ? new Date(formData.contractStartDate) : null}
-                  onChange={(date: Date | null) => {
-                    setFormData((prev) => ({
-                      ...prev,
-                      contractStartDate: date ? date.toISOString() : "",
-                    }));
-                  }}
-                  dateFormat="MM/dd/yyyy"
-                  className="border rounded px-2 py-1 w-full"
-                  placeholderText="Select start date"
-                />
+                <div className="mt-1">
+                  <DatePicker
+                    id="contractStartDate"
+                    selected={formData.contractStartDate ? new Date(formData.contractStartDate) : null}
+                    onChange={(date: Date | null) => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        contractStartDate: date ? date.toISOString() : "",
+                      }));
+                    }}
+                    dateFormat="MM/dd/yyyy"
+                    className="border rounded px-2 py-1 w-full"
+                    placeholderText="Select start date"
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="contractEndDate">Contract End Date</Label>
-                <DatePicker
-                  id="contractEndDate"
-                  selected={formData.contractEndDate ? new Date(formData.contractEndDate) : null}
-                  onChange={(date: Date | null) => {
-                    setFormData((prev) => ({
-                      ...prev,
-                      contractEndDate: date ? date.toISOString() : "",
-                    }));
-                  }}
-                  dateFormat="MM/dd/yyyy"
-                  className="border rounded px-2 py-1 w-full"
-                  placeholderText="Select end date"
-                />
+                <div className="mt-1">
+                  <DatePicker
+                    id="contractEndDate"
+                    selected={formData.contractEndDate ? new Date(formData.contractEndDate) : null}
+                    onChange={(date: Date | null) => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        contractEndDate: date ? date.toISOString() : "",
+                      }));
+                    }}
+                    dateFormat="MM/dd/yyyy"
+                    className="border rounded px-2 py-1 w-full"
+                    placeholderText="Select end date"
+                  />
+                </div>
               </div>
 
+
               <div className="space-y-2">
-                <Label htmlFor="contractValue">Contract Value</Label>
-                <Input
-                  id="contractValue"
-                  type="number"
-                  value={formData.contractValue || ""}
-                  onChange={handleInputChange("contractValue")}
-                  placeholder="Enter contract value"
-                />
+                <Label htmlFor="contractType">Contract Type</Label>
+                <Select
+                  value={formData.contractType}
+                  onValueChange={(value) => {
+                    setFormData((prev) => ({ ...prev, contractType: value }));
+                    setVariablePercentageSection(null); // Reset section when contract type changes
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select contract type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Fixed Percentage">Fixed Percentage</SelectItem>
+                    <SelectItem value="Fixed Percentage + Advance">Fixed Percentage + Advance</SelectItem>
+                    <SelectItem value="Variable Percentage">Variable Percentage</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
+
+              {formData.contractType === "Fixed Percentage" && (
+                <div className="space-y-2">
+                  <Label htmlFor="fixedPercentageNotes">Fixed Percentage Notes</Label>
+                  <Textarea
+                    id="fixedPercentageNotes"
+                    value={formData.fixedPercentageNotes || ""}
+                    onChange={handleInputChange("fixedPercentageNotes")}
+                    placeholder="Enter notes for Fixed Percentage"
+                    rows={3}
+                  />
+                  <Label>Fixed Percentage Document</Label>
+                  <div className="flex space-x-2 items-center">
+                    <div
+                      className="border-2 border-dashed rounded-lg p-2 text-center cursor-pointer hover:bg-muted/50 flex-1"
+                      onClick={() => document.getElementById("fixedPercentageInput")?.click()}
+                    >
+                      <Upload className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
+                      <p className="text-xs text-muted-foreground">Upload (PDF, JPEG, PNG)</p>
+                    </div>
+                    <input
+                      id="fixedPercentageInput"
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      className="hidden"
+                      onChange={handleFileChange("fixedPercentage")}
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePreview(uploadedFiles.fixedPercentage)}
+                      disabled={!uploadedFiles.fixedPercentage}
+                    >
+                      Preview
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDownload(uploadedFiles.fixedPercentage)}
+                      disabled={!uploadedFiles.fixedPercentage}
+                    >
+                      Download
+                    </Button>
+                  </div>
+                  {uploadedFiles.fixedPercentage && (
+                    <p className="text-sm mt-2">Selected file: {uploadedFiles.fixedPercentage.name}</p>
+                  )}
+                </div>
+              )}
+
+              {formData.contractType === "Fixed Percentage + Advance" && (
+                <div className="space-y-2">
+                  <Label htmlFor="fixedPercentageAdvanceNotes">Fixed Percentage + Advance Notes</Label>
+                  <Textarea
+                    id="fixedPercentageAdvanceNotes"
+                    value={formData.fixedPercentageAdvanceNotes || ""}
+                    onChange={handleInputChange("fixedPercentageAdvanceNotes")}
+                    placeholder="Enter notes for Fixed Percentage + Advance"
+                    rows={3}
+                  />
+                  <Label>Fixed Percentage + Advance Document</Label>
+                  <div className="flex space-x-2 items-center">
+                    <div
+                      className="border-2 border-dashed rounded-lg p-2 text-center cursor-pointer hover:bg-muted/50 flex-1"
+                      onClick={() => document.getElementById("fixedPercentageAdvanceInput")?.click()}
+                    >
+                      <Upload className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
+                      <p className="text-xs text-muted-foreground">Upload (PDF, JPEG, PNG)</p>
+                    </div>
+                    <input
+                      id="fixedPercentageAdvanceInput"
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      className="hidden"
+                      onChange={handleFileChange("fixedPercentageAdvance")}
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePreview(uploadedFiles.fixedPercentageAdvance)}
+                      disabled={!uploadedFiles.fixedPercentageAdvance}
+                    >
+                      Preview
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDownload(uploadedFiles.fixedPercentageAdvance)}
+                      disabled={!uploadedFiles.fixedPercentageAdvance}
+                    >
+                      Download
+                    </Button>
+                  </div>
+                  {uploadedFiles.fixedPercentageAdvance && (
+                    <p className="text-sm mt-2">Selected file: {uploadedFiles.fixedPercentageAdvance.name}</p>
+                  )}
+                </div>
+              )}
+
+              {formData.contractType === "Variable Percentage" && (
+                <div className="space-y-2">
+                  <div className="flex space-x-2">
+                    <Button
+                      variant={variablePercentageSection === "C-Level" ? "default" : "outline"}
+                      onClick={() => setVariablePercentageSection("C-Level")}
+                    >
+                      C-Level %
+                    </Button>
+                    <Button
+                      variant={variablePercentageSection === "Below C-Level" ? "default" : "outline"}
+                      onClick={() => setVariablePercentageSection("Below C-Level")}
+                    >
+                      Below C-Level %
+                    </Button>
+                  </div>
+
+                  {variablePercentageSection === "C-Level" && (
+                    <div className="space-y-2">
+                      <Label htmlFor="cLevelPercentage">C-Level %</Label>
+                      <Input
+                        id="cLevelPercentage"
+                        type="number"
+                        value={formData.cLevelPercentage || ""}
+                        onChange={handleInputChange("cLevelPercentage")}
+                        placeholder="Enter C-Level percentage"
+                      />
+                      <Label htmlFor="cLevelPercentageNotes">C-Level Notes</Label>
+                      <Textarea
+                        id="cLevelPercentageNotes"
+                        value={formData.cLevelPercentageNotes || ""}
+                        onChange={handleInputChange("cLevelPercentageNotes")}
+                        placeholder="Enter notes for C-Level Percentage"
+                        rows={3}
+                      />
+                      <Label>C-Level Document</Label>
+                      <div className="flex space-x-2 items-center">
+                        <div
+                          className="border-2 border-dashed rounded-lg p-2 text-center cursor-pointer hover:bg-muted/50 flex-1"
+                          onClick={() => document.getElementById("variablePercentageCLevelInput")?.click()}
+                        >
+                          <Upload className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
+                          <p className="text-xs text-muted-foreground">Upload (PDF, JPEG, PNG)</p>
+                        </div>
+                        <input
+                          id="variablePercentageCLevelInput"
+                          type="file"
+                          accept=".pdf,.jpg,.jpeg,.png"
+                          className="hidden"
+                          onChange={handleFileChange("variablePercentageCLevel")}
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handlePreview(uploadedFiles.variablePercentageCLevel)}
+                          disabled={!uploadedFiles.variablePercentageCLevel}
+                        >
+                          Preview
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDownload(uploadedFiles.variablePercentageCLevel)}
+                          disabled={!uploadedFiles.variablePercentageCLevel}
+                        >
+                          Download
+                        </Button>
+                      </div>
+                      {uploadedFiles.variablePercentageCLevel && (
+                        <p className="text-sm mt-2">Selected file: {uploadedFiles.variablePercentageCLevel.name}</p>
+                      )}
+                    </div>
+                  )}
+
+                  {variablePercentageSection === "Below C-Level" && (
+                    <div className="space-y-2">
+                      <Label htmlFor="belowCLevelPercentage">Below C-Level %</Label>
+                      <Input
+                        id="belowCLevelPercentage"
+                        type="number"
+                        value={formData.belowCLevelPercentage || ""}
+                        onChange={handleInputChange("belowCLevelPercentage")}
+                        placeholder="Enter Below C-Level percentage"
+                      />
+                      <Label htmlFor="belowCLevelPercentageNotes">Below C-Level Notes</Label>
+                      <Textarea
+                        id="belowCLevelPercentageNotes"
+                        value={formData.belowCLevelPercentageNotes || ""}
+                        onChange={handleInputChange("belowCLevelPercentageNotes")}
+                        placeholder="Enter notes for Below C-Level Percentage"
+                        rows={3}
+                      />
+                      <Label>Below C-Level Document</Label>
+                      <div className="flex space-x-2 items-center">
+                        <div
+                          className="border-2 border-dashed rounded-lg p-2 text-center cursor-pointer hover:bg-muted/50 flex-1"
+                          onClick={() => document.getElementById("variablePercentageBelowCLevelInput")?.click()}
+                        >
+                          <Upload className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
+                          <p className="text-xs text-muted-foreground">Upload (PDF, JPEG, PNG)</p>
+                        </div>
+                        <input
+                          id="variablePercentageBelowCLevelInput"
+                          type="file"
+                          accept=".pdf,.jpg,.jpeg,.png"
+                          className="hidden"
+                          onChange={handleFileChange("variablePercentageBelowCLevel")}
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handlePreview(uploadedFiles.variablePercentageBelowCLevel)}
+                          disabled={!uploadedFiles.variablePercentageBelowCLevel}
+                        >
+                          Preview
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDownload(uploadedFiles.variablePercentageBelowCLevel)}
+                          disabled={!uploadedFiles.variablePercentageBelowCLevel}
+                        >
+                          Download
+                        </Button>
+                      </div>
+                      {uploadedFiles.variablePercentageBelowCLevel && (
+                        <p className="text-sm mt-2">Selected file: {uploadedFiles.variablePercentageBelowCLevel.name}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -867,7 +1175,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                   className="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:bg-muted/50"
                   onClick={() => document.getElementById("vatCopyInput")?.click()}
                 >
-                  <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+ maja                  <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
                   <p className="text-sm text-muted-foreground">Upload VAT Copy (PDF, JPEG, PNG)</p>
                 </div>
                 <input
