@@ -263,7 +263,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
         .filter((email) => email);
       value = emails;
     } else if (field === "website" && value && !value.match(/^https?:\/\//)) {
-      value = `https://${value}`;
+      value = `${value}`;
     } else if (field === "contractValue" || field === "cLevelPercentage" || field === "belowCLevelPercentage") {
       value = e.target.value ? parseFloat(e.target.value) : 0;
     } else if (
