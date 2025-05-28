@@ -42,6 +42,7 @@ interface PrimaryContact {
 }
 
 interface ClientForm {
+  fixWithoutAdvanceNotes: string;
   name: string;
   emails: string[];
   phoneNumber: string;
@@ -75,6 +76,7 @@ interface ClientForm {
   fixedPercentageAdvanceNotes?: string;
   cLevelPercentageNotes?: string;
   belowCLevelPercentageNotes?: string;
+  salesLead?: string;
 }
 
 interface CreateClientModalProps {
@@ -125,6 +127,8 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     fixedPercentageAdvanceNotes: "",
     cLevelPercentageNotes: "",
     belowCLevelPercentageNotes: "",
+    salesLead: "",
+    fixWithoutAdvanceNotes:"",
   });
 
   const [emailInput, setEmailInput] = useState<string>("");
@@ -145,7 +149,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     position: "",
     linkedin: "",
   });
-  const [variablePercentageSection, setVariablePercentageSection] = useState<"C-Level" | "Below C-Level" | null>(null);
+  const [variablePercentageSection, setVariablePercentageSection] = useState<string | null>(null);
 
   const [uploadedFiles, setUploadedFiles] = useState<{ [key: string]: File | null }>({
     profileImage: null,
@@ -384,45 +388,190 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
 
   const countryCodes = [
     { code: "+966", label: "+966 (Saudi Arabia)" },
-    { code: "+1", label: "+1 (USA)" },
-    { code: "+91", label: "+91 (India)" },
-    { code: "+44", label: "+44 (UK)" },
-    { code: "+86", label: "+86 (China)" },
-    { code: "+81", label: "+81 (Japan)" },
-    { code: "+52", label: "+52 (Mexico)" },
-    { code: "+33", label: "+33 (France)" },
-    { code: "+49", label: "+49 (Germany)" },
-    { code: "+39", label: "+39 (Italy)" },
-    { code: "+7", label: "+7 (Russia)" },
-    { code: "+34", label: "+34 (Spain)" },
-    { code: "+55", label: "+55 (Brazil)" },
+    { code: "+93", label: "+93 (Afghanistan)" },
+    { code: "+355", label: "+355 (Albania)" },
+    { code: "+213", label: "+213 (Algeria)" },
+    { code: "+376", label: "+376 (Andorra)" },
+    { code: "+244", label: "+244 (Angola)" },
+    { code: "+54", label: "+54 (Argentina)" },
+    { code: "+374", label: "+374 (Armenia)" },
     { code: "+61", label: "+61 (Australia)" },
-    { code: "+82", label: "+82 (South Korea)" },
-    { code: "+31", label: "+31 (Netherlands)" },
-    { code: "+46", label: "+46 (Sweden)" },
-    { code: "+65", label: "+65 (Singapore)" },
-    { code: "+64", label: "+64 (New Zealand)" },
-    { code: "+27", label: "+27 (South Africa)" },
-    { code: "+47", label: "+47 (Norway)" },
-    { code: "+41", label: "+41 (Switzerland)" },
-    { code: "+48", label: "+48 (Poland)" },
+    { code: "+43", label: "+43 (Austria)" },
+    { code: "+994", label: "+994 (Azerbaijan)" },
+    { code: "+973", label: "+973 (Bahrain)" },
+    { code: "+880", label: "+880 (Bangladesh)" },
+    { code: "+375", label: "+375 (Belarus)" },
     { code: "+32", label: "+32 (Belgium)" },
-    { code: "+45", label: "+45 (Denmark)" },
+    { code: "+501", label: "+501 (Belize)" },
+    { code: "+229", label: "+229 (Benin)" },
+    { code: "+975", label: "+975 (Bhutan)" },
+    { code: "+591", label: "+591 (Bolivia)" },
+    { code: "+387", label: "+387 (Bosnia)" },
+    { code: "+267", label: "+267 (Botswana)" },
+    { code: "+55", label: "+55 (Brazil)" },
+    { code: "+359", label: "+359 (Bulgaria)" },
+    { code: "+226", label: "+226 (Burkina Faso)" },
+    { code: "+257", label: "+257 (Burundi)" },
+    { code: "+855", label: "+855 (Cambodia)" },
+    { code: "+237", label: "+237 (Cameroon)" },
+    { code: "+1", label: "+1 (Canada)" },
+    { code: "+238", label: "+238 (Cape Verde)" },
+    { code: "+236", label: "+236 (Central African)" },
+    { code: "+235", label: "+235 (Chad)" },
     { code: "+56", label: "+56 (Chile)" },
-    { code: "+51", label: "+51 (Peru)" },
+    { code: "+86", label: "+86 (China)" },
+    { code: "+57", label: "+57 (Colombia)" },
+    { code: "+269", label: "+269 (Comoros)" },
+    { code: "+506", label: "+506 (Costa Rica)" },
+    { code: "+385", label: "+385 (Croatia)" },
+    { code: "+53", label: "+53 (Cuba)" },
+    { code: "+357", label: "+357 (Cyprus)" },
+    { code: "+420", label: "+420 (Czech Republic)" },
+    { code: "+243", label: "+243 (Congo)" },
+    { code: "+45", label: "+45 (Denmark)" },
+    { code: "+253", label: "+253 (Djibouti)" },
+    { code: "+670", label: "+670 (East Timor)" },
+    { code: "+593", label: "+593 (Ecuador)" },
     { code: "+20", label: "+20 (Egypt)" },
-    { code: "+60", label: "+60 (Malaysia)" },
-    { code: "+62", label: "+62 (Indonesia)" },
-    { code: "+66", label: "+66 (Thailand)" },
-    { code: "+90", label: "+90 (Turkey)" },
+    { code: "+503", label: "+503 (El Salvador)" },
+    { code: "+240", label: "+240 (Equatorial Guinea)" },
+    { code: "+291", label: "+291 (Eritrea)" },
+    { code: "+372", label: "+372 (Estonia)" },
+    { code: "+251", label: "+251 (Ethiopia)" },
+    { code: "+679", label: "+679 (Fiji)" },
+    { code: "+358", label: "+358 (Finland)" },
+    { code: "+33", label: "+33 (France)" },
+    { code: "+241", label: "+241 (Gabon)" },
+    { code: "+220", label: "+220 (Gambia)" },
+    { code: "+995", label: "+995 (Georgia)" },
+    { code: "+49", label: "+49 (Germany)" },
+    { code: "+233", label: "+233 (Ghana)" },
     { code: "+30", label: "+30 (Greece)" },
+    { code: "+502", label: "+502 (Guatemala)" },
+    { code: "+224", label: "+224 (Guinea)" },
+    { code: "+245", label: "+245 (Guinea-Bissau)" },
+    { code: "+592", label: "+592 (Guyana)" },
+    { code: "+509", label: "+509 (Haiti)" },
+    { code: "+504", label: "+504 (Honduras)" },
+    { code: "+852", label: "+852 (Hong Kong)" },
+    { code: "+36", label: "+36 (Hungary)" },
+    { code: "+354", label: "+354 (Iceland)" },
+    { code: "+91", label: "+91 (India)" },
+    { code: "+62", label: "+62 (Indonesia)" },
+    { code: "+98", label: "+98 (Iran)" },
+    { code: "+964", label: "+964 (Iraq)" },
     { code: "+353", label: "+353 (Ireland)" },
-    { code: "+971", label: "+971 (UAE)" },
-    { code: "+886", label: "+886 (Taiwan)" },
-    { code: "+94", label: "+94 (Sri Lanka)" },
+    { code: "+972", label: "+972 (Israel)" },
+    { code: "+39", label: "+39 (Italy)" },
+    { code: "+225", label: "+225 (Ivory Coast)" },
+    { code: "+876", label: "+876 (Jamaica)" },
+    { code: "+81", label: "+81 (Japan)" },
+    { code: "+962", label: "+962 (Jordan)" },
+    { code: "+7", label: "+7 (Kazakhstan)" },
+    { code: "+254", label: "+254 (Kenya)" },
+    { code: "+686", label: "+686 (Kiribati)" },
+    { code: "+965", label: "+965 (Kuwait)" },
+    { code: "+996", label: "+996 (Kyrgyzstan)" },
+    { code: "+856", label: "+856 (Laos)" },
+    { code: "+371", label: "+371 (Latvia)" },
+    { code: "+961", label: "+961 (Lebanon)" },
+    { code: "+266", label: "+266 (Lesotho)" },
+    { code: "+231", label: "+231 (Liberia)" },
+    { code: "+218", label: "+218 (Libya)" },
+    { code: "+423", label: "+423 (Liechtenstein)" },
+    { code: "+370", label: "+370 (Lithuania)" },
+    { code: "+352", label: "+352 (Luxembourg)" },
+    { code: "+853", label: "+853 (Macau)" },
+    { code: "+389", label: "+389 (Macedonia)" },
+    { code: "+261", label: "+261 (Madagascar)" },
+    { code: "+265", label: "+265 (Malawi)" },
+    { code: "+60", label: "+60 (Malaysia)" },
+    { code: "+960", label: "+960 (Maldives)" },
+    { code: "+223", label: "+223 (Mali)" },
+    { code: "+356", label: "+356 (Malta)" },
+    { code: "+692", label: "+692 (Marshall Islands)" },
+    { code: "+222", label: "+222 (Mauritania)" },
+    { code: "+230", label: "+230 (Mauritius)" },
+    { code: "+52", label: "+52 (Mexico)" },
+    { code: "+691", label: "+691 (Micronesia)" },
     { code: "+373", label: "+373 (Moldova)" },
+    { code: "+377", label: "+377 (Monaco)" },
+    { code: "+976", label: "+976 (Mongolia)" },
+    { code: "+382", label: "+382 (Montenegro)" },
+    { code: "+212", label: "+212 (Morocco)" },
+    { code: "+258", label: "+258 (Mozambique)" },
+    { code: "+95", label: "+95 (Myanmar)" },
+    { code: "+264", label: "+264 (Namibia)" },
+    { code: "+674", label: "+674 (Nauru)" },
+    { code: "+977", label: "+977 (Nepal)" },
+    { code: "+31", label: "+31 (Netherlands)" },
+    { code: "+64", label: "+64 (New Zealand)" },
+    { code: "+505", label: "+505 (Nicaragua)" },
+    { code: "+227", label: "+227 (Niger)" },
+    { code: "+234", label: "+234 (Nigeria)" },
+    { code: "+47", label: "+47 (Norway)" },
+    { code: "+968", label: "+968 (Oman)" },
+    { code: "+92", label: "+92 (Pakistan)" },
+    { code: "+680", label: "+680 (Palau)" },
+    { code: "+507", label: "+507 (Panama)" },
+    { code: "+675", label: "+675 (Papua Guinea)" },
+    { code: "+595", label: "+595 (Paraguay)" },
+    { code: "+51", label: "+51 (Peru)" },
+    { code: "+63", label: "+63 (Philippines)" },
+    { code: "+48", label: "+48 (Poland)" },
+    { code: "+351", label: "+351 (Portugal)" },
+    { code: "+974", label: "+974 (Qatar)" },
+    { code: "+242", label: "+242 (R T Congo)" },
+    { code: "+40", label: "+40 (Romania)" },
+    { code: "+7", label: "+7 (Russia)" },
+    { code: "+250", label: "+250 (Rwanda)" },
+    { code: "+685", label: "+685 (Samoa)" },
+    { code: "+378", label: "+378 (San Marino)" },
+    { code: "+239", label: "+239 (SOTM)" },
+    { code: "+221", label: "+221 (Senegal)" },
+    { code: "+381", label: "+381 (Serbia)" },
+    { code: "+248", label: "+248 (Seychelles)" },
+    { code: "+232", label: "+232 (Sierra Leone)" },
+    { code: "+65", label: "+65 (Singapore)" },
+    { code: "+421", label: "+421 (Slovakia)" },
+    { code: "+386", label: "+386 (Slovenia)" },
+    { code: "+677", label: "+677 (Solomon Islands)" },
+    { code: "+252", label: "+252 (Somalia)" },
+    { code: "+27", label: "+27 (South Africa)" },
+    { code: "+82", label: "+82 (South Korea)" },
+    { code: "+211", label: "+211 (South Sudan)" },
+    { code: "+34", label: "+34 (Spain)" },
+    { code: "+94", label: "+94 (Sri Lanka)" },
+    { code: "+249", label: "+249 (Sudan)" },
+    { code: "+597", label: "+597 (Suriname)" },
+    { code: "+268", label: "+268 (Swaziland)" },
+    { code: "+46", label: "+46 (Sweden)" },
+    { code: "+41", label: "+41 (Switzerland)" },
+    { code: "+963", label: "+963 (Syria)" },
+    { code: "+886", label: "+886 (Taiwan)" },
+    { code: "+992", label: "+992 (Tajikistan)" },
+    { code: "+255", label: "+255 (Tanzania)" },
+    { code: "+66", label: "+66 (Thailand)" },
+    { code: "+228", label: "+228 (Togo)" },
+    { code: "+676", label: "+676 (Tonga)" },
+    { code: "+216", label: "+216 (Tunisia)" },
+    { code: "+90", label: "+90 (Turkey)" },
+    { code: "+993", label: "+993 (Turkmenistan)" },
+    { code: "+688", label: "+688 (Tuvalu)" },
+    { code: "+256", label: "+256 (Uganda)" },
+    { code: "+380", label: "+380 (Ukraine)" },
+    { code: "+971", label: "+971 (UAE)" },
+    { code: "+44", label: "+44 (UK)" },
+    { code: "+1", label: "+1 (USA)" },
     { code: "+598", label: "+598 (Uruguay)" },
-  ];
+    { code: "+998", label: "+998 (Uzbekistan)" },
+    { code: "+678", label: "+678 (Vanuatu)" },
+    { code: "+58", label: "+58 (Venezuela)" },
+    { code: "+84", label: "+84 (Vietnam)" },
+    { code: "+967", label: "+967 (Yemen)" },
+    { code: "+260", label: "+260 (Zambia)" },
+    { code: "+263", label: "+263 (Zimbabwe)" }
+];
 
   const positionOptions = [
     { value: "HR", label: "HR" },
@@ -571,6 +720,8 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
         fixedPercentageAdvanceNotes: "",
         cLevelPercentageNotes: "",
         belowCLevelPercentageNotes: "",
+        salesLead: "",
+        fixWithoutAdvanceNotes:"",
       });
       setEmailInput("");
       setSelectedYear(null);
@@ -655,6 +806,24 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
           {currentTab === 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
               <div className="space-y-2">
+                <Label htmlFor="salesLead">Sales Lead *</Label>
+                <Select
+                  value={formData.salesLead || ""}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, salesLead: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select sales lead" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="emmanuel">Emmanuel</SelectItem>
+                    <SelectItem value="rocky">Rocky</SelectItem>
+                    <SelectItem value="hamed">Hamed</SelectItem>
+                    <SelectItem value="abhay">Abhay</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="name">Client Name *</Label>
                 <Input
                   id="name"
@@ -681,13 +850,12 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phoneNumber">Client Phone Number *</Label>
+                <Label htmlFor="phoneNumber">Client LandLine Number  </Label>
                 <div className="flex space-x-2">
                   <select
                     className="border rounded px-2 py-1"
                     value={formData.countryCode}
                     onChange={handleInputChange("countryCode")}
-                    required
                   >
                     {countryCodes.map((option) => (
                       <option key={option.code} value={option.code}>
@@ -763,14 +931,25 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="referredBy">Referred By *</Label>
+                <Label htmlFor="googleMapsLink">Google Maps Link</Label>
                 <Input
-                  id="referredBy"
-                  value={formData.referredBy}
-                  onChange={handleInputChange("referredBy")}
-                  required
+                  id="googleMapsLink"
+                  value={formData.googleMapsLink}
+                  onChange={handleInputChange("googleMapsLink")}
+                  placeholder="https://maps.google.com/..."
                 />
               </div>
+
+               <div className="space-y-2">
+                <Label htmlFor="countryOfBusiness">Country of Business</Label>
+                <Input
+                  id="countryOfBusiness"
+                  value={formData.countryOfBusiness}
+                  onChange={handleInputChange("countryOfBusiness")}
+                  placeholder="Enter country of business"
+                />
+              </div>
+
             </div>
           )}
 
@@ -831,26 +1010,6 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="googleMapsLink">Google Maps Link</Label>
-                <Input
-                  id="googleMapsLink"
-                  value={formData.googleMapsLink}
-                  onChange={handleInputChange("googleMapsLink")}
-                  placeholder="https://maps.google.com/..."
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="countryOfBusiness">Country of Business</Label>
-                <Input
-                  id="countryOfBusiness"
-                  value={formData.countryOfBusiness}
-                  onChange={handleInputChange("countryOfBusiness")}
-                  placeholder="Enter country of business"
-                />
-              </div>
-
-              <div className="space-y-2">
                 <Label htmlFor="lineOfBusiness">Line of Business *</Label>
                 <div className="space-y-2 border rounded-md p-2">
                   {["Recruitment", "HR Consulting", "Mgt Consulting", "Outsourcing", "HR Managed Services ", "IT & Technology"].map(
@@ -887,9 +1046,20 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
 
           {currentTab === 2 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 py-20 -mt-5">
+
+                <div className="space-y-2">
+                <Label htmlFor="referredBy">Referred By *</Label>
+                <Input
+                  id="referredBy"
+                  value={formData.referredBy}
+                  onChange={handleInputChange("referredBy")}
+                  required
+                />
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="contractStartDate">Contract Start Date</Label>
-                <div className="mt-1">
+                <div className="relative">
                   <DatePicker
                     id="contractStartDate"
                     selected={formData.contractStartDate}
@@ -899,19 +1069,26 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                         contractStartDate: date,
                       }));
                     }}
-                    dateFormat="MM/dd/yyyy"
-                    className="border rounded "
+                    dateFormat="MMM d, yyyy"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     placeholderText="Select start date"
                     showMonthDropdown
                     showYearDropdown
                     dropdownMode="select"
+                    scrollableYearDropdown
+                    yearDropdownItemNumber={15}
+                    minDate={new Date()}
+                    maxDate={formData.contractEndDate || new Date(new Date().setFullYear(new Date().getFullYear() + 10))}
+                    showIcon
+                    icon="📅"
+                    toggleCalendarOnIconClick
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="contractEndDate">Contract End Date</Label>
-                <div className="mt-1">
+                <div className="relative">
                   <DatePicker
                     id="contractEndDate"
                     selected={formData.contractEndDate}
@@ -921,12 +1098,19 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                         contractEndDate: date,
                       }));
                     }}
-                    dateFormat="MM/dd/yyyy"
-                    className="border rounded "
+                    dateFormat="MMM d, yyyy"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     placeholderText="Select end date"
                     showMonthDropdown
                     showYearDropdown
                     dropdownMode="select"
+                    scrollableYearDropdown
+                    yearDropdownItemNumber={15}
+                    minDate={formData.contractStartDate || new Date()}
+                    maxDate={new Date(new Date().setFullYear(new Date().getFullYear() + 20))}
+                    showIcon
+                    icon="📅"
+                    toggleCalendarOnIconClick
                   />
                 </div>
               </div>
@@ -938,7 +1122,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                   value={formData.contractType}
                   onValueChange={(value) => {
                     setFormData((prev) => ({ ...prev, contractType: value }));
-                    setVariablePercentageSection(null); // Reset section when contract type changes
+                    setVariablePercentageSection(null);
                   }}
                 >
                   <SelectTrigger>
@@ -946,8 +1130,9 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Fixed Percentage">Fixed Percentage</SelectItem>
-                    <SelectItem value="Fixed Percentage + Advance">Fixed Percentage + Advance</SelectItem>
-                    <SelectItem value="Variable Percentage">Variable Percentage</SelectItem>
+                    <SelectItem value="Fix with Advance">Fix with Advance</SelectItem>
+                    <SelectItem value="Fix without Advance">Fix without Advance</SelectItem>
+                    <SelectItem value="Level Based (Hiring)">Level Based (Hiring)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1001,17 +1186,17 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                 </div>
               )}
 
-              {formData.contractType === "Fixed Percentage + Advance" && (
+              {formData.contractType === "Fix with Advance" && (
                 <div className="space-y-2">
-                  <Label htmlFor="fixedPercentageAdvanceNotes">Fixed Percentage + Advance Notes</Label>
+                  <Label htmlFor="fixedPercentageAdvanceNotes">Fix with Advance Notes</Label>
                   <Textarea
                     id="fixedPercentageAdvanceNotes"
                     value={formData.fixedPercentageAdvanceNotes || ""}
                     onChange={handleInputChange("fixedPercentageAdvanceNotes")}
-                    placeholder="Enter notes for Fixed Percentage + Advance"
+                    placeholder="Enter notes for Fix with Advance"
                     rows={3}
                   />
-                  <Label>Fixed Percentage + Advance Document</Label>
+                  <Label>Fix with Advance Document</Label>
                   <div className="flex space-x-2 items-center">
                     <div
                       className="border-2 border-dashed rounded-lg p-2 text-center cursor-pointer hover:bg-muted/50 flex-1"
@@ -1046,6 +1231,139 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                   </div>
                   {uploadedFiles.fixedPercentageAdvance && (
                     <p className="text-sm mt-2">Selected file: {uploadedFiles.fixedPercentageAdvance.name}</p>
+                  )}
+                </div>
+              )}
+
+              {formData.contractType === "Fix without Advance" && (
+                <div className="space-y-2">
+                  <Label>Fix without Advance Document</Label>
+                  <div className="flex space-x-2 items-center">
+                    <div
+                      className="border-2 border-dashed rounded-lg p-2 text-center cursor-pointer hover:bg-muted/50 flex-1"
+                      onClick={() => document.getElementById("fixWithoutAdvanceInput")?.click()}
+                    >
+                      <Upload className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
+                      <p className="text-xs text-muted-foreground">Upload (PDF, JPEG, PNG)</p>
+                    </div>
+                    <input
+                      id="fixWithoutAdvanceInput"
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      className="hidden"
+                      onChange={handleFileChange("fixWithoutAdvance")}
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePreview(uploadedFiles.fixWithoutAdvance)}
+                      disabled={!uploadedFiles.fixWithoutAdvance}
+                    >
+                      Preview
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDownload(uploadedFiles.fixWithoutAdvance)}
+                      disabled={!uploadedFiles.fixWithoutAdvance}
+                    >
+                      Download
+                    </Button>
+                  </div>
+                  {uploadedFiles.fixWithoutAdvance && (
+                    <p className="text-sm mt-2">Selected file: {uploadedFiles.fixWithoutAdvance.name}</p>
+                  )}
+                  <div className="space-y-2 mt-4">
+                    <Label htmlFor="fixWithoutAdvanceNotes">Notes</Label>
+                    <Textarea
+                      id="fixWithoutAdvanceNotes"
+                      value={formData.fixWithoutAdvanceNotes || ""}
+                      onChange={handleInputChange("fixWithoutAdvanceNotes")}
+                      placeholder="Enter notes for Fix without Advance"
+                      rows={3}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {formData.contractType === "Level Based (Hiring)" && (
+                <div className="space-y-4 col-span-2 border rounded-lg p-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Level Type</Label>
+                      <Select
+                        onValueChange={(value) => setVariablePercentageSection(value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select level type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Senior Level">Senior Level</SelectItem>
+                          <SelectItem value="Executives">Executives</SelectItem>
+                          <SelectItem value="Non-Executives">Non-Executives</SelectItem>
+                          <SelectItem value="Other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {variablePercentageSection && (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {[variablePercentageSection].map((level) => (
+                          <div key={level} className="space-y-2 border rounded-lg p-4">
+                            <h4 className="font-medium">{level}</h4>
+                            <div className="space-y-2">
+                              <Label>Document</Label>
+                              <div className="flex space-x-2 items-center">
+                                <div
+                                  className="border-2 border-dashed rounded-lg p-2 text-center cursor-pointer hover:bg-muted/50 flex-1"
+                                  onClick={() => document.getElementById(`${level.toLowerCase().replace(' ', '')}Input`)?.click()}
+                                >
+                                  <Upload className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
+                                  <p className="text-xs text-muted-foreground">Upload (PDF, JPEG, PNG)</p>
+                                </div>
+                                <input
+                                  id={`${level.toLowerCase().replace(' ', '')}Input`}
+                                  type="file"
+                                  accept=".pdf,.jpg,.jpeg,.png"
+                                  className="hidden"
+                                  onChange={handleFileChange(`${variablePercentageSection.toLowerCase().replace(' ', '')}${level.replace(' ', '')}`)}
+                                />
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handlePreview(uploadedFiles[`${variablePercentageSection.toLowerCase().replace(' ', '')}${level.replace(' ', '')}`])}
+                                  disabled={!uploadedFiles[`${variablePercentageSection.toLowerCase().replace(' ', '')}${level.replace(' ', '')}`]}
+                                >
+                                  Preview
+                                </Button>
+                              </div>
+                              {uploadedFiles[`${variablePercentageSection.toLowerCase().replace(' ', '')}${level.replace(' ', '')}`] && (
+                                <p className="text-xs text-muted-foreground truncate">
+                                  {uploadedFiles[`${variablePercentageSection.toLowerCase().replace(' ', '')}${level.replace(' ', '')}`]?.name}
+                                </p>
+                              )}
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Notes</Label>
+                              <Textarea
+                                placeholder={`Enter notes for ${level}`}
+                                rows={2}
+                                onChange={(e) => {
+                                  const notesField = `${variablePercentageSection.toLowerCase().replace(' ', '')}${level.replace(' ', '')}Notes`;
+                                  setFormData(prev => ({
+                                    ...prev,
+                                    [notesField]: e.target.value
+                                  }));
+                                }}
+                                value={formData[`${variablePercentageSection.toLowerCase().replace(' ', '')}${level.replace(' ', '')}Notes` as keyof ClientForm] as string || ''}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   )}
                 </div>
               )}
