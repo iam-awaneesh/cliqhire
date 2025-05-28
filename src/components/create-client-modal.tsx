@@ -629,7 +629,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
             className={`px-4 py-2 ${currentTab === 1 ? "border-b-2 border-blue-500 text-blue-500" : "text-gray-500"}`}
             onClick={() => setCurrentTab(1)}
           >
-            Client Details
+            Contect Details
           </button>
           <button
             className={`px-4 py-2 ${currentTab === 2 ? "border-b-2 border-blue-500 text-blue-500" : "text-gray-500"}`}
