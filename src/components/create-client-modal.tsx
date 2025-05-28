@@ -65,8 +65,8 @@ interface ClientForm {
   clientRm?: string;
   clientAge?: number;
   contractNumber?: string;
-  contractStartDate?: string;
-  contractEndDate?: string;
+  contractStartDate?: Date | null;
+  contractEndDate?: Date | null;
   contractValue?: number;
   contractType?: string;
   cLevelPercentage?: number;
@@ -115,8 +115,8 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     countryCode: "+966",
     primaryContacts: [],
     contractNumber: "",
-    contractStartDate: "",
-    contractEndDate: "",
+    contractStartDate: null,
+    contractEndDate: null,
     contractValue: 0,
     contractType: "",
     cLevelPercentage: 0,
@@ -389,6 +389,39 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     { code: "+44", label: "+44 (UK)" },
     { code: "+86", label: "+86 (China)" },
     { code: "+81", label: "+81 (Japan)" },
+    { code: "+52", label: "+52 (Mexico)" },
+    { code: "+33", label: "+33 (France)" },
+    { code: "+49", label: "+49 (Germany)" },
+    { code: "+39", label: "+39 (Italy)" },
+    { code: "+7", label: "+7 (Russia)" },
+    { code: "+34", label: "+34 (Spain)" },
+    { code: "+55", label: "+55 (Brazil)" },
+    { code: "+61", label: "+61 (Australia)" },
+    { code: "+82", label: "+82 (South Korea)" },
+    { code: "+31", label: "+31 (Netherlands)" },
+    { code: "+46", label: "+46 (Sweden)" },
+    { code: "+65", label: "+65 (Singapore)" },
+    { code: "+64", label: "+64 (New Zealand)" },
+    { code: "+27", label: "+27 (South Africa)" },
+    { code: "+47", label: "+47 (Norway)" },
+    { code: "+41", label: "+41 (Switzerland)" },
+    { code: "+48", label: "+48 (Poland)" },
+    { code: "+32", label: "+32 (Belgium)" },
+    { code: "+45", label: "+45 (Denmark)" },
+    { code: "+56", label: "+56 (Chile)" },
+    { code: "+51", label: "+51 (Peru)" },
+    { code: "+20", label: "+20 (Egypt)" },
+    { code: "+60", label: "+60 (Malaysia)" },
+    { code: "+62", label: "+62 (Indonesia)" },
+    { code: "+66", label: "+66 (Thailand)" },
+    { code: "+90", label: "+90 (Turkey)" },
+    { code: "+30", label: "+30 (Greece)" },
+    { code: "+353", label: "+353 (Ireland)" },
+    { code: "+971", label: "+971 (UAE)" },
+    { code: "+886", label: "+886 (Taiwan)" },
+    { code: "+94", label: "+94 (Sri Lanka)" },
+    { code: "+373", label: "+373 (Moldova)" },
+    { code: "+598", label: "+598 (Uruguay)" },
   ];
 
   const positionOptions = [
@@ -487,8 +520,8 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
         clientRm: formData.clientRm || "",
         clientAge: formData.clientAge || 0,
         contractNumber: formData.contractNumber || undefined,
-        contractStartDate: formData.contractStartDate || undefined,
-        contractEndDate: formData.contractEndDate || undefined,
+        contractStartDate: formData.contractStartDate ? formData.contractStartDate.toISOString().split('T')[0] : undefined,
+        contractEndDate: formData.contractEndDate ? formData.contractEndDate.toISOString().split('T')[0] : undefined,
         contractValue: formData.contractValue || undefined,
         contractType: formData.contractType || undefined,
         cLevelPercentage: formData.cLevelPercentage || undefined,
@@ -528,8 +561,8 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
         countryCode: "+966",
         primaryContacts: [],
         contractNumber: "",
-        contractStartDate: "",
-        contractEndDate: "",
+        contractStartDate: null,
+        contractEndDate: null,
         contractValue: 0,
         contractType: "",
         cLevelPercentage: 0,
@@ -853,22 +886,25 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
           )}
 
           {currentTab === 2 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 py-20 -mt-5">
               <div className="space-y-2">
                 <Label htmlFor="contractStartDate">Contract Start Date</Label>
                 <div className="mt-1">
                   <DatePicker
                     id="contractStartDate"
-                    selected={formData.contractStartDate ? new Date(formData.contractStartDate) : null}
+                    selected={formData.contractStartDate}
                     onChange={(date: Date | null) => {
                       setFormData((prev) => ({
                         ...prev,
-                        contractStartDate: date ? date.toISOString() : "",
+                        contractStartDate: date,
                       }));
                     }}
                     dateFormat="MM/dd/yyyy"
-                    className="border rounded px-2 py-1 w-full"
+                    className="border rounded "
                     placeholderText="Select start date"
+                    showMonthDropdown
+                    showYearDropdown
+                    dropdownMode="select"
                   />
                 </div>
               </div>
@@ -878,16 +914,19 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                 <div className="mt-1">
                   <DatePicker
                     id="contractEndDate"
-                    selected={formData.contractEndDate ? new Date(formData.contractEndDate) : null}
+                    selected={formData.contractEndDate}
                     onChange={(date: Date | null) => {
                       setFormData((prev) => ({
                         ...prev,
-                        contractEndDate: date ? date.toISOString() : "",
+                        contractEndDate: date,
                       }));
                     }}
                     dateFormat="MM/dd/yyyy"
-                    className="border rounded px-2 py-1 w-full"
+                    className="border rounded "
                     placeholderText="Select end date"
+                    showMonthDropdown
+                    showYearDropdown
+                    dropdownMode="select"
                   />
                 </div>
               </div>
@@ -1175,7 +1214,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                   className="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:bg-muted/50"
                   onClick={() => document.getElementById("vatCopyInput")?.click()}
                 >
- maja                  <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                  maja                  <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
                   <p className="text-sm text-muted-foreground">Upload VAT Copy (PDF, JPEG, PNG)</p>
                 </div>
                 <input
