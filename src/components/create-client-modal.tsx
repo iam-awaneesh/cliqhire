@@ -22,27 +22,16 @@ import {
 } from "@/components/ui/select";
 import { useState, useEffect } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Upload, Users, Plus, Briefcase, FileText, Eye, Download } from "lucide-react";
-import { createClient } from "@/services/clientService";
+import { Upload, Plus, Eye, Download } from "lucide-react";
+import { createClient, ClientResponse, PrimaryContact } from "@/services/clientService";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { Textarea } from "@/components/ui/textarea";
 import axios from "axios";
-import * as Flags from "country-flag-icons/react/3x2";
 import { INDUSTRIES } from "@/lib/constants";
 
-// Interfaces from clientService
-interface PrimaryContact {
-  name: string;
-  email: string;
-  phone: string;
-  countryCode?: string;
-  position?: string;
-  linkedin?: string;
-}
-
+// Interfaces from clientService (simplified for form)
 interface ClientForm {
-  fixWithoutAdvanceNotes: string;
   name: string;
   emails: string[];
   phoneNumber: string;
@@ -52,7 +41,6 @@ interface ClientForm {
   address?: string;
   googleMapsLink?: string;
   incorporationDate?: string;
-  countryOfRegistration?: string;
   registrationNumber?: string;
   lineOfBusiness?: string[];
   countryOfBusiness?: string;
@@ -61,10 +49,11 @@ interface ClientForm {
   linkedInPage?: string;
   countryCode?: string;
   primaryContacts: PrimaryContact[];
-  clientStage?: "Lead" | "Engaged" | "Negotiation" | "Signed" | "Prospect";
+  clientStage?: "Lead" | "Engaged" | "Negotiation" | "Signed";
   clientTeam?: "Enterprise" | "SMB" | "Mid-Market";
   clientRm?: string;
   clientAge?: number;
+
   contractNumber?: string;
   contractStartDate?: Date | null;
   contractEndDate?: Date | null;
@@ -76,8 +65,7 @@ interface ClientForm {
   fixedPercentageAdvanceNotes?: string;
   cLevelPercentageNotes?: string;
   belowCLevelPercentageNotes?: string;
-  salesLead?: string;
-  // Added fields for Level Based (Hiring)
+  fixWithoutAdvanceNotes?: string;
   seniorLevelPercentage?: number;
   executivesPercentage?: number;
   nonExecutivesPercentage?: number;
@@ -86,6 +74,7 @@ interface ClientForm {
   executivesNotes?: string;
   nonExecutivesNotes?: string;
   otherNotes?: string;
+  salesLead?: string;
 }
 
 interface CreateClientModalProps {
@@ -99,12 +88,6 @@ interface LocationSuggestion {
   lon: string;
 }
 
-interface CountrySuggestion {
-  name: {
-    common: string;
-  };
-}
-
 export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps) {
   const [formData, setFormData] = useState<ClientForm>({
     name: "",
@@ -116,7 +99,6 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     address: "",
     googleMapsLink: "",
     incorporationDate: "",
-    countryOfRegistration: "",
     registrationNumber: "",
     lineOfBusiness: [],
     countryOfBusiness: "",
@@ -125,6 +107,10 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     linkedInPage: "",
     countryCode: "+966",
     primaryContacts: [],
+    clientStage: "Lead",
+    clientTeam: "Enterprise",
+    clientRm: "",
+    clientAge: 0,
     contractNumber: "",
     contractStartDate: null,
     contractEndDate: null,
@@ -136,7 +122,6 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     fixedPercentageAdvanceNotes: "",
     cLevelPercentageNotes: "",
     belowCLevelPercentageNotes: "",
-    salesLead: "",
     fixWithoutAdvanceNotes: "",
     seniorLevelPercentage: 0,
     executivesPercentage: 0,
@@ -146,16 +131,14 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     executivesNotes: "",
     nonExecutivesNotes: "",
     otherNotes: "",
+    salesLead: "",
   });
 
   const [emailInput, setEmailInput] = useState<string>("");
-  const [selectedYear, setSelectedYear] = useState<Date | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [locationSuggestions, setLocationSuggestions] = useState<LocationSuggestion[]>([]);
   const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
-  const [countrySuggestions, setCountrySuggestions] = useState<CountrySuggestion[]>([]);
-  const [showCountrySuggestions, setShowCountrySuggestions] = useState(false);
   const [currentTab, setCurrentTab] = useState(0);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [newContact, setNewContact] = useState<PrimaryContact>({
@@ -268,33 +251,6 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     return () => clearTimeout(debounceTimer);
   }, [formData.location]);
 
-  // Country suggestions
-  useEffect(() => {
-    const fetchCountrySuggestions = async () => {
-      if (!formData.countryOfRegistration || formData.countryOfRegistration.length < 2) {
-        setCountrySuggestions([]);
-        return;
-      }
-      try {
-        const response = await axios.get(
-          `https://restcountries.com/v3.1/name/${encodeURIComponent(
-            formData.countryOfRegistration
-          )}`
-        );
-        setCountrySuggestions(response.data);
-        setShowCountrySuggestions(true);
-      } catch (error) {
-        if (axios.isAxiosError(error) && error.response?.status === 404) {
-          setCountrySuggestions([]);
-        } else {
-          console.error("Error fetching country suggestions:", error);
-        }
-      }
-    };
-    const debounceTimer = setTimeout(fetchCountrySuggestions, 300);
-    return () => clearTimeout(debounceTimer);
-  }, [formData.countryOfRegistration]);
-
   const handleLocationSelect = async (suggestion: LocationSuggestion) => {
     setFormData((prev) => ({
       ...prev,
@@ -304,7 +260,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     setShowLocationSuggestions(false);
     try {
       const response = await axios.get(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${suggestion.lat}&lon=${suggestion.lon}`
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${suggestion.lat}&2015lon=${suggestion.lon}`
       );
       const addressData = response.data.address;
       setFormData((prev) => ({
@@ -315,14 +271,6 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     } catch (error) {
       console.error("Error fetching address details:", error);
     }
-  };
-
-  const handleCountrySelect = (countryName: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      countryOfRegistration: countryName,
-    }));
-    setShowCountrySuggestions(false);
   };
 
   // Email validation
@@ -386,6 +334,8 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
       field === "otherNotes"
     ) {
       value = e.target.value;
+    } else {
+      value = e.target.value;
     }
 
     setFormData((prev) => ({
@@ -396,12 +346,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     if (field === "location") {
       setShowLocationSuggestions(true);
     }
-    if (field === "countryOfRegistration") {
-      setShowCountrySuggestions(true);
-    }
-    if (field !== "emails") {
-      setError(null);
-    }
+    setError(null);
   };
 
   const handleEmailBlur = () => {
@@ -421,41 +366,89 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     }
   };
 
-  const handleAddContact = (contact: PrimaryContact) => {
-    if (!contact.name) {
-      setError("Contact name is required");
-      return;
-    }
-    if (contact.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email)) {
-      setError(`Invalid contact email: ${contact.email}`);
-      return;
-    }
-    if (!contact.phone) {
-      setError("Contact phone number is required");
-      return;
-    }
-    if (contact.linkedin && !validateUrl(contact.linkedin)) {
-      setError("Invalid LinkedIn URL");
-      return;
-    }
+  // const handleAddContact = (contact: PrimaryContact) => {
+  //   if (!contact.name) {
+  //     setError("Contact name is required");
+  //     return;
+  //   }
+  //   if (contact.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email)) {
+  //     setError(`Invalid contact email: ${contact.email}`);
+  //     return;
+  //   }
+  //   if (!contact.phone) {
+  //     setError("Contact phone number is required");
+  //     return;
+  //   }
+  //   if (contact.linkedin && !validateUrl(contact.linkedin)) {
+  //     setError("Invalid LinkedIn URL");
+  //     return;
+  //   }
 
-    setFormData((prev) => ({
-      ...prev,
-      primaryContacts: [...prev.primaryContacts, { ...contact }],
-    }));
-    setNewContact({ name: "", email: "", phone: "", countryCode: "+966", position: "", linkedin: "" });
-    setIsContactModalOpen(false);
-    setError(null);
-  };
+  //   setFormData((prev) => ({
+  //     ...prev,
+  //     primaryContacts: [...prev.primaryContacts, { ...contact }],
+  //   }));
+  //   setNewContact({ name: "", email: "", phone: "", countryCode: "+966", position: "", linkedin: "" });
+  //   setIsContactModalOpen(false);
+  //   setError(null);
+  // };
+const handleAddContact = (contact: {
+  name: string;
+  email: string;
+  phone: string;
+  countryCode: string;
+  position: string;
+  linkedin: string;
+}) => {
+  if (!contact.name) {
+    setError("Contact name is required");
+    return;
+  }
+  if (contact.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email)) {
+    setError(`Invalid contact email: ${contact.email}`);
+    return;
+  }
+  if (!contact.phone) {
+    setError("Contact phone number is required");
+    return;
+  }
+  if (contact.linkedin && !validateUrl(contact.linkedin)) {
+    setError("Invalid LinkedIn URL");
+    return;
+  }
+
+  setFormData((prev) => ({
+    ...prev,
+    primaryContacts: [
+      ...prev.primaryContacts,
+      {
+        name: contact.name,
+        email: contact.email,
+        phone: contact.phone,
+        countryCode: contact.countryCode,
+        designation: contact.position,
+        isPrimary: true,
+      },
+    ],
+  }));
+  setNewContact({ name: "", email: "", phone: "", countryCode: "+966", position: "", linkedin: "" });
+  setIsContactModalOpen(false);
+  setError(null);
+};
+
+
 
   const countryCodes = [
     { code: "+966", label: "+966 (Saudi Arabia)" },
-    // ... (rest of the country codes remain unchanged)
+    { code: "+1", label: "+1 (USA)" },
+    { code: "+44", label: "+44 (UK)" },
+    // Add more country codes as needed
   ];
 
   const positionOptions = [
     { value: "HR", label: "HR" },
     { value: "Senior HR", label: "Senior HR" },
+    
     { value: "Manager", label: "Manager" },
     { value: "Director", label: "Director" },
     { value: "Executive", label: "Executive" },
@@ -503,11 +496,6 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
         setLoading(false);
         return;
       }
-      if (!formData.countryOfRegistration) {
-        setError("Country of Registration is required");
-        setLoading(false);
-        return;
-      }
 
       // Validate emails
       const emails = formData.emails.filter((email) => email);
@@ -550,57 +538,74 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
         return;
       }
 
-      // Prepare payload for createClient
-      const clientPayload = {
+      // Prepare data for createClient
+      const clientData: Omit<ClientResponse, "_id" | "createdAt" | "updatedAt"> & {
+        profileImage?: File | null;
+        crCopy?: File | null;
+        vatCopy?: File | null;
+        gstTinDocument?: File | null;
+        fixedPercentage?: File | null;
+        fixedPercentageAdvance?: File | null;
+        variablePercentageCLevel?: File | null;
+        variablePercentageBelowCLevel?: File | null;
+        fixWithoutAdvance?: File | null;
+        seniorLevel?: File | null;
+        executives?: File | null;
+        nonExecutives?: File | null;
+        other?: File | null;
+      } = {
         ...formData,
-        incorporationDate: formData.incorporationDate || undefined,
-        emails: formData.emails.length > 0 ? formData.emails : undefined,
-        lineOfBusiness: formData.lineOfBusiness.length > 0 ? formData.lineOfBusiness : undefined,
-        primaryContacts: formData.primaryContacts,
-        profileImage: uploadedFiles.profileImage || undefined,
-        crCopy: uploadedFiles.crCopy || undefined,
-        vatCopy: uploadedFiles.vatCopy || undefined,
-        gstTinDocument: uploadedFiles.gstTinDocument || undefined,
-        clientStage: formData.clientStage || "Lead",
-        clientTeam: formData.clientTeam || "Enterprise",
-        clientRm: formData.clientRm || "",
-        clientAge: formData.clientAge || 0,
-        contractNumber: formData.contractNumber || undefined,
+        // Convert seniorlevelPercentage to seniorLevelPercentage if it exists in the form data
+        seniorLevelPercentage: formData.seniorlevelPercentage ? 
+          (typeof formData.seniorlevelPercentage === 'string' ? 
+            parseInt(formData.seniorlevelPercentage) : formData.seniorlevelPercentage) : 
+          formData.seniorLevelPercentage,
+        
+        // Convert seniorlevelNotes to seniorLevelNotes if it exists in the form data
+        seniorLevelNotes: formData.seniorlevelNotes || formData.seniorLevelNotes,
+        
+        incorporationDate: formData.incorporationDate || null,
+        
         contractStartDate: formData.contractStartDate
+          
           ? formData.contractStartDate.toISOString().split("T")[0]
-          : undefined,
+          
+          : null,
+        
         contractEndDate: formData.contractEndDate
+          
           ? formData.contractEndDate.toISOString().split("T")[0]
-          : undefined,
-        contractValue: formData.contractValue || undefined,
-        contractType: formData.contractType || undefined,
-        cLevelPercentage: formData.cLevelPercentage || undefined,
-        belowCLevelPercentage: formData.belowCLevelPercentage || undefined,
-        fixedPercentage: uploadedFiles.fixedPercentage || undefined,
-        fixedPercentageAdvance: uploadedFiles.fixedPercentageAdvance || undefined,
-        variablePercentageCLevel: uploadedFiles.variablePercentageCLevel || undefined,
-        variablePercentageBelowCLevel: uploadedFiles.variablePercentageBelowCLevel || undefined,
-        fixedPercentageNotes: formData.fixedPercentageNotes || undefined,
-        fixedPercentageAdvanceNotes: formData.fixedPercentageAdvanceNotes || undefined,
-        cLevelPercentageNotes: formData.cLevelPercentageNotes || undefined,
-        belowCLevelPercentageNotes: formData.belowCLevelPercentageNotes || undefined,
-        fixWithoutAdvanceNotes: formData.fixWithoutAdvanceNotes || undefined,
-        seniorLevelPercentage: formData.seniorLevelPercentage || undefined,
-        executivesPercentage: formData.executivesPercentage || undefined,
-        nonExecutivesPercentage: formData.nonExecutivesPercentage || undefined,
-        otherPercentage: formData.otherPercentage || undefined,
-        seniorLevelNotes: formData.seniorLevelNotes || undefined,
-        executivesNotes: formData.executivesNotes || undefined,
-        nonExecutivesNotes: formData.nonExecutivesNotes || undefined,
-        otherNotes: formData.otherNotes || undefined,
-        seniorLevel: uploadedFiles.seniorLevel || undefined,
-        executives: uploadedFiles.executives || undefined,
-        nonExecutives: uploadedFiles.nonExecutives || undefined,
-        other: uploadedFiles.other || undefined,
+          
+          : null,
+        
+        profileImage: uploadedFiles.profileImage,
+        
+        crCopy: uploadedFiles.crCopy,
+        
+        vatCopy: uploadedFiles.vatCopy,
+        
+        gstTinDocument: uploadedFiles.gstTinDocument,
+        
+        fixedPercentage: uploadedFiles.fixedPercentage,
+        
+        fixedPercentageAdvance: uploadedFiles.fixedPercentageAdvance,
+        
+        variablePercentageCLevel: uploadedFiles.variablePercentageCLevel,
+        
+        variablePercentageBelowCLevel: uploadedFiles.variablePercentageBelowCLevel,
+        
+        fixWithoutAdvance: uploadedFiles.fixWithoutAdvance,
+        
+        seniorLevel: uploadedFiles.seniorLevel,
+        
+        executives: uploadedFiles.executives,
+        
+        nonExecutives: uploadedFiles.nonExecutives,
+        
+        other: uploadedFiles.other,
       };
 
-      console.log("Submitting payload:", clientPayload);
-      const result = await createClient(clientPayload);
+      const result = await createClient(clientData);
       console.log("Client created successfully:", result);
 
       // Reset form
@@ -614,7 +619,6 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
         address: "",
         googleMapsLink: "",
         incorporationDate: "",
-        countryOfRegistration: "",
         registrationNumber: "",
         lineOfBusiness: [],
         countryOfBusiness: "",
@@ -623,6 +627,10 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
         linkedInPage: "",
         countryCode: "+966",
         primaryContacts: [],
+        clientStage: "Lead",
+        clientTeam: "Enterprise",
+        clientRm: "",
+        clientAge: 0,
         contractNumber: "",
         contractStartDate: null,
         contractEndDate: null,
@@ -634,7 +642,6 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
         fixedPercentageAdvanceNotes: "",
         cLevelPercentageNotes: "",
         belowCLevelPercentageNotes: "",
-        salesLead: "",
         fixWithoutAdvanceNotes: "",
         seniorLevelPercentage: 0,
         executivesPercentage: 0,
@@ -644,9 +651,9 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
         executivesNotes: "",
         nonExecutivesNotes: "",
         otherNotes: "",
+        salesLead: "",
       });
       setEmailInput("");
-      setSelectedYear(null);
       setUploadedFiles({
         profileImage: null,
         crCopy: null,
@@ -772,7 +779,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
 
               <div className="space-y-2">
                 <Label htmlFor="phoneNumber" className="text-sm sm:text-base">
-                  Client LandLine Number
+                  Client LandLine Number *
                 </Label>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <select
@@ -876,6 +883,19 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                   placeholder="https://maps.google.com/..."
                   className="w-full"
                 />
+                {showLocationSuggestions && locationSuggestions.length > 0 && (
+                  <div className="border rounded-md max-h-40 overflow-y-auto">
+                    {locationSuggestions.map((suggestion) => (
+                      <div
+                        key={suggestion.display_name}
+                        className="p-2 hover:bg-muted cursor-pointer"
+                        onClick={() => handleLocationSelect(suggestion)}
+                      >
+                        {suggestion.display_name}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -959,7 +979,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                     "HR Consulting",
                     "Mgt Consulting",
                     "Outsourcing",
-                    "HR Managed Services ",
+                    "HR Managed Services",
                     "IT & Technology",
                   ].map((option) => (
                     <div key={option} className="flex items-center space-x-2">
@@ -1140,7 +1160,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                       size="sm"
                       onClick={() => handleDownload(uploadedFiles.fixedPercentage)}
                       disabled={!uploadedFiles.fixedPercentage}
-                    >
+                                       >
                       Download
                     </Button>
                   </div>
@@ -1432,6 +1452,24 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                 {uploadedFiles.crCopy && (
                   <p className="text-xs sm:text-sm mt-2">Selected file: {uploadedFiles.crCopy.name}</p>
                 )}
+                <div className="flex space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePreview(uploadedFiles.crCopy)}
+                    disabled={!uploadedFiles.crCopy}
+                  >
+                    Preview
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDownload(uploadedFiles.crCopy)}
+                    disabled={!uploadedFiles.crCopy}
+                  >
+                    Download
+                  </Button>
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -1453,6 +1491,24 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                 {uploadedFiles.vatCopy && (
                   <p className="text-xs sm:text-sm mt-2">Selected file: {uploadedFiles.vatCopy.name}</p>
                 )}
+                <div className="flex space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePreview(uploadedFiles.vatCopy)}
+                    disabled={!uploadedFiles.vatCopy}
+                  >
+                    Preview
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDownload(uploadedFiles.vatCopy)}
+                    disabled={!uploadedFiles.vatCopy}
+                  >
+                    Download
+                  </Button>
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -1478,6 +1534,24 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                     Selected file: {uploadedFiles.gstTinDocument.name}
                   </p>
                 )}
+                <div className="flex space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePreview(uploadedFiles.gstTinDocument)}
+                    disabled={!uploadedFiles.gstTinDocument}
+                  >
+                    Preview
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDownload(uploadedFiles.gstTinDocument)}
+                    disabled={!uploadedFiles.gstTinDocument}
+                  >
+                    Download
+                  </Button>
+                </div>
               </div>
             </div>
           )}
