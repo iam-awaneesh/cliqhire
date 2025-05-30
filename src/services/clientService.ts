@@ -8,7 +8,7 @@ export interface PrimaryContact {
   countryCode?: string;
   position?: string;
   linkedin?: string;
-  error?:string;
+  error?: string;
 }
 
 // Interface for Client Response
@@ -71,7 +71,7 @@ export interface ClientResponse {
   salesLead?: string;
   createdAt: string;
   updatedAt?: string;
-  error?:string;
+  error?: string;
 }
 
 interface ApiResponse<T> {
@@ -376,7 +376,7 @@ const handleError = (error: AxiosError) => {
 };
 
 // Create a new client
-const createClient = async (rawData: Omit<ClientResponse, "_id" | "createdAt" | "updatedAt"> & {
+const createClient = async (rawData: FormData | Omit<ClientResponse, "_id" | "createdAt" | "updatedAt"> & {
   profileImage?: File | null;
   crCopy?: File | null;
   vatCopy?: File | null;
@@ -392,15 +392,22 @@ const createClient = async (rawData: Omit<ClientResponse, "_id" | "createdAt" | 
   other?: File | null;
 }): Promise<ClientResponse> => {
   try {
-    console.log('Creating client with data:', { name: rawData.name, stage: rawData.clientStage });
-    
-    const response = await sendClientRequest(`${API_URL}/clients`, 'post', rawData);
-    
-    if (!response.data?.data) {
-      throw new Error('Invalid response format from server');
+    if (rawData instanceof FormData) {
+      console.log('Creating client with FormData');
+      const response = await axios.post<ApiResponse<ClientResponse>>(
+        `${API_URL}/clients`,
+        rawData,
+        {
+          headers: { 'Content-Type': 'multipart/form-data' },
+          timeout: 30000
+        }
+      );
+      return response.data.data;
+    } else {
+      console.log('Creating client with data:', { name: rawData.name, stage: rawData.clientStage });
+      const response = await sendClientRequest(`${API_URL}/clients`, 'post', rawData);
+      return response.data.data;
     }
-    
-    return response.data.data;
   } catch (error: any) {
     console.error('Create client error:', error);
     throw handleError(error);

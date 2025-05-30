@@ -23,14 +23,23 @@ import {
 import { useState, useEffect } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Upload, Plus, Eye, Download } from "lucide-react";
-import { createClient, ClientResponse, PrimaryContact } from "@/services/clientService";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { Textarea } from "@/components/ui/textarea";
 import axios from "axios";
 import { INDUSTRIES } from "@/lib/constants";
 
-// Interfaces from clientService (simplified for form)
+// Interfaces
+interface PrimaryContact {
+  name: string;
+  email: string;
+  phone: string;
+  countryCode: string;
+  designation: string;
+  linkedin?: string;
+  isPrimary: boolean;
+}
+
 interface ClientForm {
   name: string;
   emails: string[];
@@ -53,7 +62,6 @@ interface ClientForm {
   clientTeam?: "Enterprise" | "SMB" | "Mid-Market";
   clientRm?: string;
   clientAge?: number;
-
   contractNumber?: string;
   contractStartDate?: Date | null;
   contractEndDate?: Date | null;
@@ -87,6 +95,25 @@ interface LocationSuggestion {
   lat: string;
   lon: string;
 }
+
+// API call to create client
+const createClient = async (data: any) => {
+  try {
+    const response = await axios.post(
+      "https://aems-backend.onrender.com/api/clients",
+      data,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return { success: true, data: response.data };
+  } catch (error: any) {
+    console.error("API Error:", error);
+    throw new Error(error.response?.data?.message || "Failed to create client");
+  }
+};
 
 export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps) {
   const [formData, setFormData] = useState<ClientForm>({
@@ -146,8 +173,9 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     email: "",
     phone: "",
     countryCode: "+966",
-    position: "",
+    designation: "",
     linkedin: "",
+    isPrimary: true,
   });
   const [selectedLevels, setSelectedLevels] = useState<string[]>([]);
   const [activeLevel, setActiveLevel] = useState<string | null>(null);
@@ -228,6 +256,16 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     URL.revokeObjectURL(fileUrl);
   };
 
+  // Convert file to base64
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
   // Location suggestions
   useEffect(() => {
     const fetchLocationSuggestions = async () => {
@@ -260,7 +298,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     setShowLocationSuggestions(false);
     try {
       const response = await axios.get(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${suggestion.lat}&2015lon=${suggestion.lon}`
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${suggestion.lat}&lon=${suggestion.lon}`
       );
       const addressData = response.data.address;
       setFormData((prev) => ({
@@ -294,7 +332,9 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
   ) => {
     let value: string | string[] | number = e.target.value;
 
-    if (field === "emails") {
+    if (field === "name") {
+      value = e.target.value.trimStart();
+    } else if (field === "emails") {
       setEmailInput(e.target.value);
       const emails = e.target.value
         .split(",")
@@ -322,18 +362,6 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
       field === "otherPercentage"
     ) {
       value = e.target.value ? parseFloat(e.target.value) : 0;
-    } else if (
-      field === "fixedPercentageNotes" ||
-      field === "fixedPercentageAdvanceNotes" ||
-      field === "cLevelPercentageNotes" ||
-      field === "belowCLevelPercentageNotes" ||
-      field === "fixWithoutAdvanceNotes" ||
-      field === "seniorLevelNotes" ||
-      field === "executivesNotes" ||
-      field === "nonExecutivesNotes" ||
-      field === "otherNotes"
-    ) {
-      value = e.target.value;
     } else {
       value = e.target.value;
     }
@@ -366,90 +394,45 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     }
   };
 
-  // const handleAddContact = (contact: PrimaryContact) => {
-  //   if (!contact.name) {
-  //     setError("Contact name is required");
-  //     return;
-  //   }
-  //   if (contact.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email)) {
-  //     setError(`Invalid contact email: ${contact.email}`);
-  //     return;
-  //   }
-  //   if (!contact.phone) {
-  //     setError("Contact phone number is required");
-  //     return;
-  //   }
-  //   if (contact.linkedin && !validateUrl(contact.linkedin)) {
-  //     setError("Invalid LinkedIn URL");
-  //     return;
-  //   }
+  const handleAddContact = (contact: PrimaryContact) => {
+    if (!contact.name || contact.name.trim() === "") {
+      setError("Contact name is required");
+      return;
+    }
+    if (contact.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email)) {
+      setError(`Invalid contact email: ${contact.email}`);
+      return;
+    }
+    if (!contact.phone) {
+      setError("Contact phone number is required");
+      return;
+    }
+    if (contact.linkedin && !validateUrl(contact.linkedin)) {
+      setError("Invalid LinkedIn URL");
+      return;
+    }
 
-  //   setFormData((prev) => ({
-  //     ...prev,
-  //     primaryContacts: [...prev.primaryContacts, { ...contact }],
-  //   }));
-  //   setNewContact({ name: "", email: "", phone: "", countryCode: "+966", position: "", linkedin: "" });
-  //   setIsContactModalOpen(false);
-  //   setError(null);
-  // };
-const handleAddContact = (contact: {
-  name: string;
-  email: string;
-  phone: string;
-  countryCode: string;
-  position: string;
-  linkedin: string;
-}) => {
-  if (!contact.name) {
-    setError("Contact name is required");
-    return;
-  }
-  if (contact.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email)) {
-    setError(`Invalid contact email: ${contact.email}`);
-    return;
-  }
-  if (!contact.phone) {
-    setError("Contact phone number is required");
-    return;
-  }
-  if (contact.linkedin && !validateUrl(contact.linkedin)) {
-    setError("Invalid LinkedIn URL");
-    return;
-  }
-
-  setFormData((prev) => ({
-    ...prev,
-    primaryContacts: [
-      ...prev.primaryContacts,
-      {
-        name: contact.name,
-        email: contact.email,
-        phone: contact.phone,
-        countryCode: contact.countryCode,
-        designation: contact.position,
-        isPrimary: true,
-      },
-    ],
-  }));
-  setNewContact({ name: "", email: "", phone: "", countryCode: "+966", position: "", linkedin: "" });
-  setIsContactModalOpen(false);
-  setError(null);
-};
-
-
+    setFormData((prev) => ({
+      ...prev,
+      primaryContacts: [...prev.primaryContacts, { ...contact }],
+    }));
+    setNewContact({ name: "", email: "", phone: "", countryCode: "+966", designation: "", linkedin: "", isPrimary: true });
+    setIsContactModalOpen(false);
+    setError(null);
+  };
 
   const countryCodes = [
     { code: "+966", label: "+966 (Saudi Arabia)" },
     { code: "+1", label: "+1 (USA)" },
     { code: "+44", label: "+44 (UK)" },
-    // Add more country codes as needed
+    { code: "+91", label: "+91 (India)" },
   ];
 
   const positionOptions = [
     { value: "HR", label: "HR" },
     { value: "Senior HR", label: "Senior HR" },
-    
     { value: "Manager", label: "Manager" },
+    { value: "HR Manager", label: "HR Manager" },
     { value: "Director", label: "Director" },
     { value: "Executive", label: "Executive" },
   ];
@@ -466,7 +449,7 @@ const handleAddContact = (contact: {
 
     try {
       // Validate required fields
-      if (!formData.name) {
+      if (!formData.name || formData.name.trim() === "") {
         setError("Client Name is required");
         setLoading(false);
         return;
@@ -538,72 +521,69 @@ const handleAddContact = (contact: {
         return;
       }
 
-      // Prepare data for createClient
-      const clientData: Omit<ClientResponse, "_id" | "createdAt" | "updatedAt"> & {
-        profileImage?: File | null;
-        crCopy?: File | null;
-        vatCopy?: File | null;
-        gstTinDocument?: File | null;
-        fixedPercentage?: File | null;
-        fixedPercentageAdvance?: File | null;
-        variablePercentageCLevel?: File | null;
-        variablePercentageBelowCLevel?: File | null;
-        fixWithoutAdvance?: File | null;
-        seniorLevel?: File | null;
-        executives?: File | null;
-        nonExecutives?: File | null;
-        other?: File | null;
-      } = {
-        ...formData,
-        // Convert seniorlevelPercentage to seniorLevelPercentage if it exists in the form data
-        seniorLevelPercentage: formData.seniorlevelPercentage ? 
-          (typeof formData.seniorlevelPercentage === 'string' ? 
-            parseInt(formData.seniorlevelPercentage) : formData.seniorlevelPercentage) : 
-          formData.seniorLevelPercentage,
-        
-        // Convert seniorlevelNotes to seniorLevelNotes if it exists in the form data
-        seniorLevelNotes: formData.seniorlevelNotes || formData.seniorLevelNotes,
-        
-        incorporationDate: formData.incorporationDate || null,
-        
+      // Prepare JSON data
+      const clientData: any = {
+        name: formData.name.trim(),
+        emails: formData.emails,
+        phoneNumber: formData.phoneNumber,
+        website: formData.website || undefined,
+        industry: formData.industry,
+        address: formData.address,
+        googleMapsLink: formData.googleMapsLink || undefined,
+        lineOfBusiness: formData.lineOfBusiness,
+        countryOfBusiness: formData.countryOfBusiness || undefined,
+        referredBy: formData.referredBy,
+        linkedInProfile: formData.linkedInProfile || undefined,
+        countryCode: formData.countryCode || "+966",
+        primaryContacts: formData.primaryContacts.map(contact => ({
+          name: contact.name,
+          email: contact.email,
+          phone: contact.phone,
+          countryCode: contact.countryCode,
+          designation: contact.designation,
+          linkedin: contact.linkedin || undefined,
+          isPrimary: contact.isPrimary,
+        })),
+        clientStage: formData.clientStage || "Lead",
+        clientTeam: formData.clientTeam || "Enterprise",
+        salesLead: formData.salesLead || undefined,
         contractStartDate: formData.contractStartDate
-          
           ? formData.contractStartDate.toISOString().split("T")[0]
-          
-          : null,
-        
+          : undefined,
         contractEndDate: formData.contractEndDate
-          
           ? formData.contractEndDate.toISOString().split("T")[0]
-          
-          : null,
-        
-        profileImage: uploadedFiles.profileImage,
-        
-        crCopy: uploadedFiles.crCopy,
-        
-        vatCopy: uploadedFiles.vatCopy,
-        
-        gstTinDocument: uploadedFiles.gstTinDocument,
-        
-        fixedPercentage: uploadedFiles.fixedPercentage,
-        
-        fixedPercentageAdvance: uploadedFiles.fixedPercentageAdvance,
-        
-        variablePercentageCLevel: uploadedFiles.variablePercentageCLevel,
-        
-        variablePercentageBelowCLevel: uploadedFiles.variablePercentageBelowCLevel,
-        
-        fixWithoutAdvance: uploadedFiles.fixWithoutAdvance,
-        
-        seniorLevel: uploadedFiles.seniorLevel,
-        
-        executives: uploadedFiles.executives,
-        
-        nonExecutives: uploadedFiles.nonExecutives,
-        
-        other: uploadedFiles.other,
+          : undefined,
+        contractType: formData.contractType || undefined,
+        seniorLevelPercentage: formData.seniorLevelPercentage || undefined,
       };
+
+      // Add files as base64 strings
+      const fileFields = [
+        "crCopy",
+        "vatCopy",
+        "gstTinDocument",
+        "fixedPercentage",
+        "fixedPercentageAdvance",
+        "fixWithoutAdvance",
+        "seniorLevel",
+        "executives",
+        "nonExecutives",
+        "other",
+      ];
+
+      for (const field of fileFields) {
+        if (uploadedFiles[field]) {
+          const base64 = await fileToBase64(uploadedFiles[field]!);
+          clientData[`${field}File`] = {
+            name: uploadedFiles[field]!.name,
+            type: uploadedFiles[field]!.type,
+            data: base64,
+          };
+        }
+      }
+
+      // Log clientData for debugging
+      console.log("clientData before sending:", JSON.stringify(clientData, null, 2));
 
       const result = await createClient(clientData);
       console.log("Client created successfully:", result);
@@ -669,7 +649,7 @@ const handleAddContact = (contact: {
         nonExecutives: null,
         other: null,
       });
-      setNewContact({ name: "", email: "", phone: "", countryCode: "+966", position: "", linkedin: "" });
+      setNewContact({ name: "", email: "", phone: "", countryCode: "+966", designation: "", linkedin: "", isPrimary: true });
       setCurrentTab(0);
       setIsContactModalOpen(false);
       setSelectedLevels([]);
@@ -755,6 +735,7 @@ const handleAddContact = (contact: {
                   onChange={handleInputChange("name")}
                   required
                   className="w-full"
+                  placeholder="Enter client name"
                 />
               </div>
 
@@ -928,8 +909,9 @@ const handleAddContact = (contact: {
                           email: "",
                           phone: "",
                           countryCode: "+966",
-                          position: "",
+                          designation: "",
                           linkedin: "",
+                          isPrimary: true,
                         });
                         setIsContactModalOpen(true);
                       }}
@@ -950,7 +932,7 @@ const handleAddContact = (contact: {
                           <div className="block space-y-1">
                             <div className="font-medium">{contact.name || "Unnamed Contact"}</div>
                             <div className="text-xs sm:text-sm text-muted-foreground">
-                              {contact.position || "No position"}
+                              {contact.designation || "No designation"}
                             </div>
                             <div className="text-xs sm:text-sm text-muted-foreground">
                               {contact.email || "No email"}
@@ -1160,7 +1142,7 @@ const handleAddContact = (contact: {
                       size="sm"
                       onClick={() => handleDownload(uploadedFiles.fixedPercentage)}
                       disabled={!uploadedFiles.fixedPercentage}
-                                       >
+                    >
                       Download
                     </Button>
                   </div>
@@ -1340,11 +1322,17 @@ const handleAddContact = (contact: {
                                     max="100"
                                     onClick={(e: React.MouseEvent<HTMLInputElement>) => e.stopPropagation()}
                                     onChange={handleInputChange(
-                                      `${level.toLowerCase().replace(/\s+/g, "")}Percentage` as keyof ClientForm
+                                      `${
+                                        level.replace(/\s+/g, "")[0].toLowerCase() +
+                                        level.replace(/\s+/g, "").slice(1)
+                                      }Percentage` as keyof ClientForm
                                     )}
                                     value={
                                       formData[
-                                        `${level.toLowerCase().replace(/\s+/g, "")}Percentage` as keyof ClientForm
+                                        `${
+                                          level.replace(/\s+/g, "")[0].toLowerCase() +
+                                          level.replace(/\s+/g, "").slice(1)
+                                        }Percentage` as keyof ClientForm
                                       ] || ""
                                     }
                                     className="h-8 pl-2 pr-6 text-xs"
@@ -1358,11 +1346,17 @@ const handleAddContact = (contact: {
                                   placeholder="Notes"
                                   onClick={(e: React.MouseEvent<HTMLInputElement>) => e.stopPropagation()}
                                   onChange={handleInputChange(
-                                    `${level.toLowerCase().replace(/\s+/g, "")}Notes` as keyof ClientForm
+                                    `${
+                                      level.replace(/\s+/g, "")[0].toLowerCase() +
+                                      level.replace(/\s+/g, "").slice(1)
+                                    }Notes` as keyof ClientForm
                                   )}
                                   value={
                                     formData[
-                                      `${level.toLowerCase().replace(/\s+/g, "")}Notes` as keyof ClientForm
+                                      `${
+                                        level.replace(/\s+/g, "")[0].toLowerCase() +
+                                        level.replace(/\s+/g, "").slice(1)
+                                      }Notes` as keyof ClientForm
                                     ] || ""
                                   }
                                   className="h-8 text-xs flex-1"
@@ -1671,15 +1665,15 @@ const handleAddContact = (contact: {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="contactPosition" className="text-sm sm:text-base">
-                    Position
+                  <Label htmlFor="contactDesignation" className="text-sm sm:text-base">
+                    Designation
                   </Label>
                   <Select
-                    value={newContact.position}
-                    onValueChange={(value) => setNewContact((prev) => ({ ...prev, position: value }))}
+                    value={newContact.designation}
+                    onValueChange={(value) => setNewContact((prev) => ({ ...prev, designation: value }))}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select position" />
+                      <SelectValue placeholder="Select designation" />
                     </SelectTrigger>
                     <SelectContent>
                       {positionOptions.map((option) => (
@@ -1713,8 +1707,9 @@ const handleAddContact = (contact: {
                       email: "",
                       phone: "",
                       countryCode: "+966",
-                      position: "",
+                      designation: "",
                       linkedin: "",
+                      isPrimary: true,
                     });
                     setIsContactModalOpen(false);
                   }}
