@@ -183,9 +183,10 @@ const validateAndSanitizeClientData = (data: any) => {
     }
     
     return sanitized;
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Data validation error:', error);
-    throw new Error(`Data validation failed: ${error.message}`);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown validation error';
+    throw new Error(`Data validation failed: ${errorMessage}`);
   }
 };
 
@@ -332,14 +333,18 @@ const sendClientRequest = async (
         timeout: 30000, // 30 second timeout
       });
     }
-  } catch (error) {
-    console.error('Request error details:', {
-      message: error.message,
-      status: error.response?.status,
-      statusText: error.response?.statusText,
-      data: error.response?.data
-    });
-    throw error;
+  } catch (error: unknown) {
+    if (axios.isAxiosError(error)) {
+      console.error('Request error details:', {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data
+      });
+      throw error;
+    }
+    console.error('Non-Axios error:', error);
+    throw new Error('An unexpected error occurred');
   }
 };
 

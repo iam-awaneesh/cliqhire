@@ -17,23 +17,13 @@ import { JobStage } from "@/types/job"
 import { Badge } from "@/components/ui/badge"
 import { X, Upload, FileText } from "lucide-react"
 import { getClientNames } from "@/services/clientService"
-import { ClientResponse } from "@/services/clientService"
 import { cn } from "@/lib/utils"
 
-// Define new type for client data returned by getClientNames
+// Define type for client data
 interface ClientData {
   _id: string;
   name: string;
   jobCount: number;
-}
-
-interface CreateJobModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  clientId: string;
-  clientName: string;
-  onJobCreated: (open: boolean) => void;
-  refreshJobs?: () => void;
 }
 
 interface LocationSuggestion {
@@ -117,6 +107,15 @@ const otherBenefits = [
   "Remote Work Option"
 ]
 
+interface CreateJobModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  clientId: string;
+  clientName: string;
+  onJobCreated: (open: boolean) => void;
+  refreshJobs?: () => void;
+}
+
 export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
   const [locationSuggestions, setLocationSuggestions] = useState<LocationSuggestion[]>([])
   const [showLocationSuggestions, setShowLocationSuggestions] = useState(false)
@@ -125,7 +124,7 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
   const [selectedNationalities, setSelectedNationalities] = useState<string[]>([])
   const [searchNationality, setSearchNationality] = useState("")
   const [nationalityMode, setNationalityMode] = useState<'all' | 'specific'>('specific')
-  const [clients, setClients] = useState<ClientData[]>([]) // Updated to use ClientData
+  const [clients, setClients] = useState<ClientData[]>([])
   const [isLoadingClients, setIsLoadingClients] = useState(false)
   const [clientError, setClientError] = useState<string | null>(null)
   const [searchClient, setSearchClient] = useState("")
@@ -176,8 +175,21 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
     setIsLoadingClients(true)
     setClientError(null)
     try {
-      const clientData = await getClientNames()
-      console.log('Clients fetched and set:', clientData)
+      const clientNames = await getClientNames()
+      console.log('Raw client data from getClientNames:', clientNames)
+      
+      // Ensure clientNames is an array and transform to ClientData[]
+      const clientData: ClientData[] = Array.isArray(clientNames)
+        ? clientNames
+            .filter((item): item is string => typeof item === 'string')
+            .map((name, index) => ({
+              _id: `client-${index}`,
+              name,
+              jobCount: 0
+            }))
+        : []
+      
+      console.log('Transformed clients:', clientData)
       setClients(clientData)
       if (clientData.length === 0) {
         setClientError("No clients found in the database")
@@ -185,6 +197,7 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
     } catch (error: any) {
       console.error("Error fetching client names:", error.message)
       setClientError(`Failed to load clients: ${error.message}`)
+    } finally {
       setIsLoadingClients(false)
     }
   }
@@ -377,7 +390,11 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
   }
 
   const filteredClients = clients.filter((client) => {
-    return client.name.toLowerCase().includes(searchClient.toLowerCase())
+    // Safely access client.name, default to empty string if invalid
+    const clientName = typeof client === 'object' && client.name && typeof client.name === 'string' 
+      ? client.name.toLowerCase() 
+      : ''
+    return clientName.includes(searchClient.toLowerCase())
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -526,11 +543,11 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
                             className={`px-4 py-2 hover:bg-gray-100 cursor-pointer ${formData.client === client._id ? 'bg-gray-100' : ''}`}
                             onMouseDown={() => {
                               setFormData(prev => ({ ...prev, client: client._id }));
-                              setSearchClient(client.name);
+                              setSearchClient(client.name || '');
                               setIsInputFocused(false);
                             }}
                           >
-                            {client.name}
+                            {client.name || 'Unknown Client'}
                           </div>
                         ))
                       )}
@@ -832,7 +849,7 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
                 </div>
               </div>
 
-              <div className="grid gap- mt-0">
+              <div className="grid gap-2">
                 <Label htmlFor="gender">Gender</Label>
                 <Select
                   value={formData.gender}
@@ -890,7 +907,7 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
                   </Select>
                 </div>
                 <div className="inline-block ml-3">
-                  <Label htmlFor="Speslisation">Speslisation *</Label>
+                  <Label htmlFor="specialization">Specialization *</Label>
                   <Select required>
                     <SelectTrigger>
                       <SelectValue placeholder="Select Specialization" />
@@ -1032,7 +1049,7 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
                       variant="outline"
                       onClick={() => fileInputRef.current?.click()}
                     >
-                      <Upload className="h-4 w-4 compromiso mr-2" />
+                      <Upload className="h-4 w-4 mr-2" />
                       Upload File
                     </Button>
                     <p className="text-sm text-muted-foreground mt-2">

@@ -70,7 +70,10 @@ interface ClientForm {
   cLevelPercentage?: number;
   belowCLevelPercentage?: number;
   fixedPercentageNotes?: string;
+  fixedPercentageValue?: string | number;
   fixedPercentageAdvanceNotes?: string;
+  fixWithAdvanceValue?: string | number;
+  fixWithoutAdvanceValue?: string | number;
   cLevelPercentageNotes?: string;
   belowCLevelPercentageNotes?: string;
   fixWithoutAdvanceNotes?: string;
@@ -146,7 +149,10 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     cLevelPercentage: 0,
     belowCLevelPercentage: 0,
     fixedPercentageNotes: "",
+    fixedPercentageValue: "",
     fixedPercentageAdvanceNotes: "",
+    fixWithAdvanceValue: "",
+    fixWithoutAdvanceValue: "",
     cLevelPercentageNotes: "",
     belowCLevelPercentageNotes: "",
     fixWithoutAdvanceNotes: "",
@@ -1101,165 +1107,241 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
               </div>
 
               {formData.contractType === "Fixed Percentage" && (
-                <div className="space-y-2">
-                  <Label htmlFor="fixedPercentageNotes" className="text-sm sm:text-base">
-                    Fixed Percentage Notes
-                  </Label>
-                  <Textarea
-                    id="fixedPercentageNotes"
-                    value={formData.fixedPercentageNotes || ""}
-                    onChange={handleInputChange("fixedPercentageNotes")}
-                    placeholder="Enter notes for Fixed Percentage"
-                    rows={3}
-                    className="w-full"
-                  />
-                  <Label className="text-sm sm:text-base">Fixed Percentage Document</Label>
-                  <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 items-center">
-                    <div
-                      className="border-2 border-dashed rounded-lg p-2 text-center cursor-pointer hover:bg-muted/50 flex-1 w-full"
-                      onClick={() => document.getElementById("fixedPercentageInput")?.click()}
-                    >
-                      <Upload className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
-                      <p className="text-xs text-muted-foreground">Upload (PDF, JPEG, PNG)</p>
+                <div className="space-y-4 col-span-1 sm:col-span-2 border rounded-lg p-4">
+                  <div className="border-2 shadow-sm rounded-lg p-2 cursor-pointer transition-colors w-full border-primary bg-primary/5">
+                    <div className="flex flex-col sm:flex-row items-center sm:space-x-4 space-y-2 sm:space-y-0">
+                      <h4 className="font-medium text-xs sm:text-sm w-28">Fixed Percentage</h4>
+                      <div className="flex items-center space-x-2 w-full sm:w-auto">
+                        <div className="relative w-24">
+                          <Input
+                            type="number"
+                            placeholder="0"
+                            min="0"
+                            max="100"
+                            onChange={handleInputChange("fixedPercentageValue")}
+                            value={formData.fixedPercentageValue || ""}
+                            className="h-8 pl-2 pr-6 text-xs"
+                          />
+                          <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-muted-foreground">
+                            %
+                          </span>
+                        </div>
+                        <Input
+                          type="text"
+                          placeholder="Notes"
+                          onChange={handleInputChange("fixedPercentageNotes")}
+                          value={formData.fixedPercentageNotes || ""}
+                          className="h-8 text-xs flex-1"
+                        />
+                      </div>
                     </div>
-                    <input
-                      id="fixedPercentageInput"
-                      type="file"
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      className="hidden"
-                      onChange={handleFileChange("fixedPercentage")}
-                    />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handlePreview(uploadedFiles.fixedPercentage)}
-                      disabled={!uploadedFiles.fixedPercentage}
-                    >
-                      Preview
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDownload(uploadedFiles.fixedPercentage)}
-                      disabled={!uploadedFiles.fixedPercentage}
-                    >
-                      Download
-                    </Button>
                   </div>
-                  {uploadedFiles.fixedPercentage && (
-                    <p className="text-xs sm:text-sm mt-2">
-                      Selected file: {uploadedFiles.fixedPercentage.name}
-                    </p>
-                  )}
+                  
+                  <div className="space-y-2">
+                    <Label className="text-sm sm:text-base font-semibold">
+                      Contract Document
+                    </Label>
+                    <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 items-center">
+                      <div
+                        className="border-2 border-dashed rounded-lg p-2 text-center cursor-pointer hover:bg-muted/50 flex-1 w-full"
+                        onClick={() => document.getElementById("fixedPercentageInput")?.click()}
+                      >
+                        <Upload className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
+                        <p className="text-xs text-muted-foreground">Upload (PDF, JPEG, PNG)</p>
+                      </div>
+                      <input
+                        id="fixedPercentageInput"
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        className="hidden"
+                        onChange={handleFileChange("fixedPercentage")}
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs px-2 gap-1"
+                        onClick={() => handlePreview(uploadedFiles.fixedPercentage)}
+                        disabled={!uploadedFiles.fixedPercentage}
+                      >
+                        <Eye className="h-3 w-3" />
+                        <span>Preview</span>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs px-2 gap-1"
+                        onClick={() => handleDownload(uploadedFiles.fixedPercentage)}
+                        disabled={!uploadedFiles.fixedPercentage}
+                      >
+                        <Download className="h-3 w-3" />
+                        <span>Download</span>
+                      </Button>
+                    </div>
+                    {uploadedFiles.fixedPercentage && (
+                      <p className="text-xs text-muted-foreground truncate">
+                        Selected file: {uploadedFiles.fixedPercentage.name}
+                      </p>
+                    )}
+                  </div>
                 </div>
               )}
 
               {formData.contractType === "Fix with Advance" && (
-                <div className="space-y-2">
-                  <Label htmlFor="fixedPercentageAdvanceNotes" className="text-sm sm:text-base">
-                    Fix with Advance Notes
-                  </Label>
-                  <Textarea
-                    id="fixedPercentageAdvanceNotes"
-                    value={formData.fixedPercentageAdvanceNotes || ""}
-                    onChange={handleInputChange("fixedPercentageAdvanceNotes")}
-                    placeholder="Enter notes for Fix with Advance"
-                    rows={3}
-                    className="w-full"
-                  />
-                  <Label className="text-sm sm:text-base">Fix with Advance Document</Label>
-                  <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 items-center">
-                    <div
-                      className="border-2 border-dashed rounded-lg p-2 text-center cursor-pointer hover:bg-muted/50 flex-1 w-full"
-                      onClick={() => document.getElementById("fixedPercentageAdvanceInput")?.click()}
-                    >
-                      <Upload className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
-                      <p className="text-xs text-muted-foreground">Upload (PDF, JPEG, PNG)</p>
+                <div className="space-y-4 col-span-1 sm:col-span-2 border rounded-lg p-4">
+                  <div className="border-2 shadow-sm rounded-lg p-2 cursor-pointer transition-colors w-full border-primary bg-primary/5">
+                    <div className="flex flex-col sm:flex-row items-center sm:space-x-4 space-y-2 sm:space-y-0">
+                      <h4 className="font-medium text-xs sm:text-sm w-28">Fix with Advance</h4>
+                      <div className="flex items-center space-x-2 w-full sm:w-auto">
+                        <div className="relative w-24">
+                          <Input
+                            type="number"
+                            placeholder="0"
+                            min="0"
+                            max="100"
+                            onChange={handleInputChange("fixWithAdvanceValue")}
+                            value={formData.fixWithAdvanceValue || ""}
+                            className="h-8 pl-2 pr-6 text-xs"
+                          />
+                          <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-muted-foreground">
+                            %
+                          </span>
+                        </div>
+                        <Input
+                          type="text"
+                          placeholder="Notes"
+                          onChange={handleInputChange("fixedPercentageAdvanceNotes")}
+                          value={formData.fixedPercentageAdvanceNotes || ""}
+                          className="h-8 text-xs flex-1"
+                        />
+                      </div>
                     </div>
-                    <input
-                      id="fixedPercentageAdvanceInput"
-                      type="file"
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      className="hidden"
-                      onChange={handleFileChange("fixedPercentageAdvance")}
-                    />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handlePreview(uploadedFiles.fixedPercentageAdvance)}
-                      disabled={!uploadedFiles.fixedPercentageAdvance}
-                    >
-                      Preview
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDownload(uploadedFiles.fixedPercentageAdvance)}
-                      disabled={!uploadedFiles.fixedPercentageAdvance}
-                    >
-                      Download
-                    </Button>
                   </div>
-                  {uploadedFiles.fixedPercentageAdvance && (
-                    <p className="text-xs sm:text-sm mt-2">
-                      Selected file: {uploadedFiles.fixedPercentageAdvance.name}
-                    </p>
-                  )}
+                  
+                  <div className="space-y-2">
+                    <Label className="text-sm sm:text-base font-semibold">
+                      Contract Document
+                    </Label>
+                    <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 items-center">
+                      <div
+                        className="border-2 border-dashed rounded-lg p-2 text-center cursor-pointer hover:bg-muted/50 flex-1 w-full"
+                        onClick={() => document.getElementById("fixedPercentageAdvanceInput")?.click()}
+                      >
+                        <Upload className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
+                        <p className="text-xs text-muted-foreground">Upload (PDF, JPEG, PNG)</p>
+                      </div>
+                      <input
+                        id="fixedPercentageAdvanceInput"
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        className="hidden"
+                        onChange={handleFileChange("fixedPercentageAdvance")}
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs px-2 gap-1"
+                        onClick={() => handlePreview(uploadedFiles.fixedPercentageAdvance)}
+                        disabled={!uploadedFiles.fixedPercentageAdvance}
+                      >
+                        <Eye className="h-3 w-3" />
+                        <span>Preview</span>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs px-2 gap-1"
+                        onClick={() => handleDownload(uploadedFiles.fixedPercentageAdvance)}
+                        disabled={!uploadedFiles.fixedPercentageAdvance}
+                      >
+                        <Download className="h-3 w-3" />
+                        <span>Download</span>
+                      </Button>
+                    </div>
+                    {uploadedFiles.fixedPercentageAdvance && (
+                      <p className="text-xs text-muted-foreground truncate">
+                        Selected file: {uploadedFiles.fixedPercentageAdvance.name}
+                      </p>
+                    )}
+                  </div>
                 </div>
               )}
 
               {formData.contractType === "Fix without Advance" && (
-                <div className="space-y-2">
-                  <Label className="text-sm sm:text-base">Fix without Advance Document</Label>
-                  <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 items-center">
-                    <div
-                      className="border-2 border-dashed rounded-lg p-2 text-center cursor-pointer hover:bg-muted/50 flex-1 w-full"
-                      onClick={() => document.getElementById("fixWithoutAdvanceInput")?.click()}
-                    >
-                      <Upload className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
-                      <p className="text-xs text-muted-foreground">Upload (PDF, JPEG, PNG)</p>
+                <div className="space-y-4 col-span-1 sm:col-span-2 border rounded-lg p-4">
+                  <div className="border-2 shadow-sm rounded-lg p-2 cursor-pointer transition-colors w-full border-primary bg-primary/5">
+                    <div className="flex flex-col sm:flex-row items-center sm:space-x-4 space-y-2 sm:space-y-0">
+                      <h4 className="font-medium text-xs sm:text-sm w-28">Fix without Advance</h4>
+                      <div className="flex items-center space-x-2 w-full sm:w-auto">
+                        <div className="relative w-24">
+                          <Input
+                            type="number"
+                            placeholder="0"
+                            min="0"
+                            max="100"
+                            onChange={handleInputChange("fixWithoutAdvanceValue")}
+                            value={formData.fixWithoutAdvanceValue || ""}
+                            className="h-8 pl-2 pr-6 text-xs"
+                          />
+                          <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-muted-foreground">
+                            %
+                          </span>
+                        </div>
+                        <Input
+                          type="text"
+                          placeholder="Notes"
+                          onChange={handleInputChange("fixWithoutAdvanceNotes")}
+                          value={formData.fixWithoutAdvanceNotes || ""}
+                          className="h-8 text-xs flex-1"
+                        />
+                      </div>
                     </div>
-                    <input
-                      id="fixWithoutAdvanceInput"
-                      type="file"
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      className="hidden"
-                      onChange={handleFileChange("fixWithoutAdvance")}
-                    />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handlePreview(uploadedFiles.fixWithoutAdvance)}
-                      disabled={!uploadedFiles.fixWithoutAdvance}
-                    >
-                      Preview
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDownload(uploadedFiles.fixWithoutAdvance)}
-                      disabled={!uploadedFiles.fixWithoutAdvance}
-                    >
-                      Download
-                    </Button>
                   </div>
-                  {uploadedFiles.fixWithoutAdvance && (
-                    <p className="text-xs sm:text-sm mt-2">
-                      Selected file: {uploadedFiles.fixWithoutAdvance.name}
-                    </p>
-                  )}
-                  <div className="space-y-2 mt-4">
-                    <Label htmlFor="fixWithoutAdvanceNotes" className="text-sm sm:text-base">
-                      Notes
+                  
+                  <div className="space-y-2">
+                    <Label className="text-sm sm:text-base font-semibold">
+                      Contract Document
                     </Label>
-                    <Textarea
-                      id="fixWithoutAdvanceNotes"
-                      value={formData.fixWithoutAdvanceNotes || ""}
-                      onChange={handleInputChange("fixWithoutAdvanceNotes")}
-                      placeholder="Enter notes for Fix without Advance"
-                      rows={3}
-                      className="w-full"
-                    />
+                    <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 items-center">
+                      <div
+                        className="border-2 border-dashed rounded-lg p-2 text-center cursor-pointer hover:bg-muted/50 flex-1 w-full"
+                        onClick={() => document.getElementById("fixWithoutAdvanceInput")?.click()}
+                      >
+                        <Upload className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
+                        <p className="text-xs text-muted-foreground">Upload (PDF, JPEG, PNG)</p>
+                      </div>
+                      <input
+                        id="fixWithoutAdvanceInput"
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        className="hidden"
+                        onChange={handleFileChange("fixWithoutAdvance")}
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs px-2 gap-1"
+                        onClick={() => handlePreview(uploadedFiles.fixWithoutAdvance)}
+                        disabled={!uploadedFiles.fixWithoutAdvance}
+                      >
+                        <Eye className="h-3 w-3" />
+                        <span>Preview</span>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs px-2 gap-1"
+                        onClick={() => handleDownload(uploadedFiles.fixWithoutAdvance)}
+                        disabled={!uploadedFiles.fixWithoutAdvance}
+                      >
+                        <Download className="h-3 w-3" />
+                        <span>Download</span>
+                      </Button>
+                    </div>
+                    {uploadedFiles.fixWithoutAdvance && (
+                      <p className="text-xs text-muted-foreground truncate">
+                        Selected file: {uploadedFiles.fixWithoutAdvance.name}
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
@@ -1289,7 +1371,9 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                           <label
                             htmlFor={`level-${level}`}
                             className={`text-xs sm:text-sm font-medium leading-none cursor-pointer ${
-                              activeLevel === level ? "font-bold text-primary" : ""
+                              activeLevel === level
+                                ? "font-bold text-primary"
+                                : ""
                             }`}
                             onClick={() => selectedLevels.includes(level) && setActiveLevel(level)}
                           >
@@ -1306,13 +1390,19 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                         {selectedLevels.map((level) => (
                           <div
                             key={level}
-                            className={`border-2 border-gray-400 shadow-sm rounded-lg p-2 cursor-pointer transition-colors w-full ${
-                              activeLevel === level ? "border-primary bg-primary/5" : "border-gray-400"
+                            className={`border-2 shadow-sm rounded-lg p-2 cursor-pointer transition-colors w-full ${
+                              activeLevel === level
+                                ? "border-primary bg-primary/5"
+                                : "border-gray-400"
                             }`}
                             onClick={() => setActiveLevel(level)}
                           >
                             <div className="flex flex-col sm:flex-row items-center sm:space-x-4 space-y-2 sm:space-y-0">
-                              <h4 className="font-medium text-xs sm:text-sm w-28">{level}</h4>
+                              <h4 className={`font-medium text-xs sm:text-sm w-28 ${
+                                activeLevel === level
+                                  ? "text-primary"
+                                  : ""
+                              }`}>{level}</h4>
                               <div className="flex items-center space-x-2 w-full sm:w-auto">
                                 <div className="relative w-24">
                                   <Input
@@ -1320,19 +1410,17 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                                     placeholder="0"
                                     min="0"
                                     max="100"
-                                    onClick={(e: React.MouseEvent<HTMLInputElement>) => e.stopPropagation()}
+                                    onClick={(e: React.MouseEvent<HTMLInputElement>) =>
+                                      e.stopPropagation()
+                                    }
                                     onChange={handleInputChange(
-                                      `${
-                                        level.replace(/\s+/g, "")[0].toLowerCase() +
-                                        level.replace(/\s+/g, "").slice(1)
-                                      }Percentage` as keyof ClientForm
+                                      `${level.replace(/\s+/g, "")[0].toLowerCase() +
+                                        level.replace(/\s+/g, "").slice(1)}Percentage` as keyof ClientForm
                                     )}
                                     value={
-                                      formData[
-                                        `${
-                                          level.replace(/\s+/g, "")[0].toLowerCase() +
-                                          level.replace(/\s+/g, "").slice(1)
-                                        }Percentage` as keyof ClientForm
+                                      typeof formData[
+                                        `${level.replace(/\s+/g, "")[0].toLowerCase() +
+                                          level.replace(/\s+/g, "").slice(1)}Percentage` as keyof ClientForm
                                       ] || ""
                                     }
                                     className="h-8 pl-2 pr-6 text-xs"
@@ -1344,19 +1432,17 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                                 <Input
                                   type="text"
                                   placeholder="Notes"
-                                  onClick={(e: React.MouseEvent<HTMLInputElement>) => e.stopPropagation()}
+                                  onClick={(e: React.MouseEvent<HTMLInputElement>) =>
+                                    e.stopPropagation()
+                                  }
                                   onChange={handleInputChange(
-                                    `${
-                                      level.replace(/\s+/g, "")[0].toLowerCase() +
-                                      level.replace(/\s+/g, "").slice(1)
-                                    }Notes` as keyof ClientForm
+                                    `${level.replace(/\s+/g, "")[0].toLowerCase() +
+                                      level.replace(/\s+/g, "").slice(1)}Notes` as keyof ClientForm
                                   )}
                                   value={
-                                    formData[
-                                      `${
-                                        level.replace(/\s+/g, "")[0].toLowerCase() +
-                                        level.replace(/\s+/g, "").slice(1)
-                                      }Notes` as keyof ClientForm
+                                   typeof formData[
+                                      `${level.replace(/\s+/g, "")[0].toLowerCase() +
+                                        level.replace(/\s+/g, "").slice(1)}Notes` as keyof ClientForm
                                     ] || ""
                                   }
                                   className="h-8 text-xs flex-1"
@@ -1367,7 +1453,9 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                         ))}
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-sm sm:text-base font-semibold">Contract Document</Label>
+                        <Label className="text-sm sm:text-base font-semibold">
+                          Contract Document
+                        </Label>
                         <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 items-center">
                           <div
                             className="border-2 border-dashed rounded-lg p-2 text-center cursor-pointer hover:bg-muted/50 flex-1 w-full"
