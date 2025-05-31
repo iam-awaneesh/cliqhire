@@ -325,6 +325,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
 
   // URL validation
   const validateUrl = (url: string): boolean => {
+    if (!url) return true; // Allow empty URLs since these fields are optional
     try {
       new URL(url);
       return true;
@@ -348,17 +349,6 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
         .filter((email) => email);
       value = emails;
     } else if (
-      field === "website" ||
-      field === "linkedInProfile" ||
-      field === "linkedInPage" ||
-      field === "googleMapsLink"
-    ) {
-      value = e.target.value;
-      if (value && !validateUrl(value)) {
-        setError(`Invalid URL for ${field}`);
-        return;
-      }
-    } else if (
       field === "contractValue" ||
       field === "cLevelPercentage" ||
       field === "belowCLevelPercentage" ||
@@ -380,7 +370,26 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     if (field === "location") {
       setShowLocationSuggestions(true);
     }
-    setError(null);
+    // Clear error when user starts typing in URL fields or any field
+    if (
+      field === "website" ||
+      field === "linkedInProfile" ||
+      field === "googleMapsLink" ||
+      error
+    ) {
+      setError(null);
+    }
+  };
+
+  const handleUrlBlur = (field: keyof ClientForm) => (
+    e: React.FocusEvent<HTMLInputElement>
+  ) => {
+    const value = e.target.value;
+    if (value && !validateUrl(value)) {
+      setError(`Invalid URL for ${field}`);
+    } else {
+      setError(null);
+    }
   };
 
   const handleEmailBlur = () => {
@@ -815,6 +824,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                   type="url"
                   value={formData.website}
                   onChange={handleInputChange("website")}
+                  onBlur={handleUrlBlur("website")}
                   placeholder="https://www.example.com"
                   className="w-full"
                 />
@@ -828,6 +838,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                   id="linkedInProfile"
                   value={formData.linkedInProfile}
                   onChange={handleInputChange("linkedInProfile")}
+                  onBlur={handleUrlBlur("linkedInProfile")}
                   placeholder="https://www.linkedin.com/in/..."
                   className="w-full"
                 />
@@ -867,6 +878,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                   id="googleMapsLink"
                   value={formData.googleMapsLink}
                   onChange={handleInputChange("googleMapsLink")}
+                  onBlur={handleUrlBlur("googleMapsLink")}
                   placeholder="https://maps.google.com/..."
                   className="w-full"
                 />
@@ -1440,7 +1452,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                                       level.replace(/\s+/g, "").slice(1)}Notes` as keyof ClientForm
                                   )}
                                   value={
-                                   typeof formData[
+                                    typeof formData[
                                       `${level.replace(/\s+/g, "")[0].toLowerCase() +
                                         level.replace(/\s+/g, "").slice(1)}Notes` as keyof ClientForm
                                     ] || ""
