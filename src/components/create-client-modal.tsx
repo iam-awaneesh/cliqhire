@@ -51,7 +51,7 @@ interface ClientForm {
   googleMapsLink?: string;
   incorporationDate?: string;
   registrationNumber?: string;
-  lineOfBusiness?: string[];
+  lineOfBusiness?: string[] | string;
   countryOfBusiness?: string;
   referredBy?: string;
   linkedInProfile?: string;
@@ -86,6 +86,19 @@ interface ClientForm {
   nonExecutivesNotes?: string;
   otherNotes?: string;
   salesLead?: string;
+  // File upload fields
+  crCopy?: any;
+  vatCopy?: any;
+  gstTinDocument?: any;
+  fixedPercentage?: any;
+  fixedPercentageAdvance?: any;
+  variablePercentageCLevel?: any;
+  variablePercentageBelowCLevel?: any;
+  fixWithoutAdvance?: any;
+  seniorLevel?: any;
+  executives?: any;
+  nonExecutives?: any;
+  other?: any;
 }
 
 interface CreateClientModalProps {
@@ -100,14 +113,14 @@ interface LocationSuggestion {
 }
 
 // API call to create client
-const createClient = async (data: any) => {
+const createClient = async (data: FormData) => {
   try {
     const response = await axios.post(
       "https://aems-backend.onrender.com/api/clients",
       data,
       {
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "multipart/form-data",
         },
       }
     );
@@ -225,7 +238,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
         setError(`File ${file.name} is too large. Maximum size is 5MB.`);
         return;
       }
-      const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
+      const allowedTypes = ["image/jpeg", "image/png", "image/jpg", "application/pdf"];
       if (!allowedTypes.includes(file.type)) {
         setError(`Invalid file type for ${file.name}. Allowed types are: JPEG, PNG, PDF`);
         return;
@@ -263,14 +276,14 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
   };
 
   // Convert file to base64
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = (error) => reject(error);
-    });
-  };
+  // const fileToBase64 = (file: File): Promise<string> => {
+  // return new Promise((resolve, reject) => {
+  // const reader = new FileReader();
+  // reader.readAsDataURL(file);
+  // reader.onload = () => resolve(reader.result as string);
+  // reader.onerror = (error) => reject(error);
+  // });
+  // };
 
   // Location suggestions
   useEffect(() => {
@@ -356,6 +369,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
       field === "executivesPercentage" ||
       field === "nonExecutivesPercentage" ||
       field === "otherPercentage"
+
     ) {
       value = e.target.value ? parseFloat(e.target.value) : 0;
     } else {
@@ -461,7 +475,9 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     e.preventDefault();
     setLoading(true);
     setError(null);
-
+    console.log(formData);
+    console.log(uploadedFiles);
+    
     try {
       // Validate required fields
       if (!formData.name || formData.name.trim() === "") {
@@ -536,21 +552,53 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
         return;
       }
 
-      // Prepare JSON data
-      const clientData: any = {
-        name: formData.name.trim(),
-        emails: formData.emails,
-        phoneNumber: formData.phoneNumber,
-        website: formData.website || undefined,
-        industry: formData.industry,
-        address: formData.address,
-        googleMapsLink: formData.googleMapsLink || undefined,
-        lineOfBusiness: formData.lineOfBusiness,
-        countryOfBusiness: formData.countryOfBusiness || undefined,
-        referredBy: formData.referredBy,
-        linkedInProfile: formData.linkedInProfile || undefined,
-        countryCode: formData.countryCode || "+966",
-        primaryContacts: formData.primaryContacts.map(contact => ({
+      // Create FormData object to send both form data and files
+      const formDataToSend = new FormData();
+      
+      // Add all form data fields
+      formDataToSend.append('name', formData.name.trim());
+      
+      // Handle arrays properly by stringifying them
+      if (formData.emails && formData.emails.length > 0) {
+        formDataToSend.append('emails', JSON.stringify(formData.emails));
+      }
+      
+      formDataToSend.append('phoneNumber', formData.phoneNumber);
+      
+      if (formData.website) {
+        formDataToSend.append('website', formData.website);
+      }
+      
+      formDataToSend.append('industry', formData.industry);
+      formDataToSend.append('address', formData.address);
+      
+      if (formData.googleMapsLink) {
+        formDataToSend.append('googleMapsLink', formData.googleMapsLink);
+      }
+      
+      // Handle lineOfBusiness which can be array or string
+      if (Array.isArray(formData.lineOfBusiness)) {
+        formDataToSend.append('lineOfBusiness', JSON.stringify(formData.lineOfBusiness));
+      } else if (typeof formData.lineOfBusiness === 'string') {
+        const lineOfBusinessArray = formData.lineOfBusiness.split(',').filter(Boolean);
+        formDataToSend.append('lineOfBusiness', JSON.stringify(lineOfBusinessArray));
+      }
+      
+      if (formData.countryOfBusiness) {
+        formDataToSend.append('countryOfBusiness', formData.countryOfBusiness);
+      }
+      
+      formDataToSend.append('referredBy', formData.referredBy);
+      
+      if (formData.linkedInProfile) {
+        formDataToSend.append('linkedInProfile', formData.linkedInProfile);
+      }
+      
+      formDataToSend.append('countryCode', formData.countryCode || "+966");
+      
+      // Handle primaryContacts array
+      if (formData.primaryContacts && formData.primaryContacts.length > 0) {
+        formDataToSend.append('primaryContacts', JSON.stringify(formData.primaryContacts.map(contact => ({
           name: contact.name,
           email: contact.email,
           phone: contact.phone,
@@ -558,49 +606,134 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
           designation: contact.designation,
           linkedin: contact.linkedin || undefined,
           isPrimary: contact.isPrimary,
-        })),
-        clientStage: formData.clientStage || "Lead",
-        clientTeam: formData.clientTeam || "Enterprise",
-        salesLead: formData.salesLead || undefined,
-        contractStartDate: formData.contractStartDate
-          ? formData.contractStartDate.toISOString().split("T")[0]
-          : undefined,
-        contractEndDate: formData.contractEndDate
-          ? formData.contractEndDate.toISOString().split("T")[0]
-          : undefined,
-        contractType: formData.contractType || undefined,
-        seniorLevelPercentage: formData.seniorLevelPercentage || undefined,
-      };
-
-      // Add files as base64 strings
-      const fileFields = [
+        }))));
+      }
+      
+      formDataToSend.append('clientStage', formData.clientStage || "Lead");
+      formDataToSend.append('clientTeam', formData.clientTeam || "Enterprise");
+      
+      if (formData.salesLead) {
+        formDataToSend.append('salesLead', formData.salesLead);
+      }
+      
+      if (formData.contractStartDate) {
+        formDataToSend.append('contractStartDate', formData.contractStartDate.toISOString().split("T")[0]);
+      }
+      
+      if (formData.contractEndDate) {
+        formDataToSend.append('contractEndDate', formData.contractEndDate.toISOString().split("T")[0]);
+      }
+      
+      if (formData.contractType) {
+        formDataToSend.append('contractType', formData.contractType);
+      }
+      
+      if (formData.seniorLevelPercentage) {
+        formDataToSend.append('seniorLevelPercentage', formData.seniorLevelPercentage.toString());
+      }
+      
+      if (formData.executivesPercentage) {
+        formDataToSend.append('executivesPercentage', formData.executivesPercentage.toString());
+      }
+      
+      if (formData.nonExecutivesPercentage) {
+        formDataToSend.append('nonExecutivesPercentage', formData.nonExecutivesPercentage.toString());
+      }
+      
+      if (formData.otherPercentage) {
+        formDataToSend.append('otherPercentage', formData.otherPercentage.toString());
+      }
+      
+      if (formData.cLevelPercentage) {
+        formDataToSend.append('cLevelPercentage', formData.cLevelPercentage.toString());
+      }
+      
+      if (formData.belowCLevelPercentage) {
+        formDataToSend.append('belowCLevelPercentage', formData.belowCLevelPercentage.toString());
+      }
+      
+      // Add all notes fields
+      if (formData.fixedPercentageNotes) {
+        formDataToSend.append('fixedPercentageNotes', formData.fixedPercentageNotes);
+      }
+      
+      if (formData.fixedPercentageAdvanceNotes) {
+        formDataToSend.append('fixedPercentageAdvanceNotes', formData.fixedPercentageAdvanceNotes);
+      }
+      
+      if (formData.cLevelPercentageNotes) {
+        formDataToSend.append('cLevelPercentageNotes', formData.cLevelPercentageNotes);
+      }
+      
+      if (formData.belowCLevelPercentageNotes) {
+        formDataToSend.append('belowCLevelPercentageNotes', formData.belowCLevelPercentageNotes);
+      }
+      
+      if (formData.fixWithoutAdvanceNotes) {
+        formDataToSend.append('fixWithoutAdvanceNotes', formData.fixWithoutAdvanceNotes);
+      }
+      
+      if (formData.seniorLevelNotes) {
+        formDataToSend.append('seniorLevelNotes', formData.seniorLevelNotes);
+      }
+      
+      if (formData.executivesNotes) {
+        formDataToSend.append('executivesNotes', formData.executivesNotes);
+      }
+      
+      if (formData.nonExecutivesNotes) {
+        formDataToSend.append('nonExecutivesNotes', formData.nonExecutivesNotes);
+      }
+      
+      if (formData.otherNotes) {
+        formDataToSend.append('otherNotes', formData.otherNotes);
+      }
+      
+      // Add all value fields
+      if (formData.fixedPercentageValue) {
+        formDataToSend.append('fixedPercentageValue', formData.fixedPercentageValue.toString());
+      }
+      
+      if (formData.fixWithAdvanceValue) {
+        formDataToSend.append('fixWithAdvanceValue', formData.fixWithAdvanceValue.toString());
+      }
+      
+      if (formData.fixWithoutAdvanceValue) {
+        formDataToSend.append('fixWithoutAdvanceValue', formData.fixWithoutAdvanceValue.toString());
+      }
+      
+      // Add all file uploads
+      const fileFields: (keyof typeof uploadedFiles)[] = [
         "crCopy",
         "vatCopy",
         "gstTinDocument",
         "fixedPercentage",
         "fixedPercentageAdvance",
+        "variablePercentageCLevel",
+        "variablePercentageBelowCLevel",
         "fixWithoutAdvance",
         "seniorLevel",
         "executives",
         "nonExecutives",
         "other",
+        "profileImage"
       ];
-
+      
+      // Append files to FormData if they exist
       for (const field of fileFields) {
         if (uploadedFiles[field]) {
-          const base64 = await fileToBase64(uploadedFiles[field]!);
-          clientData[`${field}File`] = {
-            name: uploadedFiles[field]!.name,
-            type: uploadedFiles[field]!.type,
-            data: base64,
-          };
+          formDataToSend.append(field, uploadedFiles[field]!);
         }
       }
-
-      // Log clientData for debugging
-      console.log("clientData before sending:", JSON.stringify(clientData, null, 2));
-
-      const result = await createClient(clientData);
+      
+      // Log FormData for debugging (note: FormData can't be directly logged)
+      console.log("FormData created with the following fields:");
+      for (const pair of formDataToSend.entries()) {
+        console.log(pair[0], pair[1]);
+      }
+      console.log(formDataToSend);
+      // Send data to backend
+      const result = await createClient(formDataToSend);
       console.log("Client created successfully:", result);
 
       // Reset form
@@ -679,6 +812,258 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     } finally {
       setLoading(false);
     }
+
+    // try {
+    //   // Validate required fields
+    //   if (!formData.name || formData.name.trim() === "") {
+    //     setError("Client Name is required");
+    //     setLoading(false);
+    //     return;
+    //   }
+    //   if (!formData.phoneNumber) {
+    //     setError("Phone Number is required");
+    //     setLoading(false);
+    //     return;
+    //   }
+    //   if (!formData.address) {
+    //     setError("Client Address is required");
+    //     setLoading(false);
+    //     return;
+    //   }
+    //   if (!formData.referredBy) {
+    //     setError("Referred By is required");
+    //     setLoading(false);
+    //     return;
+    //   }
+    //   if (!formData.industry) {
+    //     setError("Client Industry is required");
+    //     setLoading(false);
+    //     return;
+    //   }
+    //   if (!formData.lineOfBusiness || formData.lineOfBusiness.length === 0) {
+    //     setError("Line of Business is required");
+    //     setLoading(false);
+    //     return;
+    //   }
+
+    //   // Validate emails
+    //   const emails = formData.emails.filter((email) => email);
+    //   const invalidEmails = validateEmails(emails);
+    //   if (invalidEmails.length > 0) {
+    //     setError(`Invalid email(s): ${invalidEmails.join(", ")}`);
+    //     setLoading(false);
+    //     return;
+    //   }
+
+    //   // Validate primary contacts
+    //   if (formData.primaryContacts.length === 0) {
+    //     setError("At least one primary contact is required");
+    //     setLoading(false);
+    //     return;
+    //   }
+    //   const invalidContactEmails = formData.primaryContacts.filter(
+    //     (contact) => contact.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email)
+    //   );
+    //   if (invalidContactEmails.length > 0) {
+    //     setError(`Invalid contact email(s): ${invalidContactEmails.map((c) => c.email).join(", ")}`);
+    //     setLoading(false);
+    //     return;
+    //   }
+
+    //   // Validate URLs
+    //   if (formData.website && !validateUrl(formData.website)) {
+    //     setError("Invalid website URL");
+    //     setLoading(false);
+    //     return;
+    //   }
+    //   if (formData.linkedInProfile && !validateUrl(formData.linkedInProfile)) {
+    //     setError("Invalid LinkedIn profile URL");
+    //     setLoading(false);
+    //     return;
+    //   }
+    //   if (formData.googleMapsLink && !validateUrl(formData.googleMapsLink)) {
+    //     setError("Invalid Google Maps link");
+    //     setLoading(false);
+    //     return;
+    //   }
+
+    //   // Prepare JSON data
+    //   const clientData: any = {
+    //     name: formData.name.trim(),
+    //     emails: formData.emails,
+    //     phoneNumber: formData.phoneNumber,
+    //     website: formData.website || undefined,
+    //     industry: formData.industry,
+    //     address: formData.address,
+    //     googleMapsLink: formData.googleMapsLink || undefined,
+    //     lineOfBusiness: Array.isArray(formData.lineOfBusiness) ? formData.lineOfBusiness : typeof formData.lineOfBusiness === 'string' ? formData.lineOfBusiness.split(',').filter(Boolean) : [],
+    //     countryOfBusiness: formData.countryOfBusiness || undefined,
+    //     referredBy: formData.referredBy,
+    //     linkedInProfile: formData.linkedInProfile || undefined,
+    //     countryCode: formData.countryCode || "+966",
+    //     primaryContacts: formData.primaryContacts.map(contact => ({
+    //       name: contact.name,
+    //       email: contact.email,
+    //       phone: contact.phone,
+    //       countryCode: contact.countryCode,
+    //       designation: contact.designation,
+    //       linkedin: contact.linkedin || undefined,
+    //       isPrimary: contact.isPrimary,
+    //     })),
+    //     clientStage: formData.clientStage || "Lead",
+    //     clientTeam: formData.clientTeam || "Enterprise",
+    //     salesLead: formData.salesLead || undefined,
+    //     contractStartDate: formData.contractStartDate
+    //       ? formData.contractStartDate.toISOString().split("T")[0]
+    //       : undefined,
+    //     contractEndDate: formData.contractEndDate
+    //       ? formData.contractEndDate.toISOString().split("T")[0]
+    //       : undefined,
+    //     contractType: formData.contractType || undefined,
+    //     seniorLevelPercentage: formData.seniorLevelPercentage || undefined,
+    //     // profileImage: null,
+    //     crCopy: uploadedFiles.crCopy,
+    //     vatCopy: uploadedFiles.vatCopy,
+    //     gstTinDocument: uploadedFiles.gstTinDocument,
+    //     fixedPercentage: uploadedFiles.fixedPercentage,
+    //     fixedPercentageAdvance: uploadedFiles.fixedPercentageAdvance,
+    //     variablePercentageCLevel: uploadedFiles.variablePercentageCLevel,
+    //     variablePercentageBelowCLevel: uploadedFiles.variablePercentageBelowCLevel,
+    //     fixWithoutAdvance: uploadedFiles.fixWithoutAdvance,
+    //     seniorLevel: uploadedFiles.seniorLevel,
+    //     executives: uploadedFiles.executives,
+    //     nonExecutives: uploadedFiles.nonExecutives,
+    //     other: uploadedFiles.other,
+    //   };
+
+    //   // Add files as base64 strings
+    //   const fileFields = [
+    //     "crCopy",
+    //     "vatCopy",
+    //     "gstTinDocument",
+    //     "fixedPercentage",
+    //     "fixedPercentageAdvance",
+    //     "fixWithoutAdvance",
+    //     "seniorLevel",
+    //     "executives",
+    //     "nonExecutives",
+    //     "other",
+    //   ];
+
+    //   // for (const field of fileFields) {
+    //   // if (uploadedFiles[field]) {
+    //   // const base64 = await fileToBase64(uploadedFiles[field]!);
+    //   // clientData[`${field}File`] = {
+    //   // name: uploadedFiles[field]!.name,
+    //   // type: uploadedFiles[field]!.type,
+    //   // data: base64,
+    //   // };
+    //   // }
+    //   // }
+
+    //   // Log clientData for debugging
+    //   console.log("clientData before sending:", JSON.stringify(clientData, null, 2));
+    //   let backendData = new FormData();
+
+    //   // Handle complex objects properly
+    //   for (let key in clientData) {
+    //     const value = clientData[key];
+
+    //     if (key === 'primaryContacts' && Array.isArray(value)) {
+    //       // Handle primaryContacts array specially
+    //       backendData.append('primaryContacts', JSON.stringify(value));
+    //     }
+    //     else if (key === 'lineOfBusiness' && Array.isArray(value)) {
+    //       // Handle lineOfBusiness array specially
+    //       backendData.append('lineOfBusiness', JSON.stringify(value));
+    //     }
+    //     else if (key === 'emails' && Array.isArray(value)) {
+    //       // Handle emails array specially
+    //       backendData.append('emails', JSON.stringify(value));
+    //     }
+    //     else if (value !== undefined && value !== null) {
+    //       backendData.append(key, value);
+    //     }
+    //   }
+    //   const result = await createClient(backendData);
+    //   console.log("Client created successfully:", result);
+
+    //   // Reset form
+    //   setFormData({
+    //     name: "",
+    //     emails: [],
+    //     phoneNumber: "",
+    //     website: "",
+    //     industry: "",
+    //     location: "",
+    //     address: "",
+    //     googleMapsLink: "",
+    //     incorporationDate: "",
+    //     registrationNumber: "",
+    //     lineOfBusiness: [],
+    //     countryOfBusiness: "",
+    //     referredBy: "",
+    //     linkedInProfile: "",
+    //     linkedInPage: "",
+    //     countryCode: "+966",
+    //     primaryContacts: [],
+    //     clientStage: "Lead",
+    //     clientTeam: "Enterprise",
+    //     clientRm: "",
+    //     clientAge: 0,
+    //     contractNumber: "",
+    //     contractStartDate: null,
+    //     contractEndDate: null,
+    //     contractValue: 0,
+    //     contractType: "",
+    //     cLevelPercentage: 0,
+    //     belowCLevelPercentage: 0,
+    //     fixedPercentageNotes: "",
+    //     fixedPercentageAdvanceNotes: "",
+    //     cLevelPercentageNotes: "",
+    //     belowCLevelPercentageNotes: "",
+    //     fixWithoutAdvanceNotes: "",
+    //     seniorLevelPercentage: 0,
+    //     executivesPercentage: 0,
+    //     nonExecutivesPercentage: 0,
+    //     otherPercentage: 0,
+    //     seniorLevelNotes: "",
+    //     executivesNotes: "",
+    //     nonExecutivesNotes: "",
+    //     otherNotes: "",
+    //     salesLead: "",
+    //   });
+    //   setEmailInput("");
+    //   setUploadedFiles({
+    //     profileImage: null,
+    //     crCopy: null,
+    //     vatCopy: null,
+    //     gstTinDocument: null,
+    //     fixedPercentage: null,
+    //     fixedPercentageAdvance: null,
+    //     variablePercentageCLevel: null,
+    //     variablePercentageBelowCLevel: null,
+    //     fixWithoutAdvance: null,
+    //     seniorLevel: null,
+    //     executives: null,
+    //     nonExecutives: null,
+    //     other: null,
+    //   });
+    //   setNewContact({ name: "", email: "", phone: "", countryCode: "+966", designation: "", linkedin: "", isPrimary: true });
+    //   setCurrentTab(0);
+    //   setIsContactModalOpen(false);
+    //   setSelectedLevels([]);
+    //   setActiveLevel(null);
+    //   onOpenChange(false);
+    // } catch (error: any) {
+    //   console.error("Failed to create client:", error);
+    //   const errorMessage = error.message.includes("Client validation failed")
+    //     ? "Invalid data provided. Please check all fields and try again."
+    //     : error.message || "Failed to create client. Please try again.";
+    //   setError(errorMessage);
+    // } finally {
+    //   setLoading(false);
+    // }
   };
 
   const handleNext = () => {
@@ -703,9 +1088,8 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
           {["Client Information", "Contact Details", "Contract Information", "Documents"].map((tab, index) => (
             <button
               key={tab}
-              className={`flex-1 px-2 py-2 text-center text-xs sm:text-sm md:text-base ${
-                currentTab === index ? "border-b-2 border-blue-500 text-blue-500" : "text-gray-500"
-              }`}
+              className={`flex-1 px-2 py-2 text-center text-xs sm:text-sm md:text-base ${currentTab === index ? "border-b-2 border-blue-500 text-blue-500" : "text-gray-500"
+                }`}
               onClick={() => setCurrentTab(index)}
             >
               {tab}
@@ -1148,7 +1532,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label className="text-sm sm:text-base font-semibold">
                       Contract Document
@@ -1228,7 +1612,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label className="text-sm sm:text-base font-semibold">
                       Contract Document
@@ -1308,7 +1692,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label className="text-sm sm:text-base font-semibold">
                       Contract Document
@@ -1382,11 +1766,10 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                           />
                           <label
                             htmlFor={`level-${level}`}
-                            className={`text-xs sm:text-sm font-medium leading-none cursor-pointer ${
-                              activeLevel === level
+                            className={`text-xs sm:text-sm font-medium leading-none cursor-pointer ${activeLevel === level
                                 ? "font-bold text-primary"
                                 : ""
-                            }`}
+                              }`}
                             onClick={() => selectedLevels.includes(level) && setActiveLevel(level)}
                           >
                             {level}
@@ -1402,19 +1785,17 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                         {selectedLevels.map((level) => (
                           <div
                             key={level}
-                            className={`border-2 shadow-sm rounded-lg p-2 cursor-pointer transition-colors w-full ${
-                              activeLevel === level
+                            className={`border-2 shadow-sm rounded-lg p-2 cursor-pointer transition-colors w-full ${activeLevel === level
                                 ? "border-primary bg-primary/5"
                                 : "border-gray-400"
-                            }`}
+                              }`}
                             onClick={() => setActiveLevel(level)}
                           >
                             <div className="flex flex-col sm:flex-row items-center sm:space-x-4 space-y-2 sm:space-y-0">
-                              <h4 className={`font-medium text-xs sm:text-sm w-28 ${
-                                activeLevel === level
+                              <h4 className={`font-medium text-xs sm:text-sm w-28 ${activeLevel === level
                                   ? "text-primary"
                                   : ""
-                              }`}>{level}</h4>
+                                }`}>{level}</h4>
                               <div className="flex items-center space-x-2 w-full sm:w-auto">
                                 <div className="relative w-24">
                                   <Input
@@ -1427,12 +1808,12 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                                     }
                                     onChange={handleInputChange(
                                       `${level.replace(/\s+/g, "")[0].toLowerCase() +
-                                        level.replace(/\s+/g, "").slice(1)}Percentage` as keyof ClientForm
+                                      level.replace(/\s+/g, "").slice(1)}Percentage` as keyof ClientForm
                                     )}
                                     value={
                                       typeof formData[
-                                        `${level.replace(/\s+/g, "")[0].toLowerCase() +
-                                          level.replace(/\s+/g, "").slice(1)}Percentage` as keyof ClientForm
+                                      `${level.replace(/\s+/g, "")[0].toLowerCase() +
+                                      level.replace(/\s+/g, "").slice(1)}Percentage` as keyof ClientForm
                                       ] || ""
                                     }
                                     className="h-8 pl-2 pr-6 text-xs"
@@ -1449,12 +1830,12 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                                   }
                                   onChange={handleInputChange(
                                     `${level.replace(/\s+/g, "")[0].toLowerCase() +
-                                      level.replace(/\s+/g, "").slice(1)}Notes` as keyof ClientForm
+                                    level.replace(/\s+/g, "").slice(1)}Notes` as keyof ClientForm
                                   )}
                                   value={
                                     typeof formData[
-                                      `${level.replace(/\s+/g, "")[0].toLowerCase() +
-                                        level.replace(/\s+/g, "").slice(1)}Notes` as keyof ClientForm
+                                    `${level.replace(/\s+/g, "")[0].toLowerCase() +
+                                    level.replace(/\s+/g, "").slice(1)}Notes` as keyof ClientForm
                                     ] || ""
                                   }
                                   className="h-8 text-xs flex-1"
@@ -1476,7 +1857,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                             }
                           >
                             <Upload className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
-                            <p className="text-xs text-muted-foreground">Upload (PDF, JPEG, PNG)</p>
+                            <p className="text-xs text-muted-foreground">Upload (PDF, JPEG,JPG, PNG)</p>
                           </div>
                           <input
                             id={`level-${activeLevel.replace(/\s+/g, "")}-input`}

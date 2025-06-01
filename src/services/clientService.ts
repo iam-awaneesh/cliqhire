@@ -304,9 +304,8 @@ const sendClientRequest = async (
         method,
         url,
         data: formData,
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+        // When sending FormData, do not set Content-Type header
+        // The browser will automatically set it with the correct boundary
         timeout: 30000, // 30 second timeout
       });
     } else {
@@ -399,18 +398,19 @@ const createClient = async (rawData: FormData | Omit<ClientResponse, "_id" | "cr
   try {
     if (rawData instanceof FormData) {
       console.log('Creating client with FormData');
+      // When sending FormData, do not set Content-Type header
+      // The browser will automatically set it with the correct boundary
       const response = await axios.post<ApiResponse<ClientResponse>>(
         `${API_URL}/clients`,
         rawData,
         {
-          headers: { 'Content-Type': 'multipart/form-data' },
           timeout: 30000
         }
       );
       return response.data.data;
     } else {
       console.log('Creating client with data:', { name: rawData.name, stage: rawData.clientStage });
-      const response = await sendClientRequest(`${API_URL}/clients`, 'post', rawData);
+      const response = await sendClientRequest(`${API_URL}clients`, 'post', rawData);
       return response.data.data;
     }
   } catch (error: any) {
@@ -534,7 +534,8 @@ const uploadClientFile = async (
       `${API_URL}/clients/${clientId}/upload`,
       formData,
       { 
-        headers: { "Content-Type": "multipart/form-data" },
+        // When sending FormData, do not set Content-Type header
+        // The browser will automatically set it with the correct boundary
         timeout: 30000
       }
     );
