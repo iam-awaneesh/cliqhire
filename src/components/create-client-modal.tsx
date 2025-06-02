@@ -73,6 +73,8 @@ interface ClientForm {
   fixedPercentageValue?: string | number;
   fixedPercentageAdvanceNotes?: string;
   fixWithAdvanceValue?: string | number;
+  advanceMoneyCurrency?: string;
+  advanceMoneyAmount?: number;
   fixWithoutAdvanceValue?: string | number;
   cLevelPercentageNotes?: string;
   belowCLevelPercentageNotes?: string;
@@ -722,7 +724,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
       // Append files to FormData if they exist
       for (const field of fileFields) {
         if (uploadedFiles[field]) {
-          formDataToSend.append(field, uploadedFiles[field]!);
+          formDataToSend.append(field.toString(), uploadedFiles[field]!);
         }
       }
       
@@ -768,6 +770,8 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
         belowCLevelPercentage: 0,
         fixedPercentageNotes: "",
         fixedPercentageAdvanceNotes: "",
+        advanceMoneyCurrency: "USD",
+        advanceMoneyAmount: 0,
         cLevelPercentageNotes: "",
         belowCLevelPercentageNotes: "",
         fixWithoutAdvanceNotes: "",
@@ -1372,7 +1376,10 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                         checked={formData.lineOfBusiness?.includes(option)}
                         onCheckedChange={(checked) => {
                           setFormData((prev) => {
-                            const current = prev.lineOfBusiness || [];
+                            // Ensure lineOfBusiness is always treated as an array
+                            const current = Array.isArray(prev.lineOfBusiness) 
+                              ? prev.lineOfBusiness 
+                              : prev.lineOfBusiness ? [prev.lineOfBusiness] : [];
                             return {
                               ...prev,
                               lineOfBusiness: checked
@@ -1601,6 +1608,32 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                           <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-muted-foreground">
                             %
                           </span>
+                        </div>
+                        <div className="flex items-center space-x-0 border rounded-md overflow-hidden w-48">
+                          <Select
+                            value={formData.advanceMoneyCurrency || "USD"}
+                            onValueChange={(value) => setFormData((prev) => ({ ...prev, advanceMoneyCurrency: value }))}
+                          >
+                            <SelectTrigger className="h-8 text-xs w-20 rounded-r-none border-r-0">
+                              <SelectValue placeholder="Currency" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="USD">USD</SelectItem>
+                              <SelectItem value="EUR">EUR</SelectItem>
+                              <SelectItem value="GBP">GBP</SelectItem>
+                              <SelectItem value="SAR">SAR</SelectItem>
+                              <SelectItem value="AED">AED</SelectItem>
+                              <SelectItem value="INR">INR</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Input
+                            type="number"
+                            placeholder="Amount"
+                            min="0"
+                            onChange={handleInputChange("advanceMoneyAmount")}
+                            value={formData.advanceMoneyAmount || ""}
+                            className="h-8 text-xs w-28 rounded-l-none border-l-0"
+                          />
                         </div>
                         <Input
                           type="text"
