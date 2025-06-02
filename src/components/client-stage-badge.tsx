@@ -12,23 +12,22 @@ import { ChevronDown } from "lucide-react"
 
 const stageColors = {
   Lead: "bg-blue-100 text-blue-800",
-
-  Engaged: "bg-yellow-100 text-gray-800",
   Negotiation: "bg-purple-100 text-purple-800",
-  Signed: "bg-green-100 text-purple-800",
+  Engaged: "bg-yellow-100 text-gray-800",
+  Signed: "bg-green-100 text-green-800",
 } as const
 
 const stages: (keyof typeof stageColors)[] = [
   'Lead',
-  'Engaged',
   'Negotiation',
+  'Engaged',
   'Signed'
 ]
 
 interface ClientStageBadgeProps {
   id?: string
   stage: keyof typeof stageColors
-  onStageChange?: (id:any, newStage:any) => void
+  onStageChange?: (id: string, newStage: keyof typeof stageColors) => void
 }
 
 export function ClientStageBadge({ id, stage, onStageChange }: ClientStageBadgeProps) {
@@ -42,11 +41,15 @@ export function ClientStageBadge({ id, stage, onStageChange }: ClientStageBadgeP
     
   }
 
-  const handleClick =( id:any, option: any) => {
-    return (event: any) => {
+  const handleClick = (id: string | undefined, option: keyof typeof stageColors) => {
+    return (event: React.MouseEvent) => {
       event.stopPropagation()
-      console.log('option', option)
-      onStageChange(id, option)
+      console.log('Stage changing to:', option)
+      if (id && onStageChange) {
+        onStageChange(id, option)
+      } else {
+        console.error('Cannot change stage: id is undefined or onStageChange is not provided')
+      }
     }
   }
 
@@ -71,6 +74,7 @@ export function ClientStageBadge({ id, stage, onStageChange }: ClientStageBadgeP
           <DropdownMenuItem
             key={stageOption}
             onClick={handleClick(id, stageOption)}
+            data-testid={`stage-option-${stageOption}`}
             className="flex items-center gap-2"
           >
             <Badge 

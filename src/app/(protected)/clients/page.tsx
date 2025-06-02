@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/table";
 import { Plus, RefreshCcw, SlidersHorizontal, MoreVertical } from "lucide-react";
 import { CreateClientModal } from "@/components/create-client-modal";
-import { getSampleClients } from "@/app/(protected)/clients/data/sample-clients";
+import { getSampleClients, updateClientStage } from "@/app/(protected)/clients/data/sample-clients";
 import { ClientStageBadge } from "@/components/client-stage-badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -128,6 +128,7 @@ export default function ClientsPage() {
   };
 
   const handleStageChange = (clientId: string, newStage: Client["stage"]) => {
+    console.log(`Stage change requested: Client ${clientId} to stage ${newStage}`);
     setPendingChange({ clientId, stage: newStage });
     setShowConfirmDialog(true);
   };
@@ -173,25 +174,36 @@ export default function ClientsPage() {
     setIsUpdating(true);
     
     try {
-      // Optimistically update the UI
-      setClients(prevClients =>
-        prevClients.map(client =>
-          client.id === pendingChange.clientId 
-            ? { ...client, stage: pendingChange.stage } 
-            : client
-        )
-      );
-
-      // Make the API call
+      console.log('Updating client stage:', pendingChange.clientId, 'to', pendingChange.stage);
+      
+      // Update the client stage in localStorage and get the updated clients
+      const updatedClients = updateClientStage(pendingChange.clientId, pendingChange.stage);
+      
+      // Update the UI with the updated clients
+      setClients(updatedClients);
+      
+      console.log('Stage update successful for client:', pendingChange.clientId);
+      
+      // If you want to also make the API call when it's available, uncomment this code:
+      /*
       const response = await fetch(`https://aems-backend.onrender.com/api/clients/${pendingChange.clientId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ clientStage: pendingChange.stage }),
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ stage: pendingChange.stage }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update client stage');
+        const errorData = await response.text();
+        console.error('API error response:', errorData);
+        throw new Error(`Failed to update client stage: ${response.status} ${response.statusText}`);
       }
+      
+      const responseData = await response.json();
+      console.log('Stage update successful:', responseData);
+      */
     } catch (error) {
       console.error('Error updating client stage:', error);
       // Revert the UI change if the API call fails
