@@ -9,6 +9,7 @@ const fetchClients = async () => {
     const clients = Array.isArray(response) ? response : []; // Ensure response is an array
     if (!Array.isArray(clients)) {
       throw new Error("Expected an array of clients");
+      
     }
     sampleClients = clients.map((client) => ({
       id: client._id,
@@ -16,7 +17,7 @@ const fetchClients = async () => {
       jobCount: client.jobCount,
       industry: client.industry || "", // Default to empty string if undefined
       location: client.location || "", // Default to empty string if undefined
-      stage: client.clientStage === "Prospect" ? "Lead" : client.clientStage || "Lead", // Default to "Lead" if undefined
+      stage: client.clientStage || "Lead", // Default to "Lead" if undefined
       owner: client.clientRm || "", // Default to empty string if undefined
       team: client.clientTeam || "", // Default to empty string if undefined
       createdAt: client.createdAt,
@@ -30,6 +31,7 @@ const fetchClients = async () => {
 };
 
 const getSampleClients = async () => {
+  
   return await fetchClients();
 };
 

@@ -22,27 +22,25 @@ import {
 } from "@/components/ui/select";
 import { useState, useEffect } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Upload, Plus } from "lucide-react";
-import { createClient } from "@/services/clientService";
+import { Upload, Plus, Eye, Download } from "lucide-react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { Textarea } from "@/components/ui/textarea";
 import axios from "axios";
-import * as Flags from "country-flag-icons/react/3x2";
 import { INDUSTRIES } from "@/lib/constants";
 
-// Interfaces from clientService
+// Interfaces
 interface PrimaryContact {
   name: string;
   email: string;
   phone: string;
-  countryCode?: string;
-  position?: string;
+  countryCode: string;
+  designation: string;
   linkedin?: string;
+  isPrimary: boolean;
 }
 
 interface ClientForm {
-  fixWithoutAdvanceNotes: string;
   name: string;
   emails: string[];
   phoneNumber: string;
@@ -52,16 +50,15 @@ interface ClientForm {
   address?: string;
   googleMapsLink?: string;
   incorporationDate?: string;
-  countryOfRegistration?: string;
   registrationNumber?: string;
-  lineOfBusiness?: string[];
+  lineOfBusiness?: string[] | string;
   countryOfBusiness?: string;
   referredBy?: string;
   linkedInProfile?: string;
   linkedInPage?: string;
   countryCode?: string;
   primaryContacts: PrimaryContact[];
-  clientStage?: "Lead" | "Engaged" | "Negotiation" | "Signed" | "Prospect";
+  clientStage?: "Lead" | "Engaged" | "Negotiation" | "Signed";
   clientTeam?: "Enterprise" | "SMB" | "Mid-Market";
   clientRm?: string;
   clientAge?: number;
@@ -73,10 +70,37 @@ interface ClientForm {
   cLevelPercentage?: number;
   belowCLevelPercentage?: number;
   fixedPercentageNotes?: string;
+  fixedPercentageValue?: string | number;
   fixedPercentageAdvanceNotes?: string;
+  fixWithAdvanceValue?: string | number;
+  advanceMoneyCurrency?: string;
+  advanceMoneyAmount?: number;
+  fixWithoutAdvanceValue?: string | number;
   cLevelPercentageNotes?: string;
   belowCLevelPercentageNotes?: string;
+  fixWithoutAdvanceNotes?: string;
+  seniorLevelPercentage?: number;
+  executivesPercentage?: number;
+  nonExecutivesPercentage?: number;
+  otherPercentage?: number;
+  seniorLevelNotes?: string;
+  executivesNotes?: string;
+  nonExecutivesNotes?: string;
+  otherNotes?: string;
   salesLead?: string;
+  // File upload fields
+  crCopy?: any;
+  vatCopy?: any;
+  gstTinDocument?: any;
+  fixedPercentage?: any;
+  fixedPercentageAdvance?: any;
+  variablePercentageCLevel?: any;
+  variablePercentageBelowCLevel?: any;
+  fixWithoutAdvance?: any;
+  seniorLevel?: any;
+  executives?: any;
+  nonExecutives?: any;
+  other?: any;
 }
 
 interface CreateClientModalProps {
@@ -90,11 +114,24 @@ interface LocationSuggestion {
   lon: string;
 }
 
-interface CountrySuggestion {
-  name: {
-    common: string;
-  };
-}
+// API call to create client
+const createClient = async (data: FormData) => {
+  try {
+    const response = await axios.post(
+      "https://aems-backend.onrender.com/api/clients",
+      data,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+    return { success: true, data: response.data };
+  } catch (error: any) {
+    console.error("API Error:", error);
+    throw new Error(error.response?.data?.message || "Failed to create client");
+  }
+};
 
 export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps) {
   const [formData, setFormData] = useState<ClientForm>({
@@ -107,7 +144,6 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     address: "",
     googleMapsLink: "",
     incorporationDate: "",
-    countryOfRegistration: "",
     registrationNumber: "",
     lineOfBusiness: [],
     countryOfBusiness: "",
@@ -116,6 +152,10 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     linkedInPage: "",
     countryCode: "+966",
     primaryContacts: [],
+    clientStage: "Lead",
+    clientTeam: "Enterprise",
+    clientRm: "",
+    clientAge: 0,
     contractNumber: "",
     contractStartDate: null,
     contractEndDate: null,
@@ -124,21 +164,29 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     cLevelPercentage: 0,
     belowCLevelPercentage: 0,
     fixedPercentageNotes: "",
+    fixedPercentageValue: "",
     fixedPercentageAdvanceNotes: "",
+    fixWithAdvanceValue: "",
+    fixWithoutAdvanceValue: "",
     cLevelPercentageNotes: "",
     belowCLevelPercentageNotes: "",
+    fixWithoutAdvanceNotes: "",
+    seniorLevelPercentage: 0,
+    executivesPercentage: 0,
+    nonExecutivesPercentage: 0,
+    otherPercentage: 0,
+    seniorLevelNotes: "",
+    executivesNotes: "",
+    nonExecutivesNotes: "",
+    otherNotes: "",
     salesLead: "",
-    fixWithoutAdvanceNotes:"",
   });
 
   const [emailInput, setEmailInput] = useState<string>("");
-  const [selectedYear, setSelectedYear] = useState<Date | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [locationSuggestions, setLocationSuggestions] = useState<LocationSuggestion[]>([]);
   const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
-  const [countrySuggestions, setCountrySuggestions] = useState<CountrySuggestion[]>([]);
-  const [showCountrySuggestions, setShowCountrySuggestions] = useState(false);
   const [currentTab, setCurrentTab] = useState(0);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [newContact, setNewContact] = useState<PrimaryContact>({
@@ -146,10 +194,12 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     email: "",
     phone: "",
     countryCode: "+966",
-    position: "",
+    designation: "",
     linkedin: "",
+    isPrimary: true,
   });
-  const [variablePercentageSection, setVariablePercentageSection] = useState<string | null>(null);
+  const [selectedLevels, setSelectedLevels] = useState<string[]>([]);
+  const [activeLevel, setActiveLevel] = useState<string | null>(null);
 
   const [uploadedFiles, setUploadedFiles] = useState<{ [key: string]: File | null }>({
     profileImage: null,
@@ -160,7 +210,82 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     fixedPercentageAdvance: null,
     variablePercentageCLevel: null,
     variablePercentageBelowCLevel: null,
+    fixWithoutAdvance: null,
+    seniorLevel: null,
+    executives: null,
+    nonExecutives: null,
+    other: null,
   });
+
+  type LevelType =
+    | "seniorLevel"
+    | "executives"
+    | "nonExecutives"
+    | "other"
+    | "profileImage"
+    | "crCopy"
+    | "vatCopy"
+    | "gstTinDocument"
+    | "fixedPercentage"
+    | "fixedPercentageAdvance"
+    | "variablePercentageCLevel"
+    | "variablePercentageBelowCLevel"
+    | "fixWithoutAdvance";
+
+  const handleFileChange = (field: LevelType) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (file.size > maxSize) {
+        setError(`File ${file.name} is too large. Maximum size is 5MB.`);
+        return;
+      }
+      const allowedTypes = ["image/jpeg", "image/png", "image/jpg", "application/pdf"];
+      if (!allowedTypes.includes(file.type)) {
+        setError(`Invalid file type for ${file.name}. Allowed types are: JPEG, PNG, PDF`);
+        return;
+      }
+      setUploadedFiles((prev) => ({
+        ...prev,
+        [field]: file,
+      }));
+      setError(null);
+    }
+  };
+
+  const handlePreview = (file: File | null) => {
+    if (file) {
+      const fileUrl = URL.createObjectURL(file);
+      window.open(fileUrl, "_blank");
+    } else {
+      setError("No file uploaded to preview.");
+    }
+  };
+
+  const handleDownload = (file: File | null) => {
+    if (!file) {
+      setError("No file uploaded to download.");
+      return;
+    }
+    const fileUrl = URL.createObjectURL(file);
+    const a = document.createElement("a");
+    a.href = fileUrl;
+    a.download = file.name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(fileUrl);
+  };
+
+  // Convert file to base64
+  // const fileToBase64 = (file: File): Promise<string> => {
+  // return new Promise((resolve, reject) => {
+  // const reader = new FileReader();
+  // reader.readAsDataURL(file);
+  // reader.onload = () => resolve(reader.result as string);
+  // reader.onerror = (error) => reject(error);
+  // });
+  // };
 
   // Location suggestions
   useEffect(() => {
@@ -169,7 +294,6 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
         setLocationSuggestions([]);
         return;
       }
-
       try {
         const response = await axios.get(
           `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
@@ -182,39 +306,9 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
         console.error("Error fetching location suggestions:", error);
       }
     };
-
     const debounceTimer = setTimeout(fetchLocationSuggestions, 300);
     return () => clearTimeout(debounceTimer);
   }, [formData.location]);
-
-  // Country suggestions
-  useEffect(() => {
-    const fetchCountrySuggestions = async () => {
-      if (!formData.countryOfRegistration || formData.countryOfRegistration.length < 2) {
-        setCountrySuggestions([]);
-        return;
-      }
-
-      try {
-        const response = await axios.get(
-          `https://restcountries.com/v3.1/name/${encodeURIComponent(
-            formData.countryOfRegistration
-          )}`
-        );
-        setCountrySuggestions(response.data);
-        setShowCountrySuggestions(true);
-      } catch (error) {
-        if (axios.isAxiosError(error) && error.response?.status === 404) {
-          setCountrySuggestions([]);
-        } else {
-          console.error("Error fetching country suggestions:", error);
-        }
-      }
-    };
-
-    const debounceTimer = setTimeout(fetchCountrySuggestions, 300);
-    return () => clearTimeout(debounceTimer);
-  }, [formData.countryOfRegistration]);
 
   const handleLocationSelect = async (suggestion: LocationSuggestion) => {
     setFormData((prev) => ({
@@ -223,13 +317,11 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
       googleMapsLink: `https://www.google.com/maps?q=${suggestion.lat},${suggestion.lon}`,
     }));
     setShowLocationSuggestions(false);
-
     try {
       const response = await axios.get(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${suggestion.lat}&lon=${suggestion.lon}`
       );
       const addressData = response.data.address;
-
       setFormData((prev) => ({
         ...prev,
         countryOfBusiness: addressData.country || prev.countryOfBusiness,
@@ -240,18 +332,21 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     }
   };
 
-  const handleCountrySelect = (countryName: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      countryOfRegistration: countryName,
-    }));
-    setShowCountrySuggestions(false);
-  };
-
   // Email validation
   const validateEmails = (emails: string[]): string[] => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emails.filter((email) => email && !emailRegex.test(email));
+  };
+
+  // URL validation
+  const validateUrl = (url: string): boolean => {
+    if (!url) return true; // Allow empty URLs since these fields are optional
+    try {
+      new URL(url);
+      return true;
+    } catch {
+      return false;
+    }
   };
 
   const handleInputChange = (field: keyof ClientForm) => (
@@ -259,23 +354,27 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
   ) => {
     let value: string | string[] | number = e.target.value;
 
-    if (field === "emails") {
+    if (field === "name") {
+      value = e.target.value.trimStart();
+    } else if (field === "emails") {
       setEmailInput(e.target.value);
       const emails = e.target.value
         .split(",")
         .map((email) => email.trim())
         .filter((email) => email);
       value = emails;
-    } else if (field === "website" && value && !value.match(/^https?:\/\//)) {
-      value = `${value}`;
-    } else if (field === "contractValue" || field === "cLevelPercentage" || field === "belowCLevelPercentage") {
-      value = e.target.value ? parseFloat(e.target.value) : 0;
     } else if (
-      field === "fixedPercentageNotes" ||
-      field === "fixedPercentageAdvanceNotes" ||
-      field === "cLevelPercentageNotes" ||
-      field === "belowCLevelPercentageNotes"
+      field === "contractValue" ||
+      field === "cLevelPercentage" ||
+      field === "belowCLevelPercentage" ||
+      field === "seniorLevelPercentage" ||
+      field === "executivesPercentage" ||
+      field === "nonExecutivesPercentage" ||
+      field === "otherPercentage"
+
     ) {
+      value = e.target.value ? parseFloat(e.target.value) : 0;
+    } else {
       value = e.target.value;
     }
 
@@ -287,12 +386,24 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     if (field === "location") {
       setShowLocationSuggestions(true);
     }
-
-    if (field === "countryOfRegistration") {
-      setShowCountrySuggestions(true);
+    // Clear error when user starts typing in URL fields or any field
+    if (
+      field === "website" ||
+      field === "linkedInProfile" ||
+      field === "googleMapsLink" ||
+      error
+    ) {
+      setError(null);
     }
+  };
 
-    if (field !== "emails") {
+  const handleUrlBlur = (field: keyof ClientForm) => (
+    e: React.FocusEvent<HTMLInputElement>
+  ) => {
+    const value = e.target.value;
+    if (value && !validateUrl(value)) {
+      setError(`Invalid URL for ${field}`);
+    } else {
       setError(null);
     }
   };
@@ -302,7 +413,6 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
       .split(",")
       .map((email) => email.trim())
       .filter((email) => email);
-
     const invalidEmails = validateEmails(emails);
     if (invalidEmails.length > 0) {
       setError(`Invalid email(s): ${invalidEmails.join(", ")}`);
@@ -315,56 +425,8 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     }
   };
 
-  const handleFileChange = (field: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files[0]) {
-      const file = event.target.files[0];
-
-      const maxSize = 5 * 1024 * 1024; // 5MB
-      if (file.size > maxSize) {
-        setError(`File ${file.name} is too large. Maximum size is 5MB.`);
-        return;
-      }
-
-      const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
-      if (!allowedTypes.includes(file.type)) {
-        setError(`Invalid file type for ${file.name}. Allowed types are: JPEG, PNG, PDF`);
-        return;
-      }
-
-      setUploadedFiles((prev) => ({
-        ...prev,
-        [field]: file,
-      }));
-      setError(null);
-    }
-  };
-
-  const handlePreview = (file: File | null) => {
-    if (file) {
-      const url = URL.createObjectURL(file);
-      window.open(url, "_blank");
-    } else {
-      setError("No file uploaded to preview.");
-    }
-  };
-
-  const handleDownload = (file: File | null) => {
-    if (file) {
-      const url = URL.createObjectURL(file);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = file.name;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } else {
-      setError("No file uploaded to download.");
-    }
-  };
-
   const handleAddContact = (contact: PrimaryContact) => {
-    if (!contact.name) {
+    if (!contact.name || contact.name.trim() === "") {
       setError("Contact name is required");
       return;
     }
@@ -376,207 +438,32 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
       setError("Contact phone number is required");
       return;
     }
+    if (contact.linkedin && !validateUrl(contact.linkedin)) {
+      setError("Invalid LinkedIn URL");
+      return;
+    }
 
     setFormData((prev) => ({
       ...prev,
       primaryContacts: [...prev.primaryContacts, { ...contact }],
     }));
-    setNewContact({ name: "", email: "", phone: "", countryCode: "+966", position: "", linkedin: "" });
+    setNewContact({ name: "", email: "", phone: "", countryCode: "+966", designation: "", linkedin: "", isPrimary: true });
     setIsContactModalOpen(false);
     setError(null);
   };
 
   const countryCodes = [
     { code: "+966", label: "+966 (Saudi Arabia)" },
-    { code: "+93", label: "+93 (Afghanistan)" },
-    { code: "+355", label: "+355 (Albania)" },
-    { code: "+213", label: "+213 (Algeria)" },
-    { code: "+376", label: "+376 (Andorra)" },
-    { code: "+244", label: "+244 (Angola)" },
-    { code: "+54", label: "+54 (Argentina)" },
-    { code: "+374", label: "+374 (Armenia)" },
-    { code: "+61", label: "+61 (Australia)" },
-    { code: "+43", label: "+43 (Austria)" },
-    { code: "+994", label: "+994 (Azerbaijan)" },
-    { code: "+973", label: "+973 (Bahrain)" },
-    { code: "+880", label: "+880 (Bangladesh)" },
-    { code: "+375", label: "+375 (Belarus)" },
-    { code: "+32", label: "+32 (Belgium)" },
-    { code: "+501", label: "+501 (Belize)" },
-    { code: "+229", label: "+229 (Benin)" },
-    { code: "+975", label: "+975 (Bhutan)" },
-    { code: "+591", label: "+591 (Bolivia)" },
-    { code: "+387", label: "+387 (Bosnia)" },
-    { code: "+267", label: "+267 (Botswana)" },
-    { code: "+55", label: "+55 (Brazil)" },
-    { code: "+359", label: "+359 (Bulgaria)" },
-    { code: "+226", label: "+226 (Burkina Faso)" },
-    { code: "+257", label: "+257 (Burundi)" },
-    { code: "+855", label: "+855 (Cambodia)" },
-    { code: "+237", label: "+237 (Cameroon)" },
-    { code: "+1", label: "+1 (Canada)" },
-    { code: "+238", label: "+238 (Cape Verde)" },
-    { code: "+236", label: "+236 (Central African)" },
-    { code: "+235", label: "+235 (Chad)" },
-    { code: "+56", label: "+56 (Chile)" },
-    { code: "+86", label: "+86 (China)" },
-    { code: "+57", label: "+57 (Colombia)" },
-    { code: "+269", label: "+269 (Comoros)" },
-    { code: "+506", label: "+506 (Costa Rica)" },
-    { code: "+385", label: "+385 (Croatia)" },
-    { code: "+53", label: "+53 (Cuba)" },
-    { code: "+357", label: "+357 (Cyprus)" },
-    { code: "+420", label: "+420 (Czech Republic)" },
-    { code: "+243", label: "+243 (Congo)" },
-    { code: "+45", label: "+45 (Denmark)" },
-    { code: "+253", label: "+253 (Djibouti)" },
-    { code: "+670", label: "+670 (East Timor)" },
-    { code: "+593", label: "+593 (Ecuador)" },
-    { code: "+20", label: "+20 (Egypt)" },
-    { code: "+503", label: "+503 (El Salvador)" },
-    { code: "+240", label: "+240 (Equatorial Guinea)" },
-    { code: "+291", label: "+291 (Eritrea)" },
-    { code: "+372", label: "+372 (Estonia)" },
-    { code: "+251", label: "+251 (Ethiopia)" },
-    { code: "+679", label: "+679 (Fiji)" },
-    { code: "+358", label: "+358 (Finland)" },
-    { code: "+33", label: "+33 (France)" },
-    { code: "+241", label: "+241 (Gabon)" },
-    { code: "+220", label: "+220 (Gambia)" },
-    { code: "+995", label: "+995 (Georgia)" },
-    { code: "+49", label: "+49 (Germany)" },
-    { code: "+233", label: "+233 (Ghana)" },
-    { code: "+30", label: "+30 (Greece)" },
-    { code: "+502", label: "+502 (Guatemala)" },
-    { code: "+224", label: "+224 (Guinea)" },
-    { code: "+245", label: "+245 (Guinea-Bissau)" },
-    { code: "+592", label: "+592 (Guyana)" },
-    { code: "+509", label: "+509 (Haiti)" },
-    { code: "+504", label: "+504 (Honduras)" },
-    { code: "+852", label: "+852 (Hong Kong)" },
-    { code: "+36", label: "+36 (Hungary)" },
-    { code: "+354", label: "+354 (Iceland)" },
-    { code: "+91", label: "+91 (India)" },
-    { code: "+62", label: "+62 (Indonesia)" },
-    { code: "+98", label: "+98 (Iran)" },
-    { code: "+964", label: "+964 (Iraq)" },
-    { code: "+353", label: "+353 (Ireland)" },
-    { code: "+972", label: "+972 (Israel)" },
-    { code: "+39", label: "+39 (Italy)" },
-    { code: "+225", label: "+225 (Ivory Coast)" },
-    { code: "+876", label: "+876 (Jamaica)" },
-    { code: "+81", label: "+81 (Japan)" },
-    { code: "+962", label: "+962 (Jordan)" },
-    { code: "+7", label: "+7 (Kazakhstan)" },
-    { code: "+254", label: "+254 (Kenya)" },
-    { code: "+686", label: "+686 (Kiribati)" },
-    { code: "+965", label: "+965 (Kuwait)" },
-    { code: "+996", label: "+996 (Kyrgyzstan)" },
-    { code: "+856", label: "+856 (Laos)" },
-    { code: "+371", label: "+371 (Latvia)" },
-    { code: "+961", label: "+961 (Lebanon)" },
-    { code: "+266", label: "+266 (Lesotho)" },
-    { code: "+231", label: "+231 (Liberia)" },
-    { code: "+218", label: "+218 (Libya)" },
-    { code: "+423", label: "+423 (Liechtenstein)" },
-    { code: "+370", label: "+370 (Lithuania)" },
-    { code: "+352", label: "+352 (Luxembourg)" },
-    { code: "+853", label: "+853 (Macau)" },
-    { code: "+389", label: "+389 (Macedonia)" },
-    { code: "+261", label: "+261 (Madagascar)" },
-    { code: "+265", label: "+265 (Malawi)" },
-    { code: "+60", label: "+60 (Malaysia)" },
-    { code: "+960", label: "+960 (Maldives)" },
-    { code: "+223", label: "+223 (Mali)" },
-    { code: "+356", label: "+356 (Malta)" },
-    { code: "+692", label: "+692 (Marshall Islands)" },
-    { code: "+222", label: "+222 (Mauritania)" },
-    { code: "+230", label: "+230 (Mauritius)" },
-    { code: "+52", label: "+52 (Mexico)" },
-    { code: "+691", label: "+691 (Micronesia)" },
-    { code: "+373", label: "+373 (Moldova)" },
-    { code: "+377", label: "+377 (Monaco)" },
-    { code: "+976", label: "+976 (Mongolia)" },
-    { code: "+382", label: "+382 (Montenegro)" },
-    { code: "+212", label: "+212 (Morocco)" },
-    { code: "+258", label: "+258 (Mozambique)" },
-    { code: "+95", label: "+95 (Myanmar)" },
-    { code: "+264", label: "+264 (Namibia)" },
-    { code: "+674", label: "+674 (Nauru)" },
-    { code: "+977", label: "+977 (Nepal)" },
-    { code: "+31", label: "+31 (Netherlands)" },
-    { code: "+64", label: "+64 (New Zealand)" },
-    { code: "+505", label: "+505 (Nicaragua)" },
-    { code: "+227", label: "+227 (Niger)" },
-    { code: "+234", label: "+234 (Nigeria)" },
-    { code: "+47", label: "+47 (Norway)" },
-    { code: "+968", label: "+968 (Oman)" },
-    { code: "+92", label: "+92 (Pakistan)" },
-    { code: "+680", label: "+680 (Palau)" },
-    { code: "+507", label: "+507 (Panama)" },
-    { code: "+675", label: "+675 (Papua Guinea)" },
-    { code: "+595", label: "+595 (Paraguay)" },
-    { code: "+51", label: "+51 (Peru)" },
-    { code: "+63", label: "+63 (Philippines)" },
-    { code: "+48", label: "+48 (Poland)" },
-    { code: "+351", label: "+351 (Portugal)" },
-    { code: "+974", label: "+974 (Qatar)" },
-    { code: "+242", label: "+242 (R T Congo)" },
-    { code: "+40", label: "+40 (Romania)" },
-    { code: "+7", label: "+7 (Russia)" },
-    { code: "+250", label: "+250 (Rwanda)" },
-    { code: "+685", label: "+685 (Samoa)" },
-    { code: "+378", label: "+378 (San Marino)" },
-    { code: "+239", label: "+239 (SOTM)" },
-    { code: "+221", label: "+221 (Senegal)" },
-    { code: "+381", label: "+381 (Serbia)" },
-    { code: "+248", label: "+248 (Seychelles)" },
-    { code: "+232", label: "+232 (Sierra Leone)" },
-    { code: "+65", label: "+65 (Singapore)" },
-    { code: "+421", label: "+421 (Slovakia)" },
-    { code: "+386", label: "+386 (Slovenia)" },
-    { code: "+677", label: "+677 (Solomon Islands)" },
-    { code: "+252", label: "+252 (Somalia)" },
-    { code: "+27", label: "+27 (South Africa)" },
-    { code: "+82", label: "+82 (South Korea)" },
-    { code: "+211", label: "+211 (South Sudan)" },
-    { code: "+34", label: "+34 (Spain)" },
-    { code: "+94", label: "+94 (Sri Lanka)" },
-    { code: "+249", label: "+249 (Sudan)" },
-    { code: "+597", label: "+597 (Suriname)" },
-    { code: "+268", label: "+268 (Swaziland)" },
-    { code: "+46", label: "+46 (Sweden)" },
-    { code: "+41", label: "+41 (Switzerland)" },
-    { code: "+963", label: "+963 (Syria)" },
-    { code: "+886", label: "+886 (Taiwan)" },
-    { code: "+992", label: "+992 (Tajikistan)" },
-    { code: "+255", label: "+255 (Tanzania)" },
-    { code: "+66", label: "+66 (Thailand)" },
-    { code: "+228", label: "+228 (Togo)" },
-    { code: "+676", label: "+676 (Tonga)" },
-    { code: "+216", label: "+216 (Tunisia)" },
-    { code: "+90", label: "+90 (Turkey)" },
-    { code: "+993", label: "+993 (Turkmenistan)" },
-    { code: "+688", label: "+688 (Tuvalu)" },
-    { code: "+256", label: "+256 (Uganda)" },
-    { code: "+380", label: "+380 (Ukraine)" },
-    { code: "+971", label: "+971 (UAE)" },
-    { code: "+44", label: "+44 (UK)" },
     { code: "+1", label: "+1 (USA)" },
-    { code: "+598", label: "+598 (Uruguay)" },
-    { code: "+998", label: "+998 (Uzbekistan)" },
-    { code: "+678", label: "+678 (Vanuatu)" },
-    { code: "+58", label: "+58 (Venezuela)" },
-    { code: "+84", label: "+84 (Vietnam)" },
-    { code: "+967", label: "+967 (Yemen)" },
-    { code: "+260", label: "+260 (Zambia)" },
-    { code: "+263", label: "+263 (Zimbabwe)" }
-];
+    { code: "+44", label: "+44 (UK)" },
+    { code: "+91", label: "+91 (India)" },
+  ];
 
   const positionOptions = [
     { value: "HR", label: "HR" },
     { value: "Senior HR", label: "Senior HR" },
     { value: "Manager", label: "Manager" },
+    { value: "HR Manager", label: "HR Manager" },
     { value: "Director", label: "Director" },
     { value: "Executive", label: "Executive" },
   ];
@@ -590,10 +477,12 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     e.preventDefault();
     setLoading(true);
     setError(null);
-
+    console.log(formData);
+    console.log(uploadedFiles);
+    
     try {
       // Validate required fields
-      if (!formData.name) {
+      if (!formData.name || formData.name.trim() === "") {
         setError("Client Name is required");
         setLoading(false);
         return;
@@ -623,11 +512,6 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
         setLoading(false);
         return;
       }
-      if (!formData.countryOfRegistration) {
-        setError("Country of Registration is required");
-        setLoading(false);
-        return;
-      }
 
       // Validate emails
       const emails = formData.emails.filter((email) => email);
@@ -653,40 +537,205 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
         return;
       }
 
-      // Prepare payload for createClient
-      const clientPayload = {
-        ...formData,
-        incorporationDate: formData.incorporationDate || undefined,
-        emails: formData.emails.length > 0 ? formData.emails : undefined,
-        lineOfBusiness: formData.lineOfBusiness.length > 0 ? formData.lineOfBusiness : undefined,
-        primaryContacts: formData.primaryContacts,
-        profileImage: uploadedFiles.profileImage || undefined,
-        crCopy: uploadedFiles.crCopy || undefined,
-        vatCopy: uploadedFiles.vatCopy || undefined,
-        gstTinDocument: uploadedFiles.gstTinDocument || undefined,
-        clientStage: formData.clientStage || "Lead",
-        clientTeam: formData.clientTeam || "Enterprise",
-        clientRm: formData.clientRm || "",
-        clientAge: formData.clientAge || 0,
-        contractNumber: formData.contractNumber || undefined,
-        contractStartDate: formData.contractStartDate ? formData.contractStartDate.toISOString().split('T')[0] : undefined,
-        contractEndDate: formData.contractEndDate ? formData.contractEndDate.toISOString().split('T')[0] : undefined,
-        contractValue: formData.contractValue || undefined,
-        contractType: formData.contractType || undefined,
-        cLevelPercentage: formData.cLevelPercentage || undefined,
-        belowCLevelPercentage: formData.belowCLevelPercentage || undefined,
-        fixedPercentage: uploadedFiles.fixedPercentage || undefined,
-        fixedPercentageAdvance: uploadedFiles.fixedPercentageAdvance || undefined,
-        variablePercentageCLevel: uploadedFiles.variablePercentageCLevel || undefined,
-        variablePercentageBelowCLevel: uploadedFiles.variablePercentageBelowCLevel || undefined,
-        fixedPercentageNotes: formData.fixedPercentageNotes || undefined,
-        fixedPercentageAdvanceNotes: formData.fixedPercentageAdvanceNotes || undefined,
-        cLevelPercentageNotes: formData.cLevelPercentageNotes || undefined,
-        belowCLevelPercentageNotes: formData.belowCLevelPercentageNotes || undefined,
-      };
+      // Validate URLs
+      if (formData.website && !validateUrl(formData.website)) {
+        setError("Invalid website URL");
+        setLoading(false);
+        return;
+      }
+      if (formData.linkedInProfile && !validateUrl(formData.linkedInProfile)) {
+        setError("Invalid LinkedIn profile URL");
+        setLoading(false);
+        return;
+      }
+      if (formData.googleMapsLink && !validateUrl(formData.googleMapsLink)) {
+        setError("Invalid Google Maps link");
+        setLoading(false);
+        return;
+      }
 
-      console.log("Submitting payload:", clientPayload);
-      const result = await createClient(clientPayload);
+      // Create FormData object to send both form data and files
+      const formDataToSend = new FormData();
+      
+      // Add all form data fields
+      formDataToSend.append('name', formData.name.trim());
+      
+      // Handle arrays properly by stringifying them
+      if (formData.emails && formData.emails.length > 0) {
+        formDataToSend.append('emails', JSON.stringify(formData.emails));
+      }
+      
+      formDataToSend.append('phoneNumber', formData.phoneNumber);
+      
+      if (formData.website) {
+        formDataToSend.append('website', formData.website);
+      }
+      
+      formDataToSend.append('industry', formData.industry);
+      formDataToSend.append('address', formData.address);
+      
+      if (formData.googleMapsLink) {
+        formDataToSend.append('googleMapsLink', formData.googleMapsLink);
+      }
+      
+      // Handle lineOfBusiness which can be array or string
+      if (Array.isArray(formData.lineOfBusiness)) {
+        formDataToSend.append('lineOfBusiness', JSON.stringify(formData.lineOfBusiness));
+      } else if (typeof formData.lineOfBusiness === 'string') {
+        const lineOfBusinessArray = formData.lineOfBusiness.split(',').filter(Boolean);
+        formDataToSend.append('lineOfBusiness', JSON.stringify(lineOfBusinessArray));
+      }
+      
+      if (formData.countryOfBusiness) {
+        formDataToSend.append('countryOfBusiness', formData.countryOfBusiness);
+      }
+      
+      formDataToSend.append('referredBy', formData.referredBy);
+      
+      if (formData.linkedInProfile) {
+        formDataToSend.append('linkedInProfile', formData.linkedInProfile);
+      }
+      
+      formDataToSend.append('countryCode', formData.countryCode || "+966");
+      
+      // Handle primaryContacts array
+      if (formData.primaryContacts && formData.primaryContacts.length > 0) {
+        formDataToSend.append('primaryContacts', JSON.stringify(formData.primaryContacts.map(contact => ({
+          name: contact.name,
+          email: contact.email,
+          phone: contact.phone,
+          countryCode: contact.countryCode,
+          designation: contact.designation,
+          linkedin: contact.linkedin || undefined,
+          isPrimary: contact.isPrimary,
+        }))));
+      }
+      
+      formDataToSend.append('clientStage', formData.clientStage || "Lead");
+      formDataToSend.append('clientTeam', formData.clientTeam || "Enterprise");
+      
+      if (formData.salesLead) {
+        formDataToSend.append('salesLead', formData.salesLead);
+      }
+      
+      if (formData.contractStartDate) {
+        formDataToSend.append('contractStartDate', formData.contractStartDate.toISOString().split("T")[0]);
+      }
+      
+      if (formData.contractEndDate) {
+        formDataToSend.append('contractEndDate', formData.contractEndDate.toISOString().split("T")[0]);
+      }
+      
+      if (formData.contractType) {
+        formDataToSend.append('contractType', formData.contractType);
+      }
+      
+      if (formData.seniorLevelPercentage) {
+        formDataToSend.append('seniorLevelPercentage', formData.seniorLevelPercentage.toString());
+      }
+      
+      if (formData.executivesPercentage) {
+        formDataToSend.append('executivesPercentage', formData.executivesPercentage.toString());
+      }
+      
+      if (formData.nonExecutivesPercentage) {
+        formDataToSend.append('nonExecutivesPercentage', formData.nonExecutivesPercentage.toString());
+      }
+      
+      if (formData.otherPercentage) {
+        formDataToSend.append('otherPercentage', formData.otherPercentage.toString());
+      }
+      
+      if (formData.cLevelPercentage) {
+        formDataToSend.append('cLevelPercentage', formData.cLevelPercentage.toString());
+      }
+      
+      if (formData.belowCLevelPercentage) {
+        formDataToSend.append('belowCLevelPercentage', formData.belowCLevelPercentage.toString());
+      }
+      
+      // Add all notes fields
+      if (formData.fixedPercentageNotes) {
+        formDataToSend.append('fixedPercentageNotes', formData.fixedPercentageNotes);
+      }
+      
+      if (formData.fixedPercentageAdvanceNotes) {
+        formDataToSend.append('fixedPercentageAdvanceNotes', formData.fixedPercentageAdvanceNotes);
+      }
+      
+      if (formData.cLevelPercentageNotes) {
+        formDataToSend.append('cLevelPercentageNotes', formData.cLevelPercentageNotes);
+      }
+      
+      if (formData.belowCLevelPercentageNotes) {
+        formDataToSend.append('belowCLevelPercentageNotes', formData.belowCLevelPercentageNotes);
+      }
+      
+      if (formData.fixWithoutAdvanceNotes) {
+        formDataToSend.append('fixWithoutAdvanceNotes', formData.fixWithoutAdvanceNotes);
+      }
+      
+      if (formData.seniorLevelNotes) {
+        formDataToSend.append('seniorLevelNotes', formData.seniorLevelNotes);
+      }
+      
+      if (formData.executivesNotes) {
+        formDataToSend.append('executivesNotes', formData.executivesNotes);
+      }
+      
+      if (formData.nonExecutivesNotes) {
+        formDataToSend.append('nonExecutivesNotes', formData.nonExecutivesNotes);
+      }
+      
+      if (formData.otherNotes) {
+        formDataToSend.append('otherNotes', formData.otherNotes);
+      }
+      
+      // Add all value fields
+      if (formData.fixedPercentageValue) {
+        formDataToSend.append('fixedPercentageValue', formData.fixedPercentageValue.toString());
+      }
+      
+      if (formData.fixWithAdvanceValue) {
+        formDataToSend.append('fixWithAdvanceValue', formData.fixWithAdvanceValue.toString());
+      }
+      
+      if (formData.fixWithoutAdvanceValue) {
+        formDataToSend.append('fixWithoutAdvanceValue', formData.fixWithoutAdvanceValue.toString());
+      }
+      
+      // Add all file uploads
+      const fileFields: (keyof typeof uploadedFiles)[] = [
+        "crCopy",
+        "vatCopy",
+        "gstTinDocument",
+        "fixedPercentage",
+        "fixedPercentageAdvance",
+        "variablePercentageCLevel",
+        "variablePercentageBelowCLevel",
+        "fixWithoutAdvance",
+        "seniorLevel",
+        "executives",
+        "nonExecutives",
+        "other",
+        "profileImage"
+      ];
+      
+      // Append files to FormData if they exist
+      for (const field of fileFields) {
+        if (uploadedFiles[field]) {
+          formDataToSend.append(field.toString(), uploadedFiles[field]!);
+        }
+      }
+      
+      // Log FormData for debugging (note: FormData can't be directly logged)
+      console.log("FormData created with the following fields:");
+      for (const pair of formDataToSend.entries()) {
+        console.log(pair[0], pair[1]);
+      }
+      console.log(formDataToSend);
+      // Send data to backend
+      const result = await createClient(formDataToSend);
       console.log("Client created successfully:", result);
 
       // Reset form
@@ -700,7 +749,6 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
         address: "",
         googleMapsLink: "",
         incorporationDate: "",
-        countryOfRegistration: "",
         registrationNumber: "",
         lineOfBusiness: [],
         countryOfBusiness: "",
@@ -709,6 +757,10 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
         linkedInPage: "",
         countryCode: "+966",
         primaryContacts: [],
+        clientStage: "Lead",
+        clientTeam: "Enterprise",
+        clientRm: "",
+        clientAge: 0,
         contractNumber: "",
         contractStartDate: null,
         contractEndDate: null,
@@ -718,13 +770,22 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
         belowCLevelPercentage: 0,
         fixedPercentageNotes: "",
         fixedPercentageAdvanceNotes: "",
+        advanceMoneyCurrency: "USD",
+        advanceMoneyAmount: 0,
         cLevelPercentageNotes: "",
         belowCLevelPercentageNotes: "",
+        fixWithoutAdvanceNotes: "",
+        seniorLevelPercentage: 0,
+        executivesPercentage: 0,
+        nonExecutivesPercentage: 0,
+        otherPercentage: 0,
+        seniorLevelNotes: "",
+        executivesNotes: "",
+        nonExecutivesNotes: "",
+        otherNotes: "",
         salesLead: "",
-        fixWithoutAdvanceNotes:"",
       });
       setEmailInput("");
-      setSelectedYear(null);
       setUploadedFiles({
         profileImage: null,
         crCopy: null,
@@ -734,11 +795,17 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
         fixedPercentageAdvance: null,
         variablePercentageCLevel: null,
         variablePercentageBelowCLevel: null,
+        fixWithoutAdvance: null,
+        seniorLevel: null,
+        executives: null,
+        nonExecutives: null,
+        other: null,
       });
-      setNewContact({ name: "", email: "", phone: "", countryCode: "+966", position: "", linkedin: "" });
+      setNewContact({ name: "", email: "", phone: "", countryCode: "+966", designation: "", linkedin: "", isPrimary: true });
       setCurrentTab(0);
       setIsContactModalOpen(false);
-      setVariablePercentageSection(null);
+      setSelectedLevels([]);
+      setActiveLevel(null);
       onOpenChange(false);
     } catch (error: any) {
       console.error("Failed to create client:", error);
@@ -749,6 +816,258 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     } finally {
       setLoading(false);
     }
+
+    // try {
+    //   // Validate required fields
+    //   if (!formData.name || formData.name.trim() === "") {
+    //     setError("Client Name is required");
+    //     setLoading(false);
+    //     return;
+    //   }
+    //   if (!formData.phoneNumber) {
+    //     setError("Phone Number is required");
+    //     setLoading(false);
+    //     return;
+    //   }
+    //   if (!formData.address) {
+    //     setError("Client Address is required");
+    //     setLoading(false);
+    //     return;
+    //   }
+    //   if (!formData.referredBy) {
+    //     setError("Referred By is required");
+    //     setLoading(false);
+    //     return;
+    //   }
+    //   if (!formData.industry) {
+    //     setError("Client Industry is required");
+    //     setLoading(false);
+    //     return;
+    //   }
+    //   if (!formData.lineOfBusiness || formData.lineOfBusiness.length === 0) {
+    //     setError("Line of Business is required");
+    //     setLoading(false);
+    //     return;
+    //   }
+
+    //   // Validate emails
+    //   const emails = formData.emails.filter((email) => email);
+    //   const invalidEmails = validateEmails(emails);
+    //   if (invalidEmails.length > 0) {
+    //     setError(`Invalid email(s): ${invalidEmails.join(", ")}`);
+    //     setLoading(false);
+    //     return;
+    //   }
+
+    //   // Validate primary contacts
+    //   if (formData.primaryContacts.length === 0) {
+    //     setError("At least one primary contact is required");
+    //     setLoading(false);
+    //     return;
+    //   }
+    //   const invalidContactEmails = formData.primaryContacts.filter(
+    //     (contact) => contact.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email)
+    //   );
+    //   if (invalidContactEmails.length > 0) {
+    //     setError(`Invalid contact email(s): ${invalidContactEmails.map((c) => c.email).join(", ")}`);
+    //     setLoading(false);
+    //     return;
+    //   }
+
+    //   // Validate URLs
+    //   if (formData.website && !validateUrl(formData.website)) {
+    //     setError("Invalid website URL");
+    //     setLoading(false);
+    //     return;
+    //   }
+    //   if (formData.linkedInProfile && !validateUrl(formData.linkedInProfile)) {
+    //     setError("Invalid LinkedIn profile URL");
+    //     setLoading(false);
+    //     return;
+    //   }
+    //   if (formData.googleMapsLink && !validateUrl(formData.googleMapsLink)) {
+    //     setError("Invalid Google Maps link");
+    //     setLoading(false);
+    //     return;
+    //   }
+
+    //   // Prepare JSON data
+    //   const clientData: any = {
+    //     name: formData.name.trim(),
+    //     emails: formData.emails,
+    //     phoneNumber: formData.phoneNumber,
+    //     website: formData.website || undefined,
+    //     industry: formData.industry,
+    //     address: formData.address,
+    //     googleMapsLink: formData.googleMapsLink || undefined,
+    //     lineOfBusiness: Array.isArray(formData.lineOfBusiness) ? formData.lineOfBusiness : typeof formData.lineOfBusiness === 'string' ? formData.lineOfBusiness.split(',').filter(Boolean) : [],
+    //     countryOfBusiness: formData.countryOfBusiness || undefined,
+    //     referredBy: formData.referredBy,
+    //     linkedInProfile: formData.linkedInProfile || undefined,
+    //     countryCode: formData.countryCode || "+966",
+    //     primaryContacts: formData.primaryContacts.map(contact => ({
+    //       name: contact.name,
+    //       email: contact.email,
+    //       phone: contact.phone,
+    //       countryCode: contact.countryCode,
+    //       designation: contact.designation,
+    //       linkedin: contact.linkedin || undefined,
+    //       isPrimary: contact.isPrimary,
+    //     })),
+    //     clientStage: formData.clientStage || "Lead",
+    //     clientTeam: formData.clientTeam || "Enterprise",
+    //     salesLead: formData.salesLead || undefined,
+    //     contractStartDate: formData.contractStartDate
+    //       ? formData.contractStartDate.toISOString().split("T")[0]
+    //       : undefined,
+    //     contractEndDate: formData.contractEndDate
+    //       ? formData.contractEndDate.toISOString().split("T")[0]
+    //       : undefined,
+    //     contractType: formData.contractType || undefined,
+    //     seniorLevelPercentage: formData.seniorLevelPercentage || undefined,
+    //     // profileImage: null,
+    //     crCopy: uploadedFiles.crCopy,
+    //     vatCopy: uploadedFiles.vatCopy,
+    //     gstTinDocument: uploadedFiles.gstTinDocument,
+    //     fixedPercentage: uploadedFiles.fixedPercentage,
+    //     fixedPercentageAdvance: uploadedFiles.fixedPercentageAdvance,
+    //     variablePercentageCLevel: uploadedFiles.variablePercentageCLevel,
+    //     variablePercentageBelowCLevel: uploadedFiles.variablePercentageBelowCLevel,
+    //     fixWithoutAdvance: uploadedFiles.fixWithoutAdvance,
+    //     seniorLevel: uploadedFiles.seniorLevel,
+    //     executives: uploadedFiles.executives,
+    //     nonExecutives: uploadedFiles.nonExecutives,
+    //     other: uploadedFiles.other,
+    //   };
+
+    //   // Add files as base64 strings
+    //   const fileFields = [
+    //     "crCopy",
+    //     "vatCopy",
+    //     "gstTinDocument",
+    //     "fixedPercentage",
+    //     "fixedPercentageAdvance",
+    //     "fixWithoutAdvance",
+    //     "seniorLevel",
+    //     "executives",
+    //     "nonExecutives",
+    //     "other",
+    //   ];
+
+    //   // for (const field of fileFields) {
+    //   // if (uploadedFiles[field]) {
+    //   // const base64 = await fileToBase64(uploadedFiles[field]!);
+    //   // clientData[`${field}File`] = {
+    //   // name: uploadedFiles[field]!.name,
+    //   // type: uploadedFiles[field]!.type,
+    //   // data: base64,
+    //   // };
+    //   // }
+    //   // }
+
+    //   // Log clientData for debugging
+    //   console.log("clientData before sending:", JSON.stringify(clientData, null, 2));
+    //   let backendData = new FormData();
+
+    //   // Handle complex objects properly
+    //   for (let key in clientData) {
+    //     const value = clientData[key];
+
+    //     if (key === 'primaryContacts' && Array.isArray(value)) {
+    //       // Handle primaryContacts array specially
+    //       backendData.append('primaryContacts', JSON.stringify(value));
+    //     }
+    //     else if (key === 'lineOfBusiness' && Array.isArray(value)) {
+    //       // Handle lineOfBusiness array specially
+    //       backendData.append('lineOfBusiness', JSON.stringify(value));
+    //     }
+    //     else if (key === 'emails' && Array.isArray(value)) {
+    //       // Handle emails array specially
+    //       backendData.append('emails', JSON.stringify(value));
+    //     }
+    //     else if (value !== undefined && value !== null) {
+    //       backendData.append(key, value);
+    //     }
+    //   }
+    //   const result = await createClient(backendData);
+    //   console.log("Client created successfully:", result);
+
+    //   // Reset form
+    //   setFormData({
+    //     name: "",
+    //     emails: [],
+    //     phoneNumber: "",
+    //     website: "",
+    //     industry: "",
+    //     location: "",
+    //     address: "",
+    //     googleMapsLink: "",
+    //     incorporationDate: "",
+    //     registrationNumber: "",
+    //     lineOfBusiness: [],
+    //     countryOfBusiness: "",
+    //     referredBy: "",
+    //     linkedInProfile: "",
+    //     linkedInPage: "",
+    //     countryCode: "+966",
+    //     primaryContacts: [],
+    //     clientStage: "Lead",
+    //     clientTeam: "Enterprise",
+    //     clientRm: "",
+    //     clientAge: 0,
+    //     contractNumber: "",
+    //     contractStartDate: null,
+    //     contractEndDate: null,
+    //     contractValue: 0,
+    //     contractType: "",
+    //     cLevelPercentage: 0,
+    //     belowCLevelPercentage: 0,
+    //     fixedPercentageNotes: "",
+    //     fixedPercentageAdvanceNotes: "",
+    //     cLevelPercentageNotes: "",
+    //     belowCLevelPercentageNotes: "",
+    //     fixWithoutAdvanceNotes: "",
+    //     seniorLevelPercentage: 0,
+    //     executivesPercentage: 0,
+    //     nonExecutivesPercentage: 0,
+    //     otherPercentage: 0,
+    //     seniorLevelNotes: "",
+    //     executivesNotes: "",
+    //     nonExecutivesNotes: "",
+    //     otherNotes: "",
+    //     salesLead: "",
+    //   });
+    //   setEmailInput("");
+    //   setUploadedFiles({
+    //     profileImage: null,
+    //     crCopy: null,
+    //     vatCopy: null,
+    //     gstTinDocument: null,
+    //     fixedPercentage: null,
+    //     fixedPercentageAdvance: null,
+    //     variablePercentageCLevel: null,
+    //     variablePercentageBelowCLevel: null,
+    //     fixWithoutAdvance: null,
+    //     seniorLevel: null,
+    //     executives: null,
+    //     nonExecutives: null,
+    //     other: null,
+    //   });
+    //   setNewContact({ name: "", email: "", phone: "", countryCode: "+966", designation: "", linkedin: "", isPrimary: true });
+    //   setCurrentTab(0);
+    //   setIsContactModalOpen(false);
+    //   setSelectedLevels([]);
+    //   setActiveLevel(null);
+    //   onOpenChange(false);
+    // } catch (error: any) {
+    //   console.error("Failed to create client:", error);
+    //   const errorMessage = error.message.includes("Client validation failed")
+    //     ? "Invalid data provided. Please check all fields and try again."
+    //     : error.message || "Failed to create client. Please try again.";
+    //   setError(errorMessage);
+    // } finally {
+    //   setLoading(false);
+    // }
   };
 
   const handleNext = () => {
@@ -761,55 +1080,41 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-full md:max-w-3xl lg:max-w-4xl xl:max-w-5xl max-h-[90vh] overflow-y-auto p-4 md:p-6 lg:p-8">
+      <DialogContent className="w-full max-w-[95vw] sm:max-w-[90vw] md:max-w-3xl lg:max-w-4xl xl:max-w-5xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 md:p-8">
         <DialogHeader>
-          <DialogTitle>Create Client</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-lg sm:text-xl md:text-2xl">Create Client</DialogTitle>
+          <DialogDescription className="text-sm sm:text-base">
             Fill in the client details below. Required fields are marked with an asterisk (*).
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-wrap justify-between border-b mb-4">
-          <button
-            className={`px-4 py-2 ${currentTab === 0 ? "border-b-2 border-blue-500 text-blue-500" : "text-gray-500"}`}
-            onClick={() => setCurrentTab(0)}
-          >
-            Client Information
-          </button>
-          <button
-            className={`px-4 py-2 ${currentTab === 1 ? "border-b-2 border-blue-500 text-blue-500" : "text-gray-500"}`}
-            onClick={() => setCurrentTab(1)}
-          >
-            Contact Details
-          </button>
-          <button
-            className={`px-4 py-2 ${currentTab === 2 ? "border-b-2 border-blue-500 text-blue-500" : "text-gray-500"}`}
-            onClick={() => setCurrentTab(2)}
-          >
-            Contract Information
-          </button>
-          <button
-            className={`px-4 py-2 ${currentTab === 3 ? "border-b-2 border-blue-500 text-blue-500" : "text-gray-500"}`}
-            onClick={() => setCurrentTab(3)}
-          >
-            Documents
-          </button>
+        <div className="flex flex-wrap border-b mb-4">
+          {["Client Information", "Contact Details", "Contract Information", "Documents"].map((tab, index) => (
+            <button
+              key={tab}
+              className={`flex-1 px-2 py-2 text-center text-xs sm:text-sm md:text-base ${currentTab === index ? "border-b-2 border-blue-500 text-blue-500" : "text-gray-500"
+                }`}
+              onClick={() => setCurrentTab(index)}
+            >
+              {tab}
+            </button>
+          ))}
         </div>
 
         {error && (
-          <div className="bg-red-50 text-red-500 p-3 rounded-md mb-4">
-            {error}
-          </div>
+          <div className="bg-red-50 text-red-500 p-3 rounded-md mb-4 text-sm">{error}</div>
         )}
 
         <form onSubmit={handleSubmit}>
           {currentTab === 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 py-4">
               <div className="space-y-2">
-                <Label htmlFor="salesLead">Sales Lead *</Label>
+                <Label htmlFor="salesLead" className="text-sm sm:text-base">
+                  Sales Lead *
+                </Label>
                 <Select
                   value={formData.salesLead || ""}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, salesLead: value }))}
+                  onValueChange={(value) => setFormData((prev) => ({ ...prev, salesLead: value }))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select sales lead" />
@@ -824,17 +1129,23 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="name">Client Name *</Label>
+                <Label htmlFor="name" className="text-sm sm:text-base">
+                  Client Name *
+                </Label>
                 <Input
                   id="name"
                   value={formData.name}
                   onChange={handleInputChange("name")}
                   required
+                  className="w-full"
+                  placeholder="Enter client name"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="emails">Client Email(s)</Label>
+                <Label htmlFor="emails" className="text-sm sm:text-base">
+                  Client Email(s)
+                </Label>
                 <Input
                   id="emails"
                   type="text"
@@ -843,17 +1154,20 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                   onBlur={handleEmailBlur}
                   placeholder="email1@example.com,email2@example.com"
                   autoComplete="off"
+                  className="w-full"
                 />
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs sm:text-sm text-muted-foreground">
                   Enter multiple emails separated by commas
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phoneNumber">Client LandLine Number  </Label>
-                <div className="flex space-x-2">
+                <Label htmlFor="phoneNumber" className="text-sm sm:text-base">
+                  Client LandLine Number *
+                </Label>
+                <div className="flex flex-col sm:flex-row gap-2">
                   <select
-                    className="border rounded px-2 py-1"
+                    className="border rounded px-2 py-1 w-full sm:w-32"
                     value={formData.countryCode}
                     onChange={handleInputChange("countryCode")}
                   >
@@ -870,44 +1184,58 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                     onChange={handleInputChange("phoneNumber")}
                     placeholder="50 123 4567"
                     required
+                    className="w-full"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="address">Client Address *</Label>
+                <Label htmlFor="address" className="text-sm sm:text-base">
+                  Client Address *
+                </Label>
                 <Input
                   id="address"
                   value={formData.address}
                   onChange={handleInputChange("address")}
                   placeholder="Enter detailed address"
                   required
+                  className="w-full"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="website">Client Website</Label>
+                <Label htmlFor="website" className="text-sm sm:text-base">
+                  Client Website
+                </Label>
                 <Input
                   id="website"
                   type="url"
                   value={formData.website}
                   onChange={handleInputChange("website")}
+                  onBlur={handleUrlBlur("website")}
                   placeholder="https://www.example.com"
+                  className="w-full"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="linkedInProfile">Client LinkedIn Profile</Label>
+                <Label htmlFor="linkedInProfile" className="text-sm sm:text-base">
+                  Client LinkedIn Profile
+                </Label>
                 <Input
                   id="linkedInProfile"
                   value={formData.linkedInProfile}
                   onChange={handleInputChange("linkedInProfile")}
+                  onBlur={handleUrlBlur("linkedInProfile")}
                   placeholder="https://www.linkedin.com/in/..."
+                  className="w-full"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="industry">Client Industry *</Label>
+                <Label htmlFor="industry" className="text-sm sm:text-base">
+                  Client Industry *
+                </Label>
                 <Select
                   value={formData.industry}
                   onValueChange={(value) => setFormData((prev) => ({ ...prev, industry: value }))}
@@ -931,34 +1259,53 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="googleMapsLink">Google Maps Link</Label>
+                <Label htmlFor="googleMapsLink" className="text-sm sm:text-base">
+                  Google Maps Link
+                </Label>
                 <Input
                   id="googleMapsLink"
                   value={formData.googleMapsLink}
                   onChange={handleInputChange("googleMapsLink")}
+                  onBlur={handleUrlBlur("googleMapsLink")}
                   placeholder="https://maps.google.com/..."
+                  className="w-full"
                 />
+                {showLocationSuggestions && locationSuggestions.length > 0 && (
+                  <div className="border rounded-md max-h-40 overflow-y-auto">
+                    {locationSuggestions.map((suggestion) => (
+                      <div
+                        key={suggestion.display_name}
+                        className="p-2 hover:bg-muted cursor-pointer"
+                        onClick={() => handleLocationSelect(suggestion)}
+                      >
+                        {suggestion.display_name}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
-               <div className="space-y-2">
-                <Label htmlFor="countryOfBusiness">Country of Business</Label>
+              <div className="space-y-2">
+                <Label htmlFor="countryOfBusiness" className="text-sm sm:text-base">
+                  Country of Business
+                </Label>
                 <Input
                   id="countryOfBusiness"
                   value={formData.countryOfBusiness}
                   onChange={handleInputChange("countryOfBusiness")}
                   placeholder="Enter country of business"
+                  className="w-full"
                 />
               </div>
-
             </div>
           )}
 
           {currentTab === 1 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 py-4">
               <div className="space-y-2">
                 <div className="bg-white rounded-lg border shadow-sm p-4">
                   <div className="flex items-center justify-between mb-4">
-                    <Label>Primary Contacts *</Label>
+                    <Label className="text-sm sm:text-base">Primary Contacts *</Label>
                     <Button
                       variant="outline"
                       size="sm"
@@ -968,8 +1315,9 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                           email: "",
                           phone: "",
                           countryCode: "+966",
-                          position: "",
+                          designation: "",
                           linkedin: "",
+                          isPrimary: true,
                         });
                         setIsContactModalOpen(true);
                       }}
@@ -989,16 +1337,16 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                         <div key={index} className="p-3 bg-muted/30 rounded-lg">
                           <div className="block space-y-1">
                             <div className="font-medium">{contact.name || "Unnamed Contact"}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {contact.position || "No position"}
+                            <div className="text-xs sm:text-sm text-muted-foreground">
+                              {contact.designation || "No designation"}
                             </div>
-                            <div className="text-sm text-muted-foreground">
+                            <div className="text-xs sm:text-sm text-muted-foreground">
                               {contact.email || "No email"}
                             </div>
-                            <div className="text-sm text-muted-foreground">
+                            <div className="text-xs sm:text-sm text-muted-foreground">
                               {getCountryCodeLabel(contact.countryCode || "+966")} {contact.phone || "No phone"}
                             </div>
-                            <div className="text-sm text-muted-foreground">
+                            <div className="text-xs sm:text-sm text-muted-foreground">
                               {contact.linkedin || "No LinkedIn"}
                             </div>
                           </div>
@@ -1010,55 +1358,72 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="lineOfBusiness">Line of Business *</Label>
+                <Label htmlFor="lineOfBusiness" className="text-sm sm:text-base">
+                  Line of Business *
+                </Label>
                 <div className="space-y-2 border rounded-md p-2">
-                  {["Recruitment", "HR Consulting", "Mgt Consulting", "Outsourcing", "HR Managed Services ", "IT & Technology"].map(
-                    (option) => (
-                      <div key={option} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`lob-${option}`}
-                          checked={formData.lineOfBusiness?.includes(option)}
-                          onCheckedChange={(checked) => {
-                            setFormData((prev) => {
-                              const current = prev.lineOfBusiness || [];
-                              return {
-                                ...prev,
-                                lineOfBusiness: checked
-                                  ? [...current, option]
-                                  : current.filter((item: string) => item !== option),
-                              };
-                            });
-                          }}
-                        />
-                        <label htmlFor={`lob-${option}`} className="text-sm font-medium leading-none">
-                          {option
-                            .split("-")
-                            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                            .join(" ")}
-                        </label>
-                      </div>
-                    )
-                  )}
+                  {[
+                    "Recruitment",
+                    "HR Consulting",
+                    "Mgt Consulting",
+                    "Outsourcing",
+                    "HR Managed Services",
+                    "IT & Technology",
+                  ].map((option) => (
+                    <div key={option} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`lob-${option}`}
+                        checked={formData.lineOfBusiness?.includes(option)}
+                        onCheckedChange={(checked) => {
+                          setFormData((prev) => {
+                            // Ensure lineOfBusiness is always treated as an array
+                            const current = Array.isArray(prev.lineOfBusiness) 
+                              ? prev.lineOfBusiness 
+                              : prev.lineOfBusiness ? [prev.lineOfBusiness] : [];
+                            return {
+                              ...prev,
+                              lineOfBusiness: checked
+                                ? [...current, option]
+                                : current.filter((item: string) => item !== option),
+                            };
+                          });
+                        }}
+                      />
+                      <label
+                        htmlFor={`lob-${option}`}
+                        className="text-xs sm:text-sm font-medium leading-none"
+                      >
+                        {option
+                          .split("-")
+                          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                          .join(" ")}
+                      </label>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
           )}
 
           {currentTab === 2 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 py-20 -mt-5">
-
-                <div className="space-y-2">
-                <Label htmlFor="referredBy">Referred By *</Label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="referredBy" className="text-sm sm:text-base">
+                  Referred By *
+                </Label>
                 <Input
                   id="referredBy"
                   value={formData.referredBy}
                   onChange={handleInputChange("referredBy")}
                   required
+                  className="w-full"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="contractStartDate">Contract Start Date</Label>
+                <Label htmlFor="contractStartDate" className="text-sm sm:text-base">
+                  Contract Start Date
+                </Label>
                 <div className="relative">
                   <DatePicker
                     id="contractStartDate"
@@ -1078,7 +1443,10 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                     scrollableYearDropdown
                     yearDropdownItemNumber={15}
                     minDate={new Date()}
-                    maxDate={formData.contractEndDate || new Date(new Date().setFullYear(new Date().getFullYear() + 10))}
+                    maxDate={
+                      formData.contractEndDate ||
+                      new Date(new Date().setFullYear(new Date().getFullYear() + 10))
+                    }
                     showIcon
                     icon="📅"
                     toggleCalendarOnIconClick
@@ -1087,7 +1455,9 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="contractEndDate">Contract End Date</Label>
+                <Label htmlFor="contractEndDate" className="text-sm sm:text-base">
+                  Contract End Date
+                </Label>
                 <div className="relative">
                   <DatePicker
                     id="contractEndDate"
@@ -1115,14 +1485,16 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                 </div>
               </div>
 
-
               <div className="space-y-2">
-                <Label htmlFor="contractType">Contract Type</Label>
+                <Label htmlFor="contractType" className="text-sm sm:text-base">
+                  Contract Type
+                </Label>
                 <Select
                   value={formData.contractType}
                   onValueChange={(value) => {
                     setFormData((prev) => ({ ...prev, contractType: value }));
-                    setVariablePercentageSection(null);
+                    setSelectedLevels([]);
+                    setActiveLevel(null);
                   }}
                 >
                   <SelectTrigger>
@@ -1138,364 +1510,428 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
               </div>
 
               {formData.contractType === "Fixed Percentage" && (
-                <div className="space-y-2">
-                  <Label htmlFor="fixedPercentageNotes">Fixed Percentage Notes</Label>
-                  <Textarea
-                    id="fixedPercentageNotes"
-                    value={formData.fixedPercentageNotes || ""}
-                    onChange={handleInputChange("fixedPercentageNotes")}
-                    placeholder="Enter notes for Fixed Percentage"
-                    rows={3}
-                  />
-                  <Label>Fixed Percentage Document</Label>
-                  <div className="flex space-x-2 items-center">
-                    <div
-                      className="border-2 border-dashed rounded-lg p-2 text-center cursor-pointer hover:bg-muted/50 flex-1"
-                      onClick={() => document.getElementById("fixedPercentageInput")?.click()}
-                    >
-                      <Upload className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
-                      <p className="text-xs text-muted-foreground">Upload (PDF, JPEG, PNG)</p>
+                <div className="space-y-4 col-span-1 sm:col-span-2 border rounded-lg p-4">
+                  <div className="border-2 shadow-sm rounded-lg p-2 cursor-pointer transition-colors w-full border-primary bg-primary/5">
+                    <div className="flex flex-col sm:flex-row items-center sm:space-x-4 space-y-2 sm:space-y-0">
+                      <h4 className="font-medium text-xs sm:text-sm w-28">Fixed Percentage</h4>
+                      <div className="flex items-center space-x-2 w-full sm:w-auto">
+                        <div className="relative w-24">
+                          <Input
+                            type="number"
+                            placeholder="0"
+                            min="0"
+                            max="100"
+                            onChange={handleInputChange("fixedPercentageValue")}
+                            value={formData.fixedPercentageValue || ""}
+                            className="h-8 pl-2 pr-6 text-xs"
+                          />
+                          <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-muted-foreground">
+                            %
+                          </span>
+                        </div>
+                        <Input
+                          type="text"
+                          placeholder="Notes"
+                          onChange={handleInputChange("fixedPercentageNotes")}
+                          value={formData.fixedPercentageNotes || ""}
+                          className="h-8 text-xs flex-1"
+                        />
+                      </div>
                     </div>
-                    <input
-                      id="fixedPercentageInput"
-                      type="file"
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      className="hidden"
-                      onChange={handleFileChange("fixedPercentage")}
-                    />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handlePreview(uploadedFiles.fixedPercentage)}
-                      disabled={!uploadedFiles.fixedPercentage}
-                    >
-                      Preview
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDownload(uploadedFiles.fixedPercentage)}
-                      disabled={!uploadedFiles.fixedPercentage}
-                    >
-                      Download
-                    </Button>
                   </div>
-                  {uploadedFiles.fixedPercentage && (
-                    <p className="text-sm mt-2">Selected file: {uploadedFiles.fixedPercentage.name}</p>
-                  )}
+
+                  <div className="space-y-2">
+                    <Label className="text-sm sm:text-base font-semibold">
+                      Contract Document
+                    </Label>
+                    <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 items-center">
+                      <div
+                        className="border-2 border-dashed rounded-lg p-2 text-center cursor-pointer hover:bg-muted/50 flex-1 w-full"
+                        onClick={() => document.getElementById("fixedPercentageInput")?.click()}
+                      >
+                        <Upload className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
+                        <p className="text-xs text-muted-foreground">Upload (PDF, JPEG, PNG)</p>
+                      </div>
+                      <input
+                        id="fixedPercentageInput"
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        className="hidden"
+                        onChange={handleFileChange("fixedPercentage")}
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs px-2 gap-1"
+                        onClick={() => handlePreview(uploadedFiles.fixedPercentage)}
+                        disabled={!uploadedFiles.fixedPercentage}
+                      >
+                        <Eye className="h-3 w-3" />
+                        <span>Preview</span>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs px-2 gap-1"
+                        onClick={() => handleDownload(uploadedFiles.fixedPercentage)}
+                        disabled={!uploadedFiles.fixedPercentage}
+                      >
+                        <Download className="h-3 w-3" />
+                        <span>Download</span>
+                      </Button>
+                    </div>
+                    {uploadedFiles.fixedPercentage && (
+                      <p className="text-xs text-muted-foreground truncate">
+                        Selected file: {uploadedFiles.fixedPercentage.name}
+                      </p>
+                    )}
+                  </div>
                 </div>
               )}
 
               {formData.contractType === "Fix with Advance" && (
-                <div className="space-y-2">
-                  <Label htmlFor="fixedPercentageAdvanceNotes">Fix with Advance Notes</Label>
-                  <Textarea
-                    id="fixedPercentageAdvanceNotes"
-                    value={formData.fixedPercentageAdvanceNotes || ""}
-                    onChange={handleInputChange("fixedPercentageAdvanceNotes")}
-                    placeholder="Enter notes for Fix with Advance"
-                    rows={3}
-                  />
-                  <Label>Fix with Advance Document</Label>
-                  <div className="flex space-x-2 items-center">
-                    <div
-                      className="border-2 border-dashed rounded-lg p-2 text-center cursor-pointer hover:bg-muted/50 flex-1"
-                      onClick={() => document.getElementById("fixedPercentageAdvanceInput")?.click()}
-                    >
-                      <Upload className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
-                      <p className="text-xs text-muted-foreground">Upload (PDF, JPEG, PNG)</p>
+                <div className="space-y-4 col-span-1 sm:col-span-2 border rounded-lg p-4">
+                  <div className="border-2 shadow-sm rounded-lg p-2 cursor-pointer transition-colors w-full border-primary bg-primary/5">
+                    <div className="flex flex-col sm:flex-row items-center sm:space-x-4 space-y-2 sm:space-y-0">
+                      <h4 className="font-medium text-xs sm:text-sm w-28">Fix with Advance</h4>
+                      <div className="flex items-center space-x-2 w-full sm:w-auto">
+                        <div className="relative w-24">
+                          <Input
+                            type="number"
+                            placeholder="0"
+                            min="0"
+                            max="100"
+                            onChange={handleInputChange("fixWithAdvanceValue")}
+                            value={formData.fixWithAdvanceValue || ""}
+                            className="h-8 pl-2 pr-6 text-xs"
+                          />
+                          <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-muted-foreground">
+                            %
+                          </span>
+                        </div>
+                        <div className="flex items-center space-x-0 border rounded-md overflow-hidden w-48">
+                          <Select
+                            value={formData.advanceMoneyCurrency || "USD"}
+                            onValueChange={(value) => setFormData((prev) => ({ ...prev, advanceMoneyCurrency: value }))}
+                          >
+                            <SelectTrigger className="h-8 text-xs w-20 rounded-r-none border-r-0">
+                              <SelectValue placeholder="Currency" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="USD">USD</SelectItem>
+                              <SelectItem value="EUR">EUR</SelectItem>
+                              <SelectItem value="GBP">GBP</SelectItem>
+                              <SelectItem value="SAR">SAR</SelectItem>
+                              <SelectItem value="AED">AED</SelectItem>
+                              <SelectItem value="INR">INR</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Input
+                            type="number"
+                            placeholder="Amount"
+                            min="0"
+                            onChange={handleInputChange("advanceMoneyAmount")}
+                            value={formData.advanceMoneyAmount || ""}
+                            className="h-8 text-xs w-28 rounded-l-none border-l-0"
+                          />
+                        </div>
+                        <Input
+                          type="text"
+                          placeholder="Notes"
+                          onChange={handleInputChange("fixedPercentageAdvanceNotes")}
+                          value={formData.fixedPercentageAdvanceNotes || ""}
+                          className="h-8 text-xs flex-1"
+                        />
+                      </div>
                     </div>
-                    <input
-                      id="fixedPercentageAdvanceInput"
-                      type="file"
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      className="hidden"
-                      onChange={handleFileChange("fixedPercentageAdvance")}
-                    />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handlePreview(uploadedFiles.fixedPercentageAdvance)}
-                      disabled={!uploadedFiles.fixedPercentageAdvance}
-                    >
-                      Preview
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDownload(uploadedFiles.fixedPercentageAdvance)}
-                      disabled={!uploadedFiles.fixedPercentageAdvance}
-                    >
-                      Download
-                    </Button>
                   </div>
-                  {uploadedFiles.fixedPercentageAdvance && (
-                    <p className="text-sm mt-2">Selected file: {uploadedFiles.fixedPercentageAdvance.name}</p>
-                  )}
+
+                  <div className="space-y-2">
+                    <Label className="text-sm sm:text-base font-semibold">
+                      Contract Document
+                    </Label>
+                    <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 items-center">
+                      <div
+                        className="border-2 border-dashed rounded-lg p-2 text-center cursor-pointer hover:bg-muted/50 flex-1 w-full"
+                        onClick={() => document.getElementById("fixedPercentageAdvanceInput")?.click()}
+                      >
+                        <Upload className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
+                        <p className="text-xs text-muted-foreground">Upload (PDF, JPEG, PNG)</p>
+                      </div>
+                      <input
+                        id="fixedPercentageAdvanceInput"
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        className="hidden"
+                        onChange={handleFileChange("fixedPercentageAdvance")}
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs px-2 gap-1"
+                        onClick={() => handlePreview(uploadedFiles.fixedPercentageAdvance)}
+                        disabled={!uploadedFiles.fixedPercentageAdvance}
+                      >
+                        <Eye className="h-3 w-3" />
+                        <span>Preview</span>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs px-2 gap-1"
+                        onClick={() => handleDownload(uploadedFiles.fixedPercentageAdvance)}
+                        disabled={!uploadedFiles.fixedPercentageAdvance}
+                      >
+                        <Download className="h-3 w-3" />
+                        <span>Download</span>
+                      </Button>
+                    </div>
+                    {uploadedFiles.fixedPercentageAdvance && (
+                      <p className="text-xs text-muted-foreground truncate">
+                        Selected file: {uploadedFiles.fixedPercentageAdvance.name}
+                      </p>
+                    )}
+                  </div>
                 </div>
               )}
 
               {formData.contractType === "Fix without Advance" && (
-                <div className="space-y-2">
-                  <Label>Fix without Advance Document</Label>
-                  <div className="flex space-x-2 items-center">
-                    <div
-                      className="border-2 border-dashed rounded-lg p-2 text-center cursor-pointer hover:bg-muted/50 flex-1"
-                      onClick={() => document.getElementById("fixWithoutAdvanceInput")?.click()}
-                    >
-                      <Upload className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
-                      <p className="text-xs text-muted-foreground">Upload (PDF, JPEG, PNG)</p>
+                <div className="space-y-4 col-span-1 sm:col-span-2 border rounded-lg p-4">
+                  <div className="border-2 shadow-sm rounded-lg p-2 cursor-pointer transition-colors w-full border-primary bg-primary/5">
+                    <div className="flex flex-col sm:flex-row items-center sm:space-x-4 space-y-2 sm:space-y-0">
+                      <h4 className="font-medium text-xs sm:text-sm w-28">Fix without Advance</h4>
+                      <div className="flex items-center space-x-2 w-full sm:w-auto">
+                        <div className="relative w-24">
+                          <Input
+                            type="number"
+                            placeholder="0"
+                            min="0"
+                            max="100"
+                            onChange={handleInputChange("fixWithoutAdvanceValue")}
+                            value={formData.fixWithoutAdvanceValue || ""}
+                            className="h-8 pl-2 pr-6 text-xs"
+                          />
+                          <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-muted-foreground">
+                            %
+                          </span>
+                        </div>
+                        <Input
+                          type="text"
+                          placeholder="Notes"
+                          onChange={handleInputChange("fixWithoutAdvanceNotes")}
+                          value={formData.fixWithoutAdvanceNotes || ""}
+                          className="h-8 text-xs flex-1"
+                        />
+                      </div>
                     </div>
-                    <input
-                      id="fixWithoutAdvanceInput"
-                      type="file"
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      className="hidden"
-                      onChange={handleFileChange("fixWithoutAdvance")}
-                    />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handlePreview(uploadedFiles.fixWithoutAdvance)}
-                      disabled={!uploadedFiles.fixWithoutAdvance}
-                    >
-                      Preview
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDownload(uploadedFiles.fixWithoutAdvance)}
-                      disabled={!uploadedFiles.fixWithoutAdvance}
-                    >
-                      Download
-                    </Button>
                   </div>
-                  {uploadedFiles.fixWithoutAdvance && (
-                    <p className="text-sm mt-2">Selected file: {uploadedFiles.fixWithoutAdvance.name}</p>
-                  )}
-                  <div className="space-y-2 mt-4">
-                    <Label htmlFor="fixWithoutAdvanceNotes">Notes</Label>
-                    <Textarea
-                      id="fixWithoutAdvanceNotes"
-                      value={formData.fixWithoutAdvanceNotes || ""}
-                      onChange={handleInputChange("fixWithoutAdvanceNotes")}
-                      placeholder="Enter notes for Fix without Advance"
-                      rows={3}
-                    />
+
+                  <div className="space-y-2">
+                    <Label className="text-sm sm:text-base font-semibold">
+                      Contract Document
+                    </Label>
+                    <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 items-center">
+                      <div
+                        className="border-2 border-dashed rounded-lg p-2 text-center cursor-pointer hover:bg-muted/50 flex-1 w-full"
+                        onClick={() => document.getElementById("fixWithoutAdvanceInput")?.click()}
+                      >
+                        <Upload className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
+                        <p className="text-xs text-muted-foreground">Upload (PDF, JPEG, PNG)</p>
+                      </div>
+                      <input
+                        id="fixWithoutAdvanceInput"
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        className="hidden"
+                        onChange={handleFileChange("fixWithoutAdvance")}
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs px-2 gap-1"
+                        onClick={() => handlePreview(uploadedFiles.fixWithoutAdvance)}
+                        disabled={!uploadedFiles.fixWithoutAdvance}
+                      >
+                        <Eye className="h-3 w-3" />
+                        <span>Preview</span>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs px-2 gap-1"
+                        onClick={() => handleDownload(uploadedFiles.fixWithoutAdvance)}
+                        disabled={!uploadedFiles.fixWithoutAdvance}
+                      >
+                        <Download className="h-3 w-3" />
+                        <span>Download</span>
+                      </Button>
+                    </div>
+                    {uploadedFiles.fixWithoutAdvance && (
+                      <p className="text-xs text-muted-foreground truncate">
+                        Selected file: {uploadedFiles.fixWithoutAdvance.name}
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
 
               {formData.contractType === "Level Based (Hiring)" && (
-                <div className="space-y-4 col-span-2 border rounded-lg p-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Level Type</Label>
-                      <Select
-                        onValueChange={(value) => setVariablePercentageSection(value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select level type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Senior Level">Senior Level</SelectItem>
-                          <SelectItem value="Executives">Executives</SelectItem>
-                          <SelectItem value="Non-Executives">Non-Executives</SelectItem>
-                          <SelectItem value="Other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
+                <div className="space-y-4 col-span-1 sm:col-span-2 border rounded-lg p-4">
+                  <div>
+                    <Label className="text-sm sm:text-base mb-2 block">Level Type</Label>
+                    <div className="flex flex-wrap gap-3 border rounded-md p-3">
+                      {["Senior Level", "Executives", "Non-Executives", "Other"].map((level) => (
+                        <div key={level} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`level-${level}`}
+                            checked={selectedLevels.includes(level)}
+                            onCheckedChange={(checked: boolean) => {
+                              const newLevels = checked
+                                ? [...selectedLevels, level]
+                                : selectedLevels.filter((l) => l !== level);
+                              setSelectedLevels(newLevels);
+                              if (checked && !activeLevel) {
+                                setActiveLevel(level);
+                              } else if (!checked && activeLevel === level) {
+                                setActiveLevel(newLevels.length > 0 ? newLevels[0] : null);
+                              }
+                            }}
+                          />
+                          <label
+                            htmlFor={`level-${level}`}
+                            className={`text-xs sm:text-sm font-medium leading-none cursor-pointer ${activeLevel === level
+                                ? "font-bold text-primary"
+                                : ""
+                              }`}
+                            onClick={() => selectedLevels.includes(level) && setActiveLevel(level)}
+                          >
+                            {level}
+                          </label>
+                        </div>
+                      ))}
                     </div>
                   </div>
 
-                  {variablePercentageSection && (
+                  {selectedLevels.length > 0 && activeLevel && (
                     <div className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {[variablePercentageSection].map((level) => (
-                          <div key={level} className="space-y-2 border rounded-lg p-4">
-                            <h4 className="font-medium">{level}</h4>
-                            <div className="space-y-2">
-                              <Label>Document</Label>
-                              <div className="flex space-x-2 items-center">
-                                <div
-                                  className="border-2 border-dashed rounded-lg p-2 text-center cursor-pointer hover:bg-muted/50 flex-1"
-                                  onClick={() => document.getElementById(`${level.toLowerCase().replace(' ', '')}Input`)?.click()}
-                                >
-                                  <Upload className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
-                                  <p className="text-xs text-muted-foreground">Upload (PDF, JPEG, PNG)</p>
+                      <div className="grid grid-cols-1 gap-2">
+                        {selectedLevels.map((level) => (
+                          <div
+                            key={level}
+                            className={`border-2 shadow-sm rounded-lg p-2 cursor-pointer transition-colors w-full ${activeLevel === level
+                                ? "border-primary bg-primary/5"
+                                : "border-gray-400"
+                              }`}
+                            onClick={() => setActiveLevel(level)}
+                          >
+                            <div className="flex flex-col sm:flex-row items-center sm:space-x-4 space-y-2 sm:space-y-0">
+                              <h4 className={`font-medium text-xs sm:text-sm w-28 ${activeLevel === level
+                                  ? "text-primary"
+                                  : ""
+                                }`}>{level}</h4>
+                              <div className="flex items-center space-x-2 w-full sm:w-auto">
+                                <div className="relative w-24">
+                                  <Input
+                                    type="number"
+                                    placeholder="0"
+                                    min="0"
+                                    max="100"
+                                    onClick={(e: React.MouseEvent<HTMLInputElement>) =>
+                                      e.stopPropagation()
+                                    }
+                                    onChange={handleInputChange(
+                                      `${level.replace(/\s+/g, "")[0].toLowerCase() +
+                                      level.replace(/\s+/g, "").slice(1)}Percentage` as keyof ClientForm
+                                    )}
+                                    value={
+                                      typeof formData[
+                                      `${level.replace(/\s+/g, "")[0].toLowerCase() +
+                                      level.replace(/\s+/g, "").slice(1)}Percentage` as keyof ClientForm
+                                      ] || ""
+                                    }
+                                    className="h-8 pl-2 pr-6 text-xs"
+                                  />
+                                  <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-muted-foreground">
+                                    %
+                                  </span>
                                 </div>
-                                <input
-                                  id={`${level.toLowerCase().replace(' ', '')}Input`}
-                                  type="file"
-                                  accept=".pdf,.jpg,.jpeg,.png"
-                                  className="hidden"
-                                  onChange={handleFileChange(`${variablePercentageSection.toLowerCase().replace(' ', '')}${level.replace(' ', '')}`)}
+                                <Input
+                                  type="text"
+                                  placeholder="Notes"
+                                  onClick={(e: React.MouseEvent<HTMLInputElement>) =>
+                                    e.stopPropagation()
+                                  }
+                                  onChange={handleInputChange(
+                                    `${level.replace(/\s+/g, "")[0].toLowerCase() +
+                                    level.replace(/\s+/g, "").slice(1)}Notes` as keyof ClientForm
+                                  )}
+                                  value={
+                                    typeof formData[
+                                    `${level.replace(/\s+/g, "")[0].toLowerCase() +
+                                    level.replace(/\s+/g, "").slice(1)}Notes` as keyof ClientForm
+                                    ] || ""
+                                  }
+                                  className="h-8 text-xs flex-1"
                                 />
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handlePreview(uploadedFiles[`${variablePercentageSection.toLowerCase().replace(' ', '')}${level.replace(' ', '')}`])}
-                                  disabled={!uploadedFiles[`${variablePercentageSection.toLowerCase().replace(' ', '')}${level.replace(' ', '')}`]}
-                                >
-                                  Preview
-                                </Button>
                               </div>
-                              {uploadedFiles[`${variablePercentageSection.toLowerCase().replace(' ', '')}${level.replace(' ', '')}`] && (
-                                <p className="text-xs text-muted-foreground truncate">
-                                  {uploadedFiles[`${variablePercentageSection.toLowerCase().replace(' ', '')}${level.replace(' ', '')}`]?.name}
-                                </p>
-                              )}
-                            </div>
-                            <div className="space-y-2">
-                              <Label>Notes</Label>
-                              <Textarea
-                                placeholder={`Enter notes for ${level}`}
-                                rows={2}
-                                onChange={(e) => {
-                                  const notesField = `${variablePercentageSection.toLowerCase().replace(' ', '')}${level.replace(' ', '')}Notes`;
-                                  setFormData(prev => ({
-                                    ...prev,
-                                    [notesField]: e.target.value
-                                  }));
-                                }}
-                                value={formData[`${variablePercentageSection.toLowerCase().replace(' ', '')}${level.replace(' ', '')}Notes` as keyof ClientForm] as string || ''}
-                              />
                             </div>
                           </div>
                         ))}
                       </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {formData.contractType === "Variable Percentage" && (
-                <div className="space-y-2">
-                  <div className="flex space-x-2">
-                    <Button
-                      variant={variablePercentageSection === "C-Level" ? "default" : "outline"}
-                      onClick={() => setVariablePercentageSection("C-Level")}
-                    >
-                      C-Level %
-                    </Button>
-                    <Button
-                      variant={variablePercentageSection === "Below C-Level" ? "default" : "outline"}
-                      onClick={() => setVariablePercentageSection("Below C-Level")}
-                    >
-                      Below C-Level %
-                    </Button>
-                  </div>
-
-                  {variablePercentageSection === "C-Level" && (
-                    <div className="space-y-2">
-                      <Label htmlFor="cLevelPercentage">C-Level %</Label>
-                      <Input
-                        id="cLevelPercentage"
-                        type="number"
-                        value={formData.cLevelPercentage || ""}
-                        onChange={handleInputChange("cLevelPercentage")}
-                        placeholder="Enter C-Level percentage"
-                      />
-                      <Label htmlFor="cLevelPercentageNotes">C-Level Notes</Label>
-                      <Textarea
-                        id="cLevelPercentageNotes"
-                        value={formData.cLevelPercentageNotes || ""}
-                        onChange={handleInputChange("cLevelPercentageNotes")}
-                        placeholder="Enter notes for C-Level Percentage"
-                        rows={3}
-                      />
-                      <Label>C-Level Document</Label>
-                      <div className="flex space-x-2 items-center">
-                        <div
-                          className="border-2 border-dashed rounded-lg p-2 text-center cursor-pointer hover:bg-muted/50 flex-1"
-                          onClick={() => document.getElementById("variablePercentageCLevelInput")?.click()}
-                        >
-                          <Upload className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
-                          <p className="text-xs text-muted-foreground">Upload (PDF, JPEG, PNG)</p>
+                      <div className="space-y-2">
+                        <Label className="text-sm sm:text-base font-semibold">
+                          Contract Document
+                        </Label>
+                        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 items-center">
+                          <div
+                            className="border-2 border-dashed rounded-lg p-2 text-center cursor-pointer hover:bg-muted/50 flex-1 w-full"
+                            onClick={() =>
+                              document.getElementById(`level-${activeLevel.replace(/\s+/g, "")}-input`)?.click()
+                            }
+                          >
+                            <Upload className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
+                            <p className="text-xs text-muted-foreground">Upload (PDF, JPEG,JPG, PNG)</p>
+                          </div>
+                          <input
+                            id={`level-${activeLevel.replace(/\s+/g, "")}-input`}
+                            type="file"
+                            accept=".pdf,.jpg,.jpeg,.png"
+                            className="hidden"
+                            onChange={handleFileChange(activeLevel.toLowerCase().replace(/\s+/g, "") as LevelType)}
+                          />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs px-2 gap-1"
+                            onClick={() => {
+                              const file = uploadedFiles[activeLevel.toLowerCase().replace(/\s+/g, "") as LevelType];
+                              handlePreview(file);
+                            }}
+                            disabled={!uploadedFiles[activeLevel.toLowerCase().replace(/\s+/g, "") as LevelType]}
+                          >
+                            <Eye className="h-3 w-3" />
+                            <span>Preview</span>
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs px-2 gap-1"
+                            onClick={() => {
+                              const file = uploadedFiles[activeLevel.toLowerCase().replace(/\s+/g, "") as LevelType];
+                              handleDownload(file);
+                            }}
+                            disabled={!uploadedFiles[activeLevel.toLowerCase().replace(/\s+/g, "") as LevelType]}
+                          >
+                            <Download className="h-3 w-3" />
+                            <span>Download</span>
+                          </Button>
                         </div>
-                        <input
-                          id="variablePercentageCLevelInput"
-                          type="file"
-                          accept=".pdf,.jpg,.jpeg,.png"
-                          className="hidden"
-                          onChange={handleFileChange("variablePercentageCLevel")}
-                        />
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handlePreview(uploadedFiles.variablePercentageCLevel)}
-                          disabled={!uploadedFiles.variablePercentageCLevel}
-                        >
-                          Preview
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDownload(uploadedFiles.variablePercentageCLevel)}
-                          disabled={!uploadedFiles.variablePercentageCLevel}
-                        >
-                          Download
-                        </Button>
+                        {uploadedFiles[activeLevel.toLowerCase().replace(/\s+/g, "") as LevelType] && (
+                          <p className="text-xs text-muted-foreground truncate">
+                            Selected file: {uploadedFiles[activeLevel.toLowerCase().replace(/\s+/g, "") as LevelType]?.name}
+                          </p>
+                        )}
                       </div>
-                      {uploadedFiles.variablePercentageCLevel && (
-                        <p className="text-sm mt-2">Selected file: {uploadedFiles.variablePercentageCLevel.name}</p>
-                      )}
-                    </div>
-                  )}
-
-                  {variablePercentageSection === "Below C-Level" && (
-                    <div className="space-y-2">
-                      <Label htmlFor="belowCLevelPercentage">Below C-Level %</Label>
-                      <Input
-                        id="belowCLevelPercentage"
-                        type="number"
-                        value={formData.belowCLevelPercentage || ""}
-                        onChange={handleInputChange("belowCLevelPercentage")}
-                        placeholder="Enter Below C-Level percentage"
-                      />
-                      <Label htmlFor="belowCLevelPercentageNotes">Below C-Level Notes</Label>
-                      <Textarea
-                        id="belowCLevelPercentageNotes"
-                        value={formData.belowCLevelPercentageNotes || ""}
-                        onChange={handleInputChange("belowCLevelPercentageNotes")}
-                        placeholder="Enter notes for Below C-Level Percentage"
-                        rows={3}
-                      />
-                      <Label>Below C-Level Document</Label>
-                      <div className="flex space-x-2 items-center">
-                        <div
-                          className="border-2 border-dashed rounded-lg p-2 text-center cursor-pointer hover:bg-muted/50 flex-1"
-                          onClick={() => document.getElementById("variablePercentageBelowCLevelInput")?.click()}
-                        >
-                          <Upload className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
-                          <p className="text-xs text-muted-foreground">Upload (PDF, JPEG, PNG)</p>
-                        </div>
-                        <input
-                          id="variablePercentageBelowCLevelInput"
-                          type="file"
-                          accept=".pdf,.jpg,.jpeg,.png"
-                          className="hidden"
-                          onChange={handleFileChange("variablePercentageBelowCLevel")}
-                        />
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handlePreview(uploadedFiles.variablePercentageBelowCLevel)}
-                          disabled={!uploadedFiles.variablePercentageBelowCLevel}
-                        >
-                          Preview
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDownload(uploadedFiles.variablePercentageBelowCLevel)}
-                          disabled={!uploadedFiles.variablePercentageBelowCLevel}
-                        >
-                          Download
-                        </Button>
-                      </div>
-                      {uploadedFiles.variablePercentageBelowCLevel && (
-                        <p className="text-sm mt-2">Selected file: {uploadedFiles.variablePercentageBelowCLevel.name}</p>
-                      )}
                     </div>
                   )}
                 </div>
@@ -1504,15 +1940,15 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
           )}
 
           {currentTab === 3 && (
-            <div className="grid grid-cols-1 gap-6 py-4">
+            <div className="grid grid-cols-1 gap-4 sm:gap-6 py-4">
               <div className="space-y-2">
-                <Label>CR Copy</Label>
+                <Label className="text-sm sm:text-base">CR Copy</Label>
                 <div
                   className="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:bg-muted/50"
                   onClick={() => document.getElementById("crCopyInput")?.click()}
                 >
-                  <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">Upload CR Copy (PDF, JPEG, PNG)</p>
+                  <Upload className="h-6 sm:h-8 w-6 sm:w-8 mx-auto mb-2 text-muted-foreground" />
+                  <p className="text-xs sm:text-sm text-muted-foreground">Upload CR Copy (PDF, JPEG, PNG)</p>
                 </div>
                 <input
                   id="crCopyInput"
@@ -1522,18 +1958,36 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                   onChange={handleFileChange("crCopy")}
                 />
                 {uploadedFiles.crCopy && (
-                  <p className="text-sm mt-2">Selected file: {uploadedFiles.crCopy.name}</p>
+                  <p className="text-xs sm:text-sm mt-2">Selected file: {uploadedFiles.crCopy.name}</p>
                 )}
+                <div className="flex space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePreview(uploadedFiles.crCopy)}
+                    disabled={!uploadedFiles.crCopy}
+                  >
+                    Preview
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDownload(uploadedFiles.crCopy)}
+                    disabled={!uploadedFiles.crCopy}
+                  >
+                    Download
+                  </Button>
+                </div>
               </div>
 
               <div className="space-y-2">
-                <Label>VAT Copy</Label>
+                <Label className="text-sm sm:text-base">VAT Copy</Label>
                 <div
                   className="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:bg-muted/50"
                   onClick={() => document.getElementById("vatCopyInput")?.click()}
                 >
-                  maja                  <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">Upload VAT Copy (PDF, JPEG, PNG)</p>
+                  <Upload className="h-6 sm:h-8 w-6 sm:w-8 mx-auto mb-2 text-muted-foreground" />
+                  <p className="text-xs sm:text-sm text-muted-foreground">Upload VAT Copy (PDF, JPEG, PNG)</p>
                 </div>
                 <input
                   id="vatCopyInput"
@@ -1543,18 +1997,38 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                   onChange={handleFileChange("vatCopy")}
                 />
                 {uploadedFiles.vatCopy && (
-                  <p className="text-sm mt-2">Selected file: {uploadedFiles.vatCopy.name}</p>
+                  <p className="text-xs sm:text-sm mt-2">Selected file: {uploadedFiles.vatCopy.name}</p>
                 )}
+                <div className="flex space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePreview(uploadedFiles.vatCopy)}
+                    disabled={!uploadedFiles.vatCopy}
+                  >
+                    Preview
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDownload(uploadedFiles.vatCopy)}
+                    disabled={!uploadedFiles.vatCopy}
+                  >
+                    Download
+                  </Button>
+                </div>
               </div>
 
               <div className="space-y-2">
-                <Label>GST/TIN Document</Label>
+                <Label className="text-sm sm:text-base">GST/TIN Document</Label>
                 <div
                   className="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:bg-muted/50"
                   onClick={() => document.getElementById("gstTinDocumentInput")?.click()}
                 >
-                  <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">Upload GST/TIN Document (PDF, JPEG, PNG)</p>
+                  <Upload className="h-6 sm:h-8 w-6 sm:w-8 mx-auto mb-2 text-muted-foreground" />
+                  <p className="text-xs sm:text-sm text-muted-foreground">
+                    Upload GST/TIN Document (PDF, JPEG, PNG)
+                  </p>
                 </div>
                 <input
                   id="gstTinDocumentInput"
@@ -1564,14 +2038,34 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                   onChange={handleFileChange("gstTinDocument")}
                 />
                 {uploadedFiles.gstTinDocument && (
-                  <p className="text-sm mt-2">Selected file: {uploadedFiles.gstTinDocument.name}</p>
+                  <p className="text-xs sm:text-sm mt-2">
+                    Selected file: {uploadedFiles.gstTinDocument.name}
+                  </p>
                 )}
+                <div className="flex space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePreview(uploadedFiles.gstTinDocument)}
+                    disabled={!uploadedFiles.gstTinDocument}
+                  >
+                    Preview
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDownload(uploadedFiles.gstTinDocument)}
+                    disabled={!uploadedFiles.gstTinDocument}
+                  >
+                    Download
+                  </Button>
+                </div>
               </div>
             </div>
           )}
 
           <DialogFooter>
-            <div className="flex flex-wrap justify-between w-full">
+            <div className="flex flex-col sm:flex-row justify-between w-full gap-2">
               <div>
                 {currentTab > 0 && (
                   <Button
@@ -1579,25 +2073,26 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                     type="button"
                     onClick={handlePrevious}
                     disabled={loading}
-                    className="mb-2 md:mb-0"
+                    className="w-full sm:w-auto"
                   >
                     Previous
                   </Button>
                 )}
               </div>
-              <div className="flex space-x-2">
+              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
                 {currentTab < 3 && (
                   <Button
                     variant="outline"
                     type="button"
                     onClick={() => onOpenChange(false)}
                     disabled={loading}
+                    className="w-full sm:w-auto"
                   >
                     Cancel
                   </Button>
                 )}
                 {currentTab < 3 ? (
-                  <Button type="button" onClick={handleNext} disabled={loading}>
+                  <Button type="button" onClick={handleNext} disabled={loading} className="w-full sm:w-auto">
                     Next
                   </Button>
                 ) : (
@@ -1607,10 +2102,11 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                       type="button"
                       onClick={() => onOpenChange(false)}
                       disabled={loading}
+                      className="w-full sm:w-auto"
                     >
                       Cancel
                     </Button>
-                    <Button type="submit" disabled={loading}>
+                    <Button type="submit" disabled={loading} className="w-full sm:w-auto">
                       {loading ? "Creating..." : "Create Client"}
                     </Button>
                   </>
@@ -1622,35 +2118,45 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
 
         {isContactModalOpen && (
           <Dialog open={isContactModalOpen} onOpenChange={setIsContactModalOpen}>
-            <DialogContent>
+            <DialogContent className="w-full max-w-[95vw] sm:max-w-[90vw] md:max-w-lg">
               <DialogHeader>
-                <DialogTitle>Add Primary Contact</DialogTitle>
-                <DialogDescription>Enter the details for the primary contact.</DialogDescription>
+                <DialogTitle className="text-lg sm:text-xl">Add Primary Contact</DialogTitle>
+                <DialogDescription className="text-sm sm:text-base">
+                  Enter the details for the primary contact.
+                </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="contactName">Name *</Label>
+                  <Label htmlFor="contactName" className="text-sm sm:text-base">
+                    Name *
+                  </Label>
                   <Input
                     id="contactName"
                     value={newContact.name}
                     onChange={(e) => setNewContact((prev) => ({ ...prev, name: e.target.value }))}
                     required
+                    className="w-full"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="contactEmail">Email</Label>
+                  <Label htmlFor="contactEmail" className="text-sm sm:text-base">
+                    Email
+                  </Label>
                   <Input
                     id="contactEmail"
                     type="email"
                     value={newContact.email}
                     onChange={(e) => setNewContact((prev) => ({ ...prev, email: e.target.value }))}
+                    className="w-full"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="contactPhone">Phone Number *</Label>
-                  <div className="flex space-x-2">
+                  <Label htmlFor="contactPhone" className="text-sm sm:text-base">
+                    Phone Number *
+                  </Label>
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <select
-                      className="border rounded px-2 py-1"
+                      className="border rounded px-2 py-1 w-full sm:w-32"
                       value={newContact.countryCode}
                       onChange={(e) =>
                         setNewContact((prev) => ({ ...prev, countryCode: e.target.value }))
@@ -1668,17 +2174,20 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                       value={newContact.phone}
                       onChange={(e) => setNewContact((prev) => ({ ...prev, phone: e.target.value }))}
                       required
+                      className="w-full"
                     />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="contactPosition">Position</Label>
+                  <Label htmlFor="contactDesignation" className="text-sm sm:text-base">
+                    Designation
+                  </Label>
                   <Select
-                    value={newContact.position}
-                    onValueChange={(value) => setNewContact((prev) => ({ ...prev, position: value }))}
+                    value={newContact.designation}
+                    onValueChange={(value) => setNewContact((prev) => ({ ...prev, designation: value }))}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select position" />
+                      <SelectValue placeholder="Select designation" />
                     </SelectTrigger>
                     <SelectContent>
                       {positionOptions.map((option) => (
@@ -1690,13 +2199,16 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="contactLinkedIn">LinkedIn</Label>
+                  <Label htmlFor="contactLinkedIn" className="text-sm sm:text-base">
+                    LinkedIn
+                  </Label>
                   <Input
                     id="contactLinkedIn"
                     type="text"
                     value={newContact.linkedin}
                     onChange={(e) => setNewContact((prev) => ({ ...prev, linkedin: e.target.value }))}
                     placeholder="https://www.linkedin.com/in/..."
+                    className="w-full"
                   />
                 </div>
               </div>
@@ -1709,15 +2221,19 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                       email: "",
                       phone: "",
                       countryCode: "+966",
-                      position: "",
+                      designation: "",
                       linkedin: "",
+                      isPrimary: true,
                     });
                     setIsContactModalOpen(false);
                   }}
+                  className="w-full sm:w-auto"
                 >
                   Cancel
                 </Button>
-                <Button onClick={() => handleAddContact(newContact)}>Add Contact</Button>
+                <Button onClick={() => handleAddContact(newContact)} className="w-full sm:w-auto">
+                  Add Contact
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>

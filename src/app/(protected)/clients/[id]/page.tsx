@@ -133,7 +133,7 @@ export default function ClientPage({ params }: PageProps) {
           throw new Error("Failed to fetch client data");
         }
         const responseData = await response.json();
-        if (responseData.status === "success" && responseData.data) {
+        if (responseData.success === true && responseData.data) {
           setClient(responseData.data);
         } else {
           throw new Error("Invalid client data format");
