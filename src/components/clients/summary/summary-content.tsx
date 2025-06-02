@@ -167,7 +167,7 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
           vatCopy: clientData.vatCopy || "",
           phoneNumber: clientData.phoneNumber || "",
           googleMapsLink: clientData.googleMapsLink || "",
-          primaryContacts: clientData.primaryContacts || [],
+          primaryContacts: clientData.primaryContacts || []
         });
 
         setLoading(false);
@@ -356,6 +356,9 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
               value={clientDetails.phoneNumber}
               onUpdate={handleUpdateField("phoneNumber")}
             />
+              
+
+
             <div className="bg-white rounded-lg border shadow-sm p-2">
               <div className="flex items-center justify-between mb-1">
                 <Label>Primary Contacts</Label>

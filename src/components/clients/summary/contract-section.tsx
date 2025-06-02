@@ -10,12 +10,17 @@ import {
   deleteAgreement,
   ContractResponse,
 } from "@/services/contractService";
+import { getClientById } from "@/services/clientService";
 
 interface ContractSectionProps {
   clientId: string;
+  clientData?: {
+    contractStartDate?: string;
+    contractEndDate?: string;
+  };
 }
 
-export function ContractSection({ clientId }: ContractSectionProps) {
+export function ContractSection({ clientId, clientData }: ContractSectionProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [contract, setContract] = useState<ContractResponse | null>(null);
@@ -24,64 +29,113 @@ export function ContractSection({ clientId }: ContractSectionProps) {
     contractStartDate: null as string | null,
     contractEndDate: null as string | null,
     fixedPercentage: "",
+    fixWithAdvance: "",
+    fixWithoutAdvance: "",
     variablePercentage: {
-      cLevel: "",
-      belowCLevel: "",
+      seniorLevel: "",
+      executives: "",
+      nonExecutives: "",
+      other: "",
     },
     referralPercentage: "",
     lineOfBusiness: "",
-    agreement: null as File | null,
-    agreementName: "",
+    contractDocument: null as File | null,
+    contractDocumentName: "",
   });
 
-  // Fetch contract data when component loads
+  // Fetch contract data and initialize with client data when component loads
   useEffect(() => {
     const fetchContractData = async () => {
       if (!clientId) return;
 
       try {
         setLoading(true);
-        const contractData = await getContractByClient(clientId);
+        let contractData: ContractResponse | null = null;
+        let fetchedClientData;
+
+        // Try to fetch existing contract
+        try {
+          contractData = await getContractByClient(clientId);
+        } catch (err) {
+          // If contract not found, proceed with client data
+          console.log("No existing contract found, proceeding with client data");
+        }
+
+        // Fetch client data if not provided via props
+        fetchedClientData = clientData || (await getClientById(clientId));
+
+        // Use client data from props or API
+        const contractStartDate =
+          contractData?.contractStartDate || fetchedClientData.contractStartDate || null;
+        const contractEndDate =
+          contractData?.contractEndDate || fetchedClientData.contractEndDate || null;
 
         // Update contract state
         setContract(contractData);
 
-        // Update form state
+        // Update form state with contract and client data
         setContractDetails({
-          contractStartDate: contractData.contractStartDate || null,
-          contractEndDate: contractData.contractEndDate || null,
-          fixedPercentage: contractData.fixedPercentage?.toString() || "",
+          contractStartDate,
+          contractEndDate,
+          fixedPercentage: contractData?.fixedPercentage?.toString() || "",
+          fixWithAdvance: contractData?.fixWithAdvance?.toString() || "",
+          fixWithoutAdvance: contractData?.fixWithoutAdvance?.toString() || "",
           variablePercentage: {
-            cLevel: contractData.variablePercentage?.cLevel?.toString() || "",
-            belowCLevel: contractData.variablePercentage?.belowCLevel?.toString() || "",
+            seniorLevel: contractData?.variablePercentage?.seniorLevel?.toString() || "",
+            executives: contractData?.variablePercentage?.executives?.toString() || "",
+            nonExecutives: contractData?.variablePercentage?.nonExecutives?.toString() || "",
+            other: contractData?.variablePercentage?.other?.toString() || "",
           },
-          referralPercentage: contractData.referralPercentage?.toString() || "",
-          lineOfBusiness: contractData.lineOfBusiness || "",
-          agreement: null,
-          agreementName: contractData.agreement?.fileName || "",
+          referralPercentage: contractData?.referralPercentage?.toString() || "",
+          lineOfBusiness: contractData?.lineOfBusiness || ('lineOfBusiness' in fetchedClientData && fetchedClientData.lineOfBusiness ? fetchedClientData.lineOfBusiness.join(", ") : ""),
+          contractDocument: null,
+          contractDocumentName: contractData?.agreement?.fileName || "",
         });
 
-        // Show variable percentages if either is set
-        if (contractData.variablePercentage?.cLevel || contractData.variablePercentage?.belowCLevel) {
+        // Show variable percentages if any is set
+        if (
+          contractData?.variablePercentage?.seniorLevel ||
+          contractData?.variablePercentage?.executives ||
+          contractData?.variablePercentage?.nonExecutives ||
+          contractData?.variablePercentage?.other
+        ) {
           setShowVariablePercentages(true);
+        }
+
+        // If no contract exists but client data has dates, create a new contract
+        if (!contractData && (contractStartDate || contractEndDate)) {
+          const formData = new FormData();
+          formData.append("clientId", clientId);
+          if (contractStartDate) formData.append("contractStartDate", contractStartDate);
+          if (contractEndDate) formData.append("contractEndDate", contractEndDate);
+          formData.append("fixedPercentage", "0");
+          formData.append("referralPercentage", "0");
+          formData.append("variablePercentage", JSON.stringify({
+            seniorLevel: "",
+            executives: "",
+            nonExecutives: "",
+            other: "",
+          }));
+
+          try {
+            const newContract = await createContract(formData as any);
+            setContract(newContract);
+          } catch (error) {
+            console.error("Error creating initial contract:", error);
+            setError("Failed to initialize contract with client dates");
+          }
         }
 
         setLoading(false);
       } catch (error) {
         console.error("Error fetching contract data:", error);
-        // If no contract exists yet, that's not an error
-        if ((error as Error).message.includes("not found")) {
-          setContract(null);
-          setLoading(false);
-        } else {
-          setError("Failed to load contract data");
-          setLoading(false);
-        }
+        setError("Failed to load contract data");
+        setLoading(false);
       }
     };
 
     fetchContractData();
-  }, [clientId]);
+  }, [clientId, clientData]);
 
   // Handle contract field updates
   const handleUpdateField = async (field: string, value: any) => {
@@ -104,6 +158,13 @@ export function ContractSection({ clientId }: ContractSectionProps) {
       } else {
         // Create new contract if none exists
         formData.append("clientId", clientId);
+        formData.append("fixedPercentage", contractDetails.fixedPercentage || "0");
+        formData.append("referralPercentage", contractDetails.referralPercentage || "0");
+        formData.append("variablePercentage", JSON.stringify(contractDetails.variablePercentage));
+        if (contractDetails.contractStartDate)
+          formData.append("contractStartDate", contractDetails.contractStartDate);
+        if (contractDetails.contractEndDate)
+          formData.append("contractEndDate", contractDetails.contractEndDate);
         updatedContract = await createContract(formData as any);
       }
 
@@ -117,79 +178,25 @@ export function ContractSection({ clientId }: ContractSectionProps) {
       if (contract) {
         setContractDetails((prev) => ({
           ...prev,
-          [field]: contract[field as keyof ContractResponse],
+          [field]: contract[field as keyof ContractResponse] || "",
         }));
       }
     }
   };
 
-  const handleUpdateVariablePercentage = async (field: "cLevel" | "belowCLevel", value: string) => {
-    // Update local state first
-    setContractDetails((prev) => ({
-      ...prev,
-      variablePercentage: {
-        ...prev.variablePercentage,
-        [field]: value,
-      },
-    }));
-
-    try {
-      // Create FormData for the API call
-      const formData = new FormData();
-
-      // Send the whole variablePercentage object
-      const updatedVariablePercentage = {
-        ...contractDetails.variablePercentage,
-        [field]: value,
-      };
-
-      formData.append("variablePercentage", JSON.stringify(updatedVariablePercentage));
-
-      let updatedContract;
-
-      if (contract) {
-        // Update existing contract
-        updatedContract = await updateContract(contract._id, formData as any);
-      } else {
-        // Create new contract if none exists
-        formData.append("clientId", clientId);
-        formData.append("fixedPercentage", contractDetails.fixedPercentage || "0");
-        formData.append("referralPercentage", contractDetails.referralPercentage || "0");
-        updatedContract = await createContract(formData as any);
-      }
-
-      // Update contract state with response
-      setContract(updatedContract);
-    } catch (error) {
-      console.error(`Error updating variable percentage:`, error);
-      setError(`Failed to update variable percentage`);
-
-      // Revert to previous value on error
-      if (contract) {
-        setContractDetails((prev) => ({
-          ...prev,
-          variablePercentage: {
-            cLevel: contract.variablePercentage?.cLevel?.toString() || "",
-            belowCLevel: contract.variablePercentage?.belowCLevel?.toString() || "",
-          },
-        }));
-      }
-    }
-  };
-
-  // Handle agreement file upload
-  const handleAgreementUpload = async (file: File) => {
+  // Handle contract document file upload
+  const handleContractDocumentUpload = async (file: File) => {
     try {
       // Update local state for immediate feedback
       setContractDetails((prev) => ({
         ...prev,
-        agreement: file,
-        agreementName: file.name,
+        contractDocument: file,
+        contractDocumentName: file.name,
       }));
 
       // Create FormData for the API call
       const formData = new FormData();
-      formData.append("agreement", file);
+      formData.append("agreement", file); // Keep the API field name as 'agreement'
 
       let updatedContract;
 
@@ -202,6 +209,10 @@ export function ContractSection({ clientId }: ContractSectionProps) {
         formData.append("fixedPercentage", contractDetails.fixedPercentage || "0");
         formData.append("referralPercentage", contractDetails.referralPercentage || "0");
         formData.append("variablePercentage", JSON.stringify(contractDetails.variablePercentage));
+        if (contractDetails.contractStartDate)
+          formData.append("contractStartDate", contractDetails.contractStartDate);
+        if (contractDetails.contractEndDate)
+          formData.append("contractEndDate", contractDetails.contractEndDate);
         updatedContract = await createContract(formData as any);
       }
 
@@ -211,17 +222,17 @@ export function ContractSection({ clientId }: ContractSectionProps) {
       console.error("Error uploading agreement:", error);
       setError("Failed to upload agreement");
 
-      // Reset agreement info on error
+      // Reset contract document info on error
       setContractDetails((prev) => ({
         ...prev,
-        agreement: null,
-        agreementName: contract?.agreement?.fileName || "",
+        contractDocument: null,
+        contractDocumentName: contract?.agreement?.fileName || "",
       }));
     }
   };
 
-  // Handle agreement download
-  const handleDownloadAgreement = async () => {
+  // Handle contract document download
+  const handleDownloadContractDocument = async () => {
     if (!contract || !contract._id) return;
 
     try {
@@ -243,8 +254,8 @@ export function ContractSection({ clientId }: ContractSectionProps) {
     }
   };
 
-  // Handle agreement deletion
-  const handleDeleteAgreement = async () => {
+  // Handle contract document deletion
+  const handleDeleteContractDocument = async () => {
     if (!contract || !contract._id) return;
 
     try {
@@ -256,8 +267,8 @@ export function ContractSection({ clientId }: ContractSectionProps) {
       // Update form state
       setContractDetails((prev) => ({
         ...prev,
-        agreement: null,
-        agreementName: "",
+        contractDocument: null,
+        contractDocumentName: "",
       }));
     } catch (error) {
       console.error("Error deleting agreement:", error);
@@ -292,10 +303,28 @@ export function ContractSection({ clientId }: ContractSectionProps) {
           max={100}
           suffix="%"
         />
+        <DetailRow
+          label="Fix with Advance"
+          value={contractDetails.fixWithAdvance}
+          onUpdate={(value) => handleUpdateField("fixWithAdvance", value)}
+          isNumber={true}
+          min={0}
+          max={100}
+          suffix="%"
+        />
+        <DetailRow
+          label="Fix without Advance"
+          value={contractDetails.fixWithoutAdvance}
+          onUpdate={(value) => handleUpdateField("fixWithoutAdvance", value)}
+          isNumber={true}
+          min={0}
+          max={100}
+          suffix="%"
+        />
 
         <div className="flex items-center justify-between border-b pb-2">
           <span className="text-sm text-gray-500 ">Variable Percentage</span>
-          <button 
+          <button
             onClick={() => setShowVariablePercentages(!showVariablePercentages)}
             className="text-gray-500 hover:text-gray-700 transition-colors"
             aria-expanded={showVariablePercentages}
@@ -312,19 +341,36 @@ export function ContractSection({ clientId }: ContractSectionProps) {
         {showVariablePercentages && (
           <div id="variable-percentage-fields" className="space-y-3 pl-2">
             <DetailRow
-              label="C-Level Percentage"
-              value={contractDetails.variablePercentage.cLevel}
-              onUpdate={(value) => handleUpdateVariablePercentage("cLevel", value)}
+              label="Senior Level Percentage"
+              value={contractDetails.variablePercentage.seniorLevel}
+              onUpdate={(value) => handleUpdateField("seniorLevel", value)}
               isNumber={true}
               min={0}
               max={100}
               suffix="%"
             />
-
             <DetailRow
-              label="Below C-Level Percentage"
-              value={contractDetails.variablePercentage.belowCLevel}
-              onUpdate={(value) => handleUpdateVariablePercentage("belowCLevel", value)}
+              label="Executives Percentage"
+              value={contractDetails.variablePercentage.executives}
+              onUpdate={(value) => handleUpdateField("executives", value)}
+              isNumber={true}
+              min={0}
+              max={100}
+              suffix="%"
+            />
+            <DetailRow
+              label="Non-Executives Percentage"
+              value={contractDetails.variablePercentage.nonExecutives}
+              onUpdate={(value) => handleUpdateField("nonExecutives", value)}
+              isNumber={true}
+              min={0}
+              max={100}
+              suffix="%"
+            />
+            <DetailRow
+              label="Other Percentage"
+              value={contractDetails.variablePercentage.other}
+              onUpdate={(value) => handleUpdateField("other", value)}
               isNumber={true}
               min={0}
               max={100}
@@ -332,7 +378,7 @@ export function ContractSection({ clientId }: ContractSectionProps) {
             />
           </div>
         )}
-        {/* <DetailRow
+        <DetailRow
           label="Referral Percentage"
           value={contractDetails.referralPercentage}
           onUpdate={(value) => handleUpdateField("referralPercentage", value)}
@@ -340,22 +386,19 @@ export function ContractSection({ clientId }: ContractSectionProps) {
           min={0}
           max={100}
           suffix="%"
-        /> */}
-
+        />
         <DetailRow
           label="Line of Business"
           value={contractDetails.lineOfBusiness}
           onUpdate={(value) => handleUpdateField("lineOfBusiness", value)}
         />
-
-        
-         <FileUploadRow
-          label="Agreement"
+        <FileUploadRow
+          label="Contract Document"
           accept=".pdf,.doc,.docx"
-          onFileSelect={handleAgreementUpload}
-          currentFileName={contractDetails.agreementName}
-          onDownload={contract?.agreement ? handleDownloadAgreement : undefined}
-          onDelete={contract?.agreement ? handleDeleteAgreement : undefined}
+          onFileSelect={handleContractDocumentUpload}
+          currentFileName={contractDetails.contractDocumentName}
+          onDownload={contract?.agreement ? handleDownloadContractDocument : undefined}
+          onDelete={contract?.agreement ? handleDeleteContractDocument : undefined}
         />
       </div>
     </div>
