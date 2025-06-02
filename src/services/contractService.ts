@@ -10,9 +10,13 @@ export interface ContractResponse {
   contractStartDate?: string | null;
   contractEndDate?: string | null;
   fixedPercentage: number;
+  fixWithAdvance?: number;
+  fixWithoutAdvance?: number;
   variablePercentage: {
-    cLevel?: number;
-    belowCLevel?: number;
+    seniorLevel?: number;
+    executives?: number;
+    nonExecutives?: number;
+    other?: number;
   };
   agreement?: {
     fileName: string;
