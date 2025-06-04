@@ -76,6 +76,7 @@ export interface ClientResponse {
 
 interface ApiResponse<T> {
   status: string;
+  success: boolean;
   results?: number;
   data: T;
   message?: string;
@@ -429,17 +430,44 @@ const getClients = async (queryParams: {
   clientTeam?: "Enterprise" | "SMB" | "Mid-Market";
 } = {}): Promise<{ clients: ClientResponse[]; total: number; page: number; pages: number }> => {
   try {
-    const response = await axios.get<ApiResponse<{ 
-      clients: ClientResponse[]; 
-      total: number; 
-      page: number; 
-      pages: number 
-    }>>(`${API_URL}/clients`, { 
+    const response = await axios.get(`${API_URL}/clients`, { 
       params: queryParams,
       timeout: 15000
     });
-    return response.data.data;
+    
+    // Log the response for debugging
+    console.log('API Response in service:', response.data);
+    
+    // Handle different response formats
+    if (response.data.success && Array.isArray(response.data.data)) {
+      // Format is { success: true, data: [...clients] }
+      const clients = response.data.data;
+      const meta = response.data.meta || { total: clients.length, page: 1, pages: 1 };
+      
+      return {
+        clients: clients,
+        total: meta.total || clients.length,
+        page: meta.page || 1,
+        pages: meta.pages || 1
+      };
+    } else if (response.data.data && response.data.data.clients) {
+      // Format is { data: { clients: [...], total: X, page: Y, pages: Z } }
+      return response.data.data;
+    } else {
+      // Fallback for unexpected format
+      console.error('Unexpected API response format:', response.data);
+      const clients = Array.isArray(response.data) ? response.data : 
+                    (Array.isArray(response.data.data) ? response.data.data : []);
+      
+      return {
+        clients: clients,
+        total: clients.length,
+        page: 1,
+        pages: 1
+      };
+    }
   } catch (error: any) {
+    console.error('Error in getClients:', error);
     throw handleError(error);
   }
 };
@@ -568,12 +596,69 @@ const addPrimaryContact = async (
   }
 };
 
+// Update client stage
+const updateClientStage = async (id: string, stage: "Lead" | "Engaged" | "Negotiation" | "Signed"): Promise<ClientResponse> => {
+  try {
+    // First, get the current client data
+    const currentClient = await getClientById(id);
+    
+    // Update only the clientStage field
+    const updatedClient = {
+      ...currentClient,
+      clientStage: stage,
+      updatedAt: new Date().toISOString()
+    };
+    
+    // Use the main update endpoint with PUT method
+    const response = await axios.put<ApiResponse<ClientResponse>>(
+      `${API_URL}/clients/${id}`,
+      updatedClient,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        timeout: 10000
+      }
+    );
+    
+    // If the API returns a success flag, check it
+    if (response.data.success === false) {
+      throw new Error(response.data.error || 'Failed to update client stage');
+    }
+    
+    return response.data.data;
+  } catch (error: any) {
+    let errorMessage = 'Failed to update client stage. Please try again.';
+    
+    if (error.response) {
+      // Server responded with a status code outside 2xx
+      const { data, status } = error.response;
+      
+      if (status === 404) {
+        errorMessage = 'Client not found. Please refresh the page and try again.';
+      } else {
+        errorMessage = data?.error || data?.message || errorMessage;
+      }
+    } else if (error.request) {
+      // Request was made but no response received
+      errorMessage = 'No response from server. Please check your connection.';
+    } else if (error.message) {
+      // Something happened in setting up the request
+      errorMessage = error.message;
+    }
+    
+    console.error('Client stage update error:', error);
+    throw new Error(errorMessage);
+  }
+};
+
 export {
   createClient,
   getClients,
   getClientNames,
   getClientById,
   updateClient,
+  updateClientStage,
   deleteClient,
   uploadClientFile,
   addPrimaryContact,

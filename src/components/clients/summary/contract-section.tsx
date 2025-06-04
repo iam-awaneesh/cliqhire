@@ -25,6 +25,7 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
   const [error, setError] = useState("");
   const [contract, setContract] = useState<ContractResponse | null>(null);
   const [showVariablePercentages, setShowVariablePercentages] = useState(false);
+  const [editMode, setEditMode] = useState(false);
   const [contractDetails, setContractDetails] = useState({
     contractStartDate: null as string | null,
     contractEndDate: null as string | null,
@@ -294,56 +295,122 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
           onUpdate={(value) => handleUpdateField("contractEndDate", value)}
           isDate={true}
         />
-        <DetailRow
-          label="Fixed Percentage"
-          value={contractDetails.fixedPercentage}
-          onUpdate={(value) => handleUpdateField("fixedPercentage", value)}
-          isNumber={true}
-          min={0}
-          max={100}
-          suffix="%"
-        />
-        <DetailRow
-          label="Fix with Advance"
-          value={contractDetails.fixWithAdvance}
-          onUpdate={(value) => handleUpdateField("fixWithAdvance", value)}
-          isNumber={true}
-          min={0}
-          max={100}
-          suffix="%"
-        />
-        <DetailRow
-          label="Fix without Advance"
-          value={contractDetails.fixWithoutAdvance}
-          onUpdate={(value) => handleUpdateField("fixWithoutAdvance", value)}
-          isNumber={true}
-          min={0}
-          max={100}
-          suffix="%"
-        />
-
-        <div className="flex items-center justify-between border-b pb-2">
-          <span className="text-sm text-gray-500 ">Variable Percentage</span>
-          <button
-            onClick={() => setShowVariablePercentages(!showVariablePercentages)}
-            className="text-gray-500 hover:text-gray-700 transition-colors"
-            aria-expanded={showVariablePercentages}
-            aria-controls="variable-percentage-fields"
-          >
-            {showVariablePercentages ? (
-              <ChevronUp size={16} className="transition-transform" />
-            ) : (
-              <ChevronDown size={16} className="transition-transform" />
-            )}
-          </button>
-        </div>
+        
+        {/* Show all contract options in edit mode or if none have values */}
+        {(editMode || (!contractDetails.fixedPercentage && !contractDetails.fixWithAdvance && !contractDetails.fixWithoutAdvance && 
+          !contractDetails.variablePercentage.seniorLevel && !contractDetails.variablePercentage.executives && 
+          !contractDetails.variablePercentage.nonExecutives && !contractDetails.variablePercentage.other)) && (
+          <>
+            <DetailRow
+              label="Fixed Percentage"
+              value={contractDetails.fixedPercentage}
+              onUpdate={(value) => {
+                handleUpdateField("fixedPercentage", value);
+                setEditMode(false);
+              }}
+              isNumber={true}
+              min={0}
+              max={100}
+              suffix="%"
+            />
+            <DetailRow
+              label="Fix with Advance"
+              value={contractDetails.fixWithAdvance}
+              onUpdate={(value) => {
+                handleUpdateField("fixWithAdvance", value);
+                setEditMode(false);
+              }}
+              isNumber={true}
+              min={0}
+              max={100}
+              suffix="%"
+            />
+            <DetailRow
+              label="Fix without Advance"
+              value={contractDetails.fixWithoutAdvance}
+              onUpdate={(value) => {
+                handleUpdateField("fixWithoutAdvance", value);
+                setEditMode(false);
+              }}
+              isNumber={true}
+              min={0}
+              max={100}
+              suffix="%"
+            />
+          </>
+        )}
+        
+        {/* Show only the filled contract option when not in edit mode */}
+        {!editMode && contractDetails.fixedPercentage && (
+          <DetailRow
+            label="Fixed Percentage"
+            value={contractDetails.fixedPercentage}
+            onUpdate={(value) => {
+              setEditMode(true);
+            }}
+            isNumber={true}
+            min={0}
+            max={100}
+            suffix="%"
+          />
+        )}
+        {!editMode && contractDetails.fixWithAdvance && (
+          <DetailRow
+            label="Fix with Advance"
+            value={contractDetails.fixWithAdvance}
+            onUpdate={(value) => {
+              setEditMode(true);
+            }}
+            isNumber={true}
+            min={0}
+            max={100}
+            suffix="%"
+          />
+        )}
+        {!editMode && contractDetails.fixWithoutAdvance && (
+          <DetailRow
+            label="Fix without Advance"
+            value={contractDetails.fixWithoutAdvance}
+            onUpdate={(value) => {
+              setEditMode(true);
+            }}
+            isNumber={true}
+            min={0}
+            max={100}
+            suffix="%"
+          />
+        )}
+        
+        {/* Only show variable percentage section if in edit mode or if no other contract options are filled */}
+        {(editMode || (!contractDetails.fixedPercentage && !contractDetails.fixWithAdvance && !contractDetails.fixWithoutAdvance) || 
+          (contractDetails.variablePercentage.seniorLevel || contractDetails.variablePercentage.executives || 
+          contractDetails.variablePercentage.nonExecutives || contractDetails.variablePercentage.other)) && (
+          <div className="flex items-center justify-between border-b pb-2">
+            <span className="text-sm text-gray-500 ">Variable Percentage</span>
+            <button
+              onClick={() => setShowVariablePercentages(!showVariablePercentages)}
+              className="text-gray-500 hover:text-gray-700 transition-colors"
+              aria-expanded={showVariablePercentages}
+              aria-controls="variable-percentage-fields"
+            >
+              {showVariablePercentages ? (
+                <ChevronUp size={16} className="transition-transform" />
+              ) : (
+                <ChevronDown size={16} className="transition-transform" />
+              )}
+            </button>
+          </div>
+        )}
 
         {showVariablePercentages && (
           <div id="variable-percentage-fields" className="space-y-3 pl-2">
             <DetailRow
               label="Senior Level Percentage"
               value={contractDetails.variablePercentage.seniorLevel}
-              onUpdate={(value) => handleUpdateField("seniorLevel", value)}
+              onUpdate={(value) => {
+                handleUpdateField("seniorLevel", value);
+                setEditMode(false);
+              }}
               isNumber={true}
               min={0}
               max={100}
@@ -352,7 +419,10 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
             <DetailRow
               label="Executives Percentage"
               value={contractDetails.variablePercentage.executives}
-              onUpdate={(value) => handleUpdateField("executives", value)}
+              onUpdate={(value) => {
+                handleUpdateField("executives", value);
+                setEditMode(false);
+              }}
               isNumber={true}
               min={0}
               max={100}
@@ -361,7 +431,10 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
             <DetailRow
               label="Non-Executives Percentage"
               value={contractDetails.variablePercentage.nonExecutives}
-              onUpdate={(value) => handleUpdateField("nonExecutives", value)}
+              onUpdate={(value) => {
+                handleUpdateField("nonExecutives", value);
+                setEditMode(false);
+              }}
               isNumber={true}
               min={0}
               max={100}
@@ -370,7 +443,10 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
             <DetailRow
               label="Other Percentage"
               value={contractDetails.variablePercentage.other}
-              onUpdate={(value) => handleUpdateField("other", value)}
+              onUpdate={(value) => {
+                handleUpdateField("other", value);
+                setEditMode(false);
+              }}
               isNumber={true}
               min={0}
               max={100}
@@ -378,6 +454,7 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
             />
           </div>
         )}
+        
         <DetailRow
           label="Referral Percentage"
           value={contractDetails.referralPercentage}

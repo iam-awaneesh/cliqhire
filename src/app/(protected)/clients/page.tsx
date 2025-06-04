@@ -1,4 +1,5 @@
 "use client";
+import axios from "axios";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,12 +23,14 @@ import {
 } from "@/components/ui/table";
 import { Plus, RefreshCcw, SlidersHorizontal, MoreVertical } from "lucide-react";
 import { CreateClientModal } from "@/components/create-client-modal";
-import { getSampleClients, updateClientStage } from "@/app/(protected)/clients/data/sample-clients";
+import { getClients, updateClientStage } from "@/services/clientService";
 import { ClientStageBadge } from "@/components/client-stage-badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { differenceInYears } from 'date-fns';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://aems-backend.onrender.com/api";
 
 interface Client {
   id: string;
@@ -83,35 +86,220 @@ export default function ClientsPage() {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [pendingChange, setPendingChange] = useState<{ clientId: string; stage: Client["stage"] } | null>(null);
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
+  
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [totalPages, setTotalPages] = useState<number>(1);
+  const [totalClients, setTotalClients] = useState<number>(0);
+  const [pageSize, setPageSize] = useState<number>(1000); // Set a very high number to effectively show all clients
 
-  useEffect(() => {
-    const fetchClients = async () => {
+  const fetchClients = async (page = 1, size = pageSize) => {
+    setInitialLoading(true);
+    try {
+      // Fetch clients directly from the API with pagination
+      console.log(`Fetching clients from API: page ${page}, limit ${size}`);
+      
+      // First try with the service function
       try {
-        const data = await getSampleClients();
-        console.log('Fetched clients:', data);
-        const response = await fetch('https://aems-backend.onrender.com/api/jobs/count/67fcd97be14a5de37110a5b6');
-        const jobCountData = await response.json();
-        console.log('Fetched job counts:', jobCountData);
-        if (jobCountData.success) {
-          const updatedClients = data.map(client => {
-            const jobCount = jobCountData.data.find((job: { _id: string; count: number })=> job._id === client.id);
-            console.log(`Client ${client.id} has job count: ${jobCount ? jobCount.count : 0}`);
-            return { ...client, jobCount: jobCount ? jobCount.count : 0 };
-          });
-          console.log('Updated clients:', updatedClients);
-          setClients(updatedClients);
-        } else {
-          console.log('Failed to fetch job counts');
-          setClients(data.map(client => ({ ...client, jobCount: 0 })));
+        const response = await getClients({
+          page,
+          limit: size,
+          ...(filters.name && { search: filters.name }),
+          ...(filters.industry && { industry: filters.industry })
+        });
+        
+        console.log('API Response from service:', response);
+        
+        if (response && response.clients && Array.isArray(response.clients)) {
+          // Extract data from response
+          const { clients: apiClients, total, pages } = response;
+          
+          // Update pagination state
+          setTotalClients(total);
+          setTotalPages(pages);
+          setCurrentPage(page);
+          
+          console.log(`Fetched ${apiClients.length} clients (page ${page}/${pages}, total: ${total})`);
+          
+          // Map API clients to our format
+          const mappedClients = apiClients.map(client => ({
+            id: client._id,
+            name: client.name || 'Unnamed Client',
+            industry: client.industry || '',
+            location: client.location || '',
+            stage: client.clientStage || 'Lead',
+            owner: client.clientRm || '',
+            team: client.clientTeam || '',
+            createdAt: client.createdAt,
+            incorporationDate: client.incorporationDate || '',
+            jobCount: 0 // Will be updated with actual job counts
+          }));
+          
+          // Set clients state immediately to show data
+          setClients(mappedClients);
+          
+          // Fetch job counts in the background
+          fetchJobCounts(mappedClients);
+          
+          // Save to localStorage as backup
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('cliqhire_clients', JSON.stringify(mappedClients));
+          }
+          
+          return; // Exit early since we successfully processed the data
         }
-      } catch (error) {
-        console.error("Error fetching clients:", error);
-      } finally {
-        setInitialLoading(false);
+      } catch (serviceError) {
+        console.error('Error using service function:', serviceError);
+        // Continue to direct API call as fallback
       }
-    };
-    fetchClients();
+      
+      // Fallback: Direct API call
+      console.log('Falling back to direct API call');
+      const directResponse = await axios.get(`${API_URL}/clients`, {
+        params: {
+          page,
+          limit: size,
+          ...(filters.name && { search: filters.name }),
+          ...(filters.industry && { industry: filters.industry })
+        }
+      });
+      
+      console.log('Direct API Response:', directResponse.data);
+      
+      // Process the direct API response
+      if (directResponse.data && directResponse.data.success) {
+        const apiClients = directResponse.data.data;
+        const meta = directResponse.data.meta || { total: apiClients.length, page: 1, pages: 1 };
+        
+        // Update pagination state
+        setTotalClients(meta.total);
+        setTotalPages(meta.pages);
+        setCurrentPage(meta.page);
+        
+        console.log(`Fetched ${apiClients.length} clients directly from API`);
+        
+        // Map API clients to our format
+        const mappedClients = apiClients.map(client => ({
+          id: client._id,
+          name: client.name || 'Unnamed Client',
+          industry: client.industry || '',
+          location: client.location || '',
+          stage: client.clientStage || '',
+          owner: client.clientRm || '',
+          team: client.clientTeam || '',
+          createdAt: client.createdAt,
+          incorporationDate: client.incorporationDate || '',
+          jobCount: 0 // Will be updated with actual job counts
+        }));
+        
+        // Set clients state immediately to show data
+        setClients(mappedClients);
+        
+        // Fetch job counts in the background
+        fetchJobCounts(mappedClients);
+        
+        // Save to localStorage as backup
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('cliqhire_clients', JSON.stringify(mappedClients));
+        }
+      } else {
+        throw new Error('Invalid API response format');
+      }
+    } catch (error) {
+      console.error('Error fetching clients:', error);
+      // Fallback to empty clients list or local storage if available
+      try {
+        // Try to get clients from localStorage if available
+        const storedClients = typeof window !== 'undefined' ? 
+          JSON.parse(localStorage.getItem('cliqhire_clients') || '[]') : [];
+        
+        if (storedClients.length > 0) {
+          // Apply manual pagination to stored clients
+          const total = storedClients.length;
+          setTotalClients(total);
+          
+          const pages = Math.ceil(total / size);
+          setTotalPages(pages);
+          setCurrentPage(page);
+          
+          const startIndex = (page - 1) * size;
+          const endIndex = Math.min(startIndex + size, total);
+          const paginatedClients = storedClients.slice(startIndex, endIndex);
+          
+          setClients(paginatedClients);
+          console.log(`Fallback: Showing clients ${startIndex + 1} to ${endIndex} of ${total} from localStorage`);
+        } else {
+          // No clients in localStorage either
+          setClients([]);
+          setTotalClients(0);
+          setTotalPages(1);
+          console.log('No clients available in localStorage');
+        }
+      } catch (fallbackError) {
+        console.error('Error with fallback clients:', fallbackError);
+        setClients([]);
+        setTotalClients(0);
+        setTotalPages(1);
+      }
+    } finally {
+      setInitialLoading(false);
+    }
+  };
+  
+  // Separate function to fetch job counts in the background
+  const fetchJobCounts = async (clientsList: Client[]) => {
+    try {
+      // Fetch job counts for all clients
+      const jobCountPromises = clientsList.map(async (client: Client) => {
+        try {
+          const response = await fetch(`${API_URL}/jobs/count/${client.id}`);
+          const jobCountData = await response.json();
+          return {
+            clientId: client.id,
+            count: jobCountData.success ? jobCountData.data.count || 0 : 0
+          };
+        } catch (error) {
+          console.error(`Error fetching job count for client ${client.id}:`, error);
+          return { clientId: client.id, count: 0 };
+        }
+      });
+      
+      // Wait for all job count requests to complete
+      const jobCounts = await Promise.all(jobCountPromises);
+      
+      // Update clients with job counts
+      setClients(prevClients => {
+        return prevClients.map((client: Client) => {
+          const jobCountInfo = jobCounts.find(jc => jc.clientId === client.id);
+          return { ...client, jobCount: jobCountInfo ? jobCountInfo.count : 0 };
+        });
+      });
+      
+      console.log('Updated clients with job counts');
+    } catch (error) {
+      console.error('Error fetching job counts:', error);
+    }
+  };
+  
+  // Handle page change
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+      fetchClients(newPage, pageSize);
+    }
+  };
+  
+  useEffect(() => {
+    fetchClients(currentPage);
   }, []);
+  
+  // Refresh data when filters change
+  useEffect(() => {
+    // Only refetch if not the initial render
+    if (!initialLoading) {
+      fetchClients(1); // Reset to first page when filters change
+    }
+  }, [filters]);
 
   function getYearDifference(createdAt: string) {
     const createdDate = new Date(createdAt);
@@ -168,56 +356,44 @@ export default function ClientsPage() {
     return result;
   }, [sortConfig, filters, clients]);
 
+  const [error, setError] = useState<string | null>(null);
+
   const handleConfirmChange = async () => {
     if (!pendingChange) return;
 
     setIsUpdating(true);
+    setError(null);
     
     try {
       console.log('Updating client stage:', pendingChange.clientId, 'to', pendingChange.stage);
       
-      // Update the client stage in localStorage and get the updated clients
-      const updatedClients = updateClientStage(pendingChange.clientId, pendingChange.stage);
+      // Update the client stage in the database
+      const updatedClient = await updateClientStage(pendingChange.clientId, pendingChange.stage);
       
-      // Update the UI with the updated clients
-      setClients(updatedClients);
-      
-      console.log('Stage update successful for client:', pendingChange.clientId);
-      
-      // If you want to also make the API call when it's available, uncomment this code:
-      /*
-      const response = await fetch(`https://aems-backend.onrender.com/api/clients/${pendingChange.clientId}`, {
-        method: 'PATCH',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({ stage: pendingChange.stage }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.text();
-        console.error('API error response:', errorData);
-        throw new Error(`Failed to update client stage: ${response.status} ${response.statusText}`);
-      }
-      
-      const responseData = await response.json();
-      console.log('Stage update successful:', responseData);
-      */
-    } catch (error) {
-      console.error('Error updating client stage:', error);
-      // Revert the UI change if the API call fails
+      // Update the UI with the updated client data
       setClients(prevClients =>
         prevClients.map(client =>
-          client.id === pendingChange.clientId 
-            ? { ...client, stage: clients.find(c => c.id === pendingChange.clientId)?.stage || "Lead" } 
+          client.id === pendingChange.clientId
+            ? { ...client, stage: updatedClient.clientStage || pendingChange.stage }
             : client
         )
       );
+      
+      console.log('Stage update successful for client:', pendingChange.clientId);
+      
+      // Close the dialog on success
+      setShowConfirmDialog(false);
+    } catch (error: any) {
+      console.error('Error updating client stage:', error);
+      // Set the error message to be displayed in the dialog
+      setError(error.message || 'Failed to update client stage. Please try again.');
+      return; // Don't close the dialog on error
     } finally {
       setIsUpdating(false);
-      setPendingChange(null);
-      setShowConfirmDialog(false);
+      // Only clear pending change if there was no error
+      if (!error) {
+        setPendingChange(null);
+      }
     }
   };
 
@@ -228,21 +404,49 @@ export default function ClientsPage() {
 
   return (
     <>
-      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+      <Dialog open={showConfirmDialog} onOpenChange={(open) => {
+        if (!open) {
+          setShowConfirmDialog(false);
+          setError(null);
+          setPendingChange(null);
+        }
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Confirm Stage Change</DialogTitle>
             <DialogDescription>
-              Are you sure you want to update the client stage?
+              {error ? (
+                <div className="text-red-600 mb-4 p-3 bg-red-50 rounded-md">
+                  {error}
+                </div>
+              ) : (
+                'Are you sure you want to update the client stage?'
+              )}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={handleCancelChange} disabled={isUpdating}>
-              Cancel
+            <Button 
+              variant="outline" 
+              onClick={handleCancelChange} 
+              disabled={isUpdating}
+              className="mr-2"
+            >
+              {error ? 'Close' : 'Cancel'}
             </Button>
-            <Button onClick={handleConfirmChange} disabled={isUpdating}>
-              {isUpdating ? "Updating..." : "Confirm"}
-            </Button>
+            {!error && (
+              <Button 
+                onClick={handleConfirmChange} 
+                disabled={isUpdating}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {isUpdating ? (
+                  <>
+                    <RefreshCcw className="h-4 w-4 mr-2 animate-spin" />
+                    Updating...
+                  </>
+                ) : 'Confirm'}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -275,9 +479,23 @@ export default function ClientsPage() {
               <SlidersHorizontal className="h-4 w-4 mr-2" />
               Filters
             </Button>
-            <Button variant="outline" size="sm">
-              <RefreshCcw className="h-4 w-4 mr-2" />
-              Refresh
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => fetchClients(currentPage, pageSize)}
+              disabled={initialLoading}
+            >
+              {initialLoading ? (
+                <>
+                  <RefreshCcw className="h-4 w-4 mr-2 animate-spin" />
+                  Loading...
+                </>
+              ) : (
+                <>
+                  <RefreshCcw className="h-4 w-4 mr-2" />
+                  Refresh
+                </>
+              )}
             </Button>
             <Button variant="ghost" size="sm">
               <MoreVertical className="h-4 w-4" />
@@ -367,6 +585,58 @@ export default function ClientsPage() {
                 )}
               </TableBody>
             </Table>
+            
+            {/* Pagination Controls */}
+            <div className="flex items-center justify-between p-4 border-t">
+              <div className="flex items-center space-x-4">
+                <div className="text-sm text-muted-foreground">
+                  Showing {clients.length > 0 ? (currentPage - 1) * pageSize + 1 : 0} to {Math.min(currentPage * pageSize, totalClients)} of {totalClients} clients
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm">Show</span>
+                  <select 
+                    className="h-8 w-16 rounded-md border border-input bg-background px-2 text-sm" 
+                    value={pageSize}
+                    onChange={(e) => {
+                      const newSize = parseInt(e.target.value);
+                      setPageSize(newSize);
+                      // Reset to page 1 when changing page size
+                      setCurrentPage(1);
+                      fetchClients(1, newSize);
+                    }}
+                  >
+                    <option value="1000">All</option>
+                    <option value="10">10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                    <option value="200">200</option>
+                  </select>
+                  <span className="text-sm">per page</span>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage <= 1 || initialLoading}
+                >
+                  Previous
+                </Button>
+                <div className="text-sm">
+                  Page {currentPage} of {totalPages}
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage >= totalPages || initialLoading}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
           </div>
         )}
 
