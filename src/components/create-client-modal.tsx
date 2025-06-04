@@ -371,9 +371,10 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
       field === "executivesPercentage" ||
       field === "nonExecutivesPercentage" ||
       field === "otherPercentage"
-
     ) {
-      value = e.target.value ? parseFloat(e.target.value) : 0;
+      // Ensure the value is a valid number between 0 and 100
+      const numValue = parseFloat(e.target.value);
+      value = isNaN(numValue) ? 0 : Math.min(100, Math.max(0, numValue));
     } else {
       value = e.target.value;
     }
@@ -1839,15 +1840,16 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                                     onClick={(e: React.MouseEvent<HTMLInputElement>) =>
                                       e.stopPropagation()
                                     }
-                                    onChange={handleInputChange(
-                                      `${level.replace(/\s+/g, "")[0].toLowerCase() +
-                                      level.replace(/\s+/g, "").slice(1)}Percentage` as keyof ClientForm
-                                    )}
+                                    onChange={(e) => {
+                                      const fieldName = `${level.replace(/\s+/g, "").toLowerCase()}Percentage` as keyof ClientForm;
+                                      const value = e.target.value ? parseFloat(e.target.value) : 0;
+                                      setFormData(prev => ({
+                                        ...prev,
+                                        [fieldName]: isNaN(value) ? 0 : Math.min(100, Math.max(0, value))
+                                      }));
+                                    }}
                                     value={
-                                      typeof formData[
-                                      `${level.replace(/\s+/g, "")[0].toLowerCase() +
-                                      level.replace(/\s+/g, "").slice(1)}Percentage` as keyof ClientForm
-                                      ] || ""
+                                      (formData as any)[`${level.replace(/\s+/g, "").toLowerCase()}Percentage`] || ""
                                     }
                                     className="h-8 pl-2 pr-6 text-xs"
                                   />
@@ -1861,15 +1863,15 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                                   onClick={(e: React.MouseEvent<HTMLInputElement>) =>
                                     e.stopPropagation()
                                   }
-                                  onChange={handleInputChange(
-                                    `${level.replace(/\s+/g, "")[0].toLowerCase() +
-                                    level.replace(/\s+/g, "").slice(1)}Notes` as keyof ClientForm
-                                  )}
+                                  onChange={(e) => {
+                                    const fieldName = `${level.replace(/\s+/g, "").toLowerCase()}Notes` as keyof ClientForm;
+                                    setFormData(prev => ({
+                                      ...prev,
+                                      [fieldName]: e.target.value
+                                    }));
+                                  }}
                                   value={
-                                    typeof formData[
-                                    `${level.replace(/\s+/g, "")[0].toLowerCase() +
-                                    level.replace(/\s+/g, "").slice(1)}Notes` as keyof ClientForm
-                                    ] || ""
+                                    (formData as any)[`${level.replace(/\s+/g, "").toLowerCase()}Notes`] || ""
                                   }
                                   className="h-8 text-xs flex-1"
                                 />
