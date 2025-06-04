@@ -96,14 +96,13 @@ export default function ClientsPage() {
   const fetchClients = async (page = 1, size = pageSize) => {
     setInitialLoading(true);
     try {
-      // Fetch clients directly from the API with pagination
-      console.log(`Fetching clients from API: page ${page}, limit ${size}`);
+      // Fetch all clients from the API (no pagination in the API call)
+      console.log('Fetching all clients from API');
       
       // First try with the service function
       try {
+        // Fetch all clients by not providing page/limit to getClients
         const response = await getClients({
-          page,
-          limit: size,
           ...(filters.name && { search: filters.name }),
           ...(filters.industry && { industry: filters.industry })
         });
@@ -112,14 +111,10 @@ export default function ClientsPage() {
         
         if (response && response.clients && Array.isArray(response.clients)) {
           // Extract data from response
-          const { clients: apiClients, total, pages } = response;
+          const apiClients = response.clients;
+          const total = apiClients.length;
           
-          // Update pagination state
-          setTotalClients(total);
-          setTotalPages(pages);
-          setCurrentPage(page);
-          
-          console.log(`Fetched ${apiClients.length} clients (page ${page}/${pages}, total: ${total})`);
+          console.log(`Fetched ${total} clients from API`);
           
           // Map API clients to our format
           const mappedClients = apiClients.map(client => ({
@@ -135,8 +130,11 @@ export default function ClientsPage() {
             jobCount: 0 // Will be updated with actual job counts
           }));
           
-          // Set clients state immediately to show data
+          // Set clients state with all clients (pagination is handled client-side)
           setClients(mappedClients);
+          
+          // Reset to first page when fetching new data
+          setCurrentPage(1);
           
           // Fetch job counts in the background
           fetchJobCounts(mappedClients);
@@ -157,8 +155,7 @@ export default function ClientsPage() {
       console.log('Falling back to direct API call');
       const directResponse = await axios.get(`${API_URL}/clients`, {
         params: {
-          page,
-          limit: size,
+          // Don't pass page/limit to get all clients
           ...(filters.name && { search: filters.name }),
           ...(filters.industry && { industry: filters.industry })
         }
@@ -168,13 +165,10 @@ export default function ClientsPage() {
       
       // Process the direct API response
       if (directResponse.data && directResponse.data.success) {
-        const apiClients = directResponse.data.data;
-        const meta = directResponse.data.meta || { total: apiClients.length, page: 1, pages: 1 };
-        
-        // Update pagination state
-        setTotalClients(meta.total);
-        setTotalPages(meta.pages);
-        setCurrentPage(meta.page);
+        const apiClients = Array.isArray(directResponse.data.data) ? 
+          directResponse.data.data : 
+          (directResponse.data.data && Array.isArray(directResponse.data.data.clients) ? 
+            directResponse.data.data.clients : []);
         
         console.log(`Fetched ${apiClients.length} clients directly from API`);
         
@@ -184,7 +178,7 @@ export default function ClientsPage() {
           name: client.name || 'Unnamed Client',
           industry: client.industry || '',
           location: client.location || '',
-          stage: client.clientStage || '',
+          stage: client.clientStage || 'Lead',
           owner: client.clientRm || '',
           team: client.clientTeam || '',
           createdAt: client.createdAt,
@@ -192,8 +186,11 @@ export default function ClientsPage() {
           jobCount: 0 // Will be updated with actual job counts
         }));
         
-        // Set clients state immediately to show data
+        // Set clients state with all clients (pagination is handled client-side)
         setClients(mappedClients);
+        
+        // Reset to first page when fetching new data
+        setCurrentPage(1);
         
         // Fetch job counts in the background
         fetchJobCounts(mappedClients);
@@ -285,7 +282,8 @@ export default function ClientsPage() {
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
       setCurrentPage(newPage);
-      fetchClients(newPage, pageSize);
+      // We don't need to fetch clients here since we're now handling pagination client-side
+      // The filteredAndSortedClients will automatically update with the new page
     }
   };
   
@@ -343,6 +341,7 @@ export default function ClientsPage() {
       }
     }
 
+    // Apply sorting
     result.sort((a, b) => {
       if (a[sortConfig.field] < b[sortConfig.field]) {
         return sortConfig.order === "asc" ? -1 : 1;
@@ -353,8 +352,19 @@ export default function ClientsPage() {
       return 0;
     });
 
-    return result;
-  }, [sortConfig, filters, clients]);
+    // Update total clients count based on filtered results
+    setTotalClients(result.length);
+    
+    // Calculate total pages based on filtered results and current page size
+    const totalFilteredPages = Math.ceil(result.length / pageSize);
+    setTotalPages(totalFilteredPages > 0 ? totalFilteredPages : 1);
+
+    // Apply pagination
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = Math.min(startIndex + pageSize, result.length);
+    
+    return result.slice(startIndex, endIndex);
+  }, [sortConfig, filters, clients, currentPage, pageSize]);
 
   const [error, setError] = useState<string | null>(null);
 
@@ -602,6 +612,7 @@ export default function ClientsPage() {
                       setPageSize(newSize);
                       // Reset to page 1 when changing page size
                       setCurrentPage(1);
+                      // Fetch clients with the new page size
                       fetchClients(1, newSize);
                     }}
                   >
