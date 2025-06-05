@@ -58,6 +58,18 @@ interface ClientDetails {
   position?: string;
   email?: string;
   primaryContacts?: PrimaryContact[];
+  labelType?: {
+    seniorLevel?: string;
+    executives?: string;
+    nonExecutives?: string;
+    other?: string;
+  };
+  seniorLevel?: string;
+  executives?: string;
+  nonExecutives?: string;
+  other?: string;
+  contractStartDate?: string;
+  contractEndDate?: string;
 }
 
 interface PrimaryContact {
@@ -167,7 +179,15 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
           vatCopy: clientData.vatCopy || "",
           phoneNumber: clientData.phoneNumber || "",
           googleMapsLink: clientData.googleMapsLink || "",
-          primaryContacts: clientData.primaryContacts || []
+          primaryContacts: clientData.primaryContacts || [],
+          labelType: clientData.labelType || {
+            seniorLevel: clientData.seniorLevel || "",
+            executives: clientData.executives || "",
+            nonExecutives: clientData.nonExecutives || "",
+            other: clientData.other || ""
+          },
+          contractStartDate: clientData.contractStartDate || "",
+          contractEndDate: clientData.contractEndDate || ""
         });
 
         setLoading(false);
@@ -483,7 +503,14 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
         </div>
       </div>
       <div className="space-y-6">
-        <ContractSection clientId={clientId} />
+        <ContractSection 
+          clientId={clientId} 
+          clientData={{
+            contractStartDate: clientDetails.contractStartDate,
+            contractEndDate: clientDetails.contractEndDate,
+            labelType: clientDetails.labelType
+          }} 
+        />
         <div className="bg-white rounded-lg border shadow-sm p-4">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold">Team</h2>

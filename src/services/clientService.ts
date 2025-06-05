@@ -72,6 +72,12 @@ export interface ClientResponse {
   createdAt: string;
   updatedAt?: string;
   error?: string;
+  labelType?: {
+    seniorLevel?: string;
+    executives?: string;
+    nonExecutives?: string;
+    other?: string;
+  };
 }
 
 interface ApiResponse<T> {
@@ -183,6 +189,23 @@ const validateAndSanitizeClientData = (data: any) => {
       });
     }
     
+    // Validate labelType
+    if (sanitized.labelType && typeof sanitized.labelType === 'object') {
+      sanitized.labelType = {
+        seniorLevel: sanitized.labelType.seniorLevel || '',
+        executives: sanitized.labelType.executives || '',
+        nonExecutives: sanitized.labelType.nonExecutives || '',
+        other: sanitized.labelType.other || '',
+      };
+    } else {
+      sanitized.labelType = {
+        seniorLevel: '',
+        executives: '',
+        nonExecutives: '',
+        other: '',
+      };
+    }
+    
     return sanitized;
   } catch (error: unknown) {
     console.error('Data validation error:', error);
@@ -216,12 +239,18 @@ const prepareFormData = (data: any): FormData => {
       return;
     }
 
-    if (Array.isArray(value) || typeof value === 'object') {
+    if (Array.isArray(value) || (typeof value === 'object' && key === 'labelType')) {
       try {
         formData.append(key, JSON.stringify(value));
       } catch (error) {
         console.warn(`Could not stringify field ${key}:`, error);
         // Skip this field if it can't be stringified
+      }
+    } else if (typeof value === 'object') {
+      try {
+        formData.append(key, JSON.stringify(value));
+      } catch (error) {
+        console.warn(`Could not stringify field ${key}:`, error);
       }
     } else {
       formData.append(key, String(value));
@@ -411,7 +440,7 @@ const createClient = async (rawData: FormData | Omit<ClientResponse, "_id" | "cr
       return response.data.data;
     } else {
       console.log('Creating client with data:', { name: rawData.name, stage: rawData.clientStage });
-      const response = await sendClientRequest(`${API_URL}clients`, 'post', rawData);
+      const response = await sendClientRequest(`${API_URL}/clients`, 'post', rawData);
       return response.data.data;
     }
   } catch (error: any) {

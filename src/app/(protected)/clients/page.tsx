@@ -245,19 +245,43 @@ export default function ClientsPage() {
   
   // Separate function to fetch job counts in the background
   const fetchJobCounts = async (clientsList: Client[]) => {
+    console.log('Starting to fetch job counts for', clientsList.length, 'clients');
+    
     try {
       // Fetch job counts for all clients
       const jobCountPromises = clientsList.map(async (client: Client) => {
         try {
+          console.log(`Fetching job count for client ${client.id} (${client.name})`);
           const response = await fetch(`${API_URL}/jobs/count/${client.id}`);
+          
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          
           const jobCountData = await response.json();
+          console.log(`Job count response for client ${client.id}:`, jobCountData);
+          
+          // Handle different possible response formats
+          let count = 0;
+          if (jobCountData && typeof jobCountData === 'object') {
+            if (jobCountData.success && jobCountData.data && typeof jobCountData.data.count === 'number') {
+              count = jobCountData.data.count;
+            } else if (typeof jobCountData.count === 'number') {
+              count = jobCountData.count;
+            } else if (Array.isArray(jobCountData)) {
+              // Handle case where the API returns an array of job counts
+              count = jobCountData.length;
+            }
+          }
+          
+          console.log(`Client ${client.id} has ${count} jobs`);
           return {
             clientId: client.id,
-            count: jobCountData.success ? jobCountData.data.count || 0 : 0
+            count: count
           };
         } catch (error) {
-          console.error(`Error fetching job count for client ${client.id}:`, error);
-          return { clientId: client.id, count: 0 };
+          console.error(`Error fetching job count for client ${client.id} (${client.name}):`, error);
+          return { clientId: client.id, count: 0 }; // Return 0 as fallback
         }
       });
       
@@ -266,15 +290,21 @@ export default function ClientsPage() {
       
       // Update clients with job counts
       setClients(prevClients => {
-        return prevClients.map((client: Client) => {
+        const updatedClients = prevClients.map((client: Client) => {
           const jobCountInfo = jobCounts.find(jc => jc.clientId === client.id);
-          return { ...client, jobCount: jobCountInfo ? jobCountInfo.count : 0 };
+          return { 
+            ...client, 
+            jobCount: jobCountInfo ? jobCountInfo.count : 0 
+          };
         });
+        
+        console.log('Updated clients with job counts:', updatedClients);
+        return updatedClients;
       });
       
-      console.log('Updated clients with job counts');
+      console.log('Successfully updated all clients with job counts');
     } catch (error) {
-      console.error('Error fetching job counts:', error);
+      console.error('Error in fetchJobCounts:', error);
     }
   };
   

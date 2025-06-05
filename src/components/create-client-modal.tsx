@@ -478,62 +478,40 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     e.preventDefault();
     setLoading(true);
     setError(null);
-    console.log(formData);
-    console.log(uploadedFiles);
-    
+
     try {
-      // Validate required fields
+      // Basic validation
       if (!formData.name || formData.name.trim() === "") {
-        setError("Client Name is required");
+        setError("Client name is required");
         setLoading(false);
         return;
       }
+
       if (!formData.phoneNumber) {
-        setError("Phone Number is required");
+        setError("Phone number is required");
         setLoading(false);
         return;
       }
+
       if (!formData.address) {
-        setError("Client Address is required");
-        setLoading(false);
-        return;
-      }
-      if (!formData.referredBy) {
-        setError("Referred By is required");
-        setLoading(false);
-        return;
-      }
-      if (!formData.industry) {
-        setError("Client Industry is required");
-        setLoading(false);
-        return;
-      }
-      if (!formData.lineOfBusiness || formData.lineOfBusiness.length === 0) {
-        setError("Line of Business is required");
+        setError("Address is required");
         setLoading(false);
         return;
       }
 
-      // Validate emails
-      const emails = formData.emails.filter((email) => email);
-      const invalidEmails = validateEmails(emails);
-      if (invalidEmails.length > 0) {
-        setError(`Invalid email(s): ${invalidEmails.join(", ")}`);
-        setLoading(false);
-        return;
-      }
-
-      // Validate primary contacts
       if (formData.primaryContacts.length === 0) {
         setError("At least one primary contact is required");
         setLoading(false);
         return;
       }
+
+      // Validate primary contact emails
       const invalidContactEmails = formData.primaryContacts.filter(
-        (contact) => contact.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email)
+        (contact: PrimaryContact) => contact.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email)
       );
+      
       if (invalidContactEmails.length > 0) {
-        setError(`Invalid contact email(s): ${invalidContactEmails.map((c) => c.email).join(", ")}`);
+        setError(`Invalid contact email(s): ${invalidContactEmails.map(c => c.email).join(", ")}`);
         setLoading(false);
         return;
       }
@@ -558,6 +536,42 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
       // Create FormData object to send both form data and files
       const formDataToSend = new FormData();
       
+      // Add label type data if we have selected levels
+      if (selectedLevels && selectedLevels.length > 0) {
+        const labelType: Record<string, string> = {};
+        
+        // Map the selected levels to the correct fields
+        selectedLevels.forEach(level => {
+          const levelKey = level.toLowerCase().replace(/\s+/g, '');
+          let fieldName = '';
+          
+          // Determine the field name based on the level key
+          if (levelKey.includes('senior') || levelKey.includes('level')) {
+            fieldName = 'seniorLevel';
+          } else if (levelKey.includes('execut')) {
+            fieldName = 'executives';
+          } else if (levelKey.includes('non') || levelKey.includes('execut')) {
+            fieldName = 'nonExecutives';
+          } else {
+            fieldName = 'other';
+          }
+          
+          // Only set the label if it's not already set
+          if (!labelType[fieldName]) {
+            labelType[fieldName] = level;
+          }
+        });
+        
+        // Add the structured labelType object
+        formDataToSend.append('labelType', JSON.stringify(labelType));
+        
+        // Also add individual fields for backward compatibility
+        if (labelType.seniorLevel) formDataToSend.append('seniorLevel', labelType.seniorLevel);
+        if (labelType.executives) formDataToSend.append('executives', labelType.executives);
+        if (labelType.nonExecutives) formDataToSend.append('nonExecutives', labelType.nonExecutives);
+        if (labelType.other) formDataToSend.append('other', labelType.other);
+      }
+      
       // Add all form data fields
       formDataToSend.append('name', formData.name.trim());
       
@@ -572,7 +586,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
         formDataToSend.append('website', formData.website);
       }
       
-      formDataToSend.append('industry', formData.industry);
+      formDataToSend.append('industry', formData.industry || "");
       formDataToSend.append('address', formData.address);
       
       if (formData.googleMapsLink) {
@@ -591,7 +605,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
         formDataToSend.append('countryOfBusiness', formData.countryOfBusiness);
       }
       
-      formDataToSend.append('referredBy', formData.referredBy);
+      formDataToSend.append('referredBy', formData.referredBy || "");
       
       if (formData.linkedInProfile) {
         formDataToSend.append('linkedInProfile', formData.linkedInProfile);
@@ -607,7 +621,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
           phone: contact.phone,
           countryCode: contact.countryCode,
           designation: contact.designation,
-          linkedin: contact.linkedin || undefined,
+          linkedin: contact.linkedin || "",
           isPrimary: contact.isPrimary,
         }))));
       }
