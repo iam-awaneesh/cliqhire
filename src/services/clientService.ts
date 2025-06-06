@@ -43,6 +43,7 @@ export interface ClientResponse {
   cLevelPercentage?: number;
   belowCLevelPercentage?: number;
   fixedPercentageNotes?: string;
+  fixedPercentageValue?:string;
   fixedPercentageAdvanceNotes?: string;
   cLevelPercentageNotes?: string;
   belowCLevelPercentageNotes?: string;

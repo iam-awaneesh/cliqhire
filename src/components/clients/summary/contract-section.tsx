@@ -1321,12 +1321,10 @@ import { FileUploadRow } from "./file-upload-row";
 import {
   createContract,
   updateContract,
-  getContractByClient,
   downloadAgreement,
   deleteAgreement,
   ContractResponse,
 } from "@/services/contractService";
-import { getClientById } from "@/services/clientService";
 
 interface ContractSectionProps {
   clientId: string;
@@ -1366,6 +1364,21 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
     percentage: string;
     notes: string;
   }>({ open: false, type: "", percentage: "", notes: "" });
+  const [contractTypeEditDialog, setContractTypeEditDialog] = useState<{
+    open: boolean;
+    selectedType: string;
+    selectedLevels: string[];
+    details: Record<string, { percentage: string; notes: string }>;
+    isTypeDropdownOpen: boolean;
+    isLevelDropdownOpen: boolean;
+  }>({
+    open: false,
+    selectedType: "",
+    selectedLevels: [],
+    details: {},
+    isTypeDropdownOpen: false,
+    isLevelDropdownOpen: false,
+  });
 
   const contractTypes = [
     "Fixed Percentage",
@@ -1375,58 +1388,63 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
   ];
   const levelOptions = ["Senior Level", "Executives", "Non-Executives", "Other"];
 
-  // Fetch contract data
+  // Fetch contract data from client API
   const fetchContractData = async () => {
     if (!clientId) return;
 
     try {
       setLoading(true);
-      let contractData: ContractResponse | null = null;
-      let fetchedClientData: any;
 
-      // Fetch existing contract
-      try {
-        contractData = await getContractByClient(clientId);
-        console.log("Fetched contract data:", contractData); // Debug log
-      } catch (err) {
-        console.log("No existing contract found, proceeding with client data:", err);
+      // Fetch client data from the provided API
+      const response = await fetch(`https://aems-backend.onrender.com/api/clients/${clientId}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch client data: ${response.statusText}`);
       }
+      const fetchedClientData = await response.json();
+      const client = fetchedClientData.data;
 
-      // Fetch client data if not provided via props
-      fetchedClientData = clientData || (await getClientById(clientId));
-      console.log("Fetched client data:", fetchedClientData); // Debug log
-
-      // Use client data from props or API
-      const contractStartDate = 
-        contractData?.contractStartDate || 
-        (fetchedClientData?.contractStartDate || null);
-        
-      const contractEndDate = 
-        contractData?.contractEndDate || 
-        (fetchedClientData?.contractEndDate || null);
+      // Map client data to contract fields
+      const contractStartDate = client.contractStartDate || clientData?.contractStartDate || null;
+      const contractEndDate = client.contractEndDate || clientData?.contractEndDate || null;
+      const contractType = client.contractType || "";
+      const contractTypeDetails = contractType === "Fixed Percentage"
+        ? { [contractType]: { percentage: client.fixedPercentageValue?.toString() || "", notes: client.fixedPercentageNotes || "" } }
+        : client.contractTypeDetails || {};
+      const selectedLevels = client.selectedLevels || [];
 
       // Update contract state
-      setContract(contractData);
+      setContract({
+        _id: client._id,
+        clientId,
+        contractStartDate,
+        contractEndDate,
+        referralPercentage: client.referralPercentage?.toString() || "0",
+        lineOfBusiness: client.lineOfBusiness,
+        agreement: client.agreement,
+        contractType,
+        contractTypeDetails,
+        selectedLevels,
+      });
 
       // Update form state with contract and client data
       setContractDetails({
         contractStartDate,
         contractEndDate,
-        referralPercentage: contractData?.referralPercentage?.toString() || "",
-        lineOfBusiness: contractData?.lineOfBusiness || 
-          (fetchedClientData?.lineOfBusiness ? 
-            (Array.isArray(fetchedClientData.lineOfBusiness) ? 
-              fetchedClientData.lineOfBusiness.join(", ") : 
-              String(fetchedClientData.lineOfBusiness)) : ""),
+        referralPercentage: client.referralPercentage?.toString() || "",
+        lineOfBusiness: client.lineOfBusiness
+          ? (Array.isArray(client.lineOfBusiness)
+              ? client.lineOfBusiness.join(", ")
+              : String(client.lineOfBusiness))
+          : "",
         contractDocument: null,
-        contractDocumentName: contractData?.agreement?.fileName || "",
-        contractType: contractData?.contractType || "",
-        contractTypeDetails: contractData?.contractTypeDetails || {},
-        selectedLevels: contractData?.selectedLevels || [],
+        contractDocumentName: client.agreement?.fileName || "",
+        contractType,
+        contractTypeDetails,
+        selectedLevels,
       });
 
       // If no contract exists but client data has dates, create a new contract
-      if (!contractData && (contractStartDate || contractEndDate)) {
+      if (!client.contractType && (contractStartDate || contractEndDate)) {
         const formData = new FormData();
         formData.append("clientId", clientId);
         if (contractStartDate) formData.append("contractStartDate", contractStartDate);
@@ -1437,7 +1455,6 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
           const newContract = await createContract(formData as any);
           setContract(newContract);
           localStorage.setItem("contractUpdate", JSON.stringify({ clientId, timestamp: Date.now(), updatedField: "new_contract" }));
-          console.log("Created new contract:", newContract); // Debug log
         } catch (error) {
           console.error("Error creating initial contract:", error);
           setError("Failed to initialize contract with client dates");
@@ -1460,7 +1477,6 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
       if (event.key === "contractUpdate") {
         const updateData = event.newValue ? JSON.parse(event.newValue) : null;
         if (updateData && updateData.clientId === clientId) {
-          console.log("Detected contract update in another tab:", updateData); // Debug log
           fetchContractData(); // Refetch data
         }
       }
@@ -1491,7 +1507,6 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
       if (contract) {
         // Update existing contract
         updatedContract = await updateContract(contract._id, formData as any);
-        console.log("Updated contract:", updatedContract); // Debug log
       } else {
         // Create new contract if none exists
         formData.append("clientId", clientId);
@@ -1501,7 +1516,6 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
         if (contractDetails.contractEndDate)
           formData.append("contractEndDate", contractDetails.contractEndDate);
         updatedContract = await createContract(formData as any);
-        console.log("Created new contract:", updatedContract); // Debug log
       }
 
       // Update contract state with response
@@ -1509,7 +1523,6 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
 
       // Notify other tabs
       localStorage.setItem("contractUpdate", JSON.stringify({ clientId, timestamp: Date.now(), updatedField: field }));
-      console.log("Notified other tabs of contract update for field:", field); // Debug log
     } catch (error) {
       console.error(`Error updating ${field}:`, error);
       setError(`Failed to update ${field}`);
@@ -1693,7 +1706,7 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
     }
   };
 
-  // Handle opening edit dialog
+  // Handle opening edit dialog for individual contract type or level
   const openEditDialog = (type: string, level?: string) => {
     setEditDialog({
       open: true,
@@ -1708,7 +1721,7 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
     });
   };
 
-  // Handle saving edit dialog
+  // Handle saving edit dialog for individual contract type or level
   const saveEditDialog = async () => {
     try {
       const { type, level, percentage, notes } = editDialog;
@@ -1724,7 +1737,12 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
       }));
 
       const formData = new FormData();
-      formData.append("contractTypeDetails", JSON.stringify(newDetails));
+      if (contractDetails.contractType === "Fixed Percentage") {
+        formData.append("fixedPercentageValue", percentage);
+        formData.append("fixedPercentageNotes", notes);
+      } else {
+        formData.append("contractTypeDetails", JSON.stringify(newDetails));
+      }
 
       let updatedContract;
       if (contract) {
@@ -1746,6 +1764,106 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
     } catch (error) {
       console.error("Error saving contract details:", error);
       setError("Failed to save contract details");
+    }
+  };
+
+  // Handle opening contract type edit dialog
+  const openContractTypeEditDialog = () => {
+    setContractTypeEditDialog({
+      open: true,
+      selectedType: contractDetails.contractType || contractTypes[0],
+      selectedLevels: contractDetails.selectedLevels,
+      details: { ...contractDetails.contractTypeDetails },
+      isTypeDropdownOpen: false,
+      isLevelDropdownOpen: false,
+    });
+  };
+
+  // Handle contract type selection in edit dialog
+  const handleEditDialogTypeSelect = (type: string) => {
+    setContractTypeEditDialog((prev) => ({
+      ...prev,
+      selectedType: type,
+      selectedLevels: type === "Level Based (Hiring)" ? prev.selectedLevels : [],
+      details: {
+        ...prev.details,
+        [type]: prev.details[type] || { percentage: "", notes: "" },
+      },
+      isTypeDropdownOpen: false,
+    }));
+  };
+
+  // Handle level selection in edit dialog for Level Based (Hiring)
+  const handleEditDialogLevelSelect = (level: string) => {
+    setContractTypeEditDialog((prev) => ({
+      ...prev,
+      selectedLevels: prev.selectedLevels.includes(level)
+        ? prev.selectedLevels.filter((l) => l !== level)
+        : [...prev.selectedLevels, level],
+      details: {
+        ...prev.details,
+        [level]: prev.details[level] || { percentage: "", notes: "" },
+      },
+      isLevelDropdownOpen: false,
+    }));
+  };
+
+  // Handle saving contract type edit dialog
+  const saveContractTypeEditDialog = async () => {
+    try {
+      const { selectedType, selectedLevels, details } = contractTypeEditDialog;
+      const newDetails = { ...contractDetails.contractTypeDetails };
+
+      if (selectedType === "Level Based (Hiring)") {
+        selectedLevels.forEach((level) => {
+          if (details[level]) {
+            newDetails[level] = details[level];
+          }
+        });
+      } else if (details[selectedType]) {
+        newDetails[selectedType] = details[selectedType];
+      }
+
+      setContractDetails((prev) => ({
+        ...prev,
+        contractTypeDetails: newDetails,
+      }));
+
+      const formData = new FormData();
+      if (selectedType === "Fixed Percentage") {
+        formData.append("fixedPercentageValue", details[selectedType]?.percentage || "");
+        formData.append("fixedPercentageNotes", details[selectedType]?.notes || "");
+      } else {
+        formData.append("contractTypeDetails", JSON.stringify(newDetails));
+      }
+
+      let updatedContract;
+      if (contract) {
+        updatedContract = await updateContract(contract._id, formData as any);
+      } else {
+        formData.append("clientId", clientId);
+        formData.append("contractType", contractDetails.contractType || selectedType);
+        formData.append("referralPercentage", contractDetails.referralPercentage || "0");
+        if (contractDetails.contractStartDate)
+          formData.append("contractStartDate", contractDetails.contractStartDate);
+        if (contractDetails.contractEndDate)
+          formData.append("contractEndDate", contractDetails.contractEndDate);
+        updatedContract = await createContract(formData as any);
+      }
+
+      setContract(updatedContract);
+      localStorage.setItem("contractUpdate", JSON.stringify({ clientId, timestamp: Date.now(), updatedField: "contractTypeDetails" }));
+      setContractTypeEditDialog({
+        open: false,
+        selectedType: "",
+        selectedLevels: [],
+        details: {},
+        isTypeDropdownOpen: false,
+        isLevelDropdownOpen: false,
+      });
+    } catch (error) {
+      console.error("Error saving contract type details:", error);
+      setError("Failed to save contract type details");
     }
   };
 
@@ -1772,37 +1890,34 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
           <label className="w-1/3 text-sm font-medium text-gray-600">Contract Type</label>
           <div className="w-2/3 flex items-center justify-between space-x-2">
             <div className="flex-1">
+              <button
+                className="w-full bg-gray-100 border rounded-md p-2 text-sm text-gray-800 flex items-center justify-between cursor-pointer hover:bg-gray-200 transition-colors"
+                onClick={() => setIsContractTypeDropdownOpen(!isContractTypeDropdownOpen)}
+              >
+                {contractDetails.contractType || "Select Contract Type"}
+                {isContractTypeDropdownOpen ? (
+                  <ChevronUp className="h-4 w-4 text-gray-600" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-gray-600" />
+                )}
+              </button>
               {isContractTypeDropdownOpen && (
-                <div className="relative">
-                  <div
-                    className="w-full bg-gray-100 border rounded-md p-2 text-sm text-gray-800 flex items-center justify-between cursor-pointer hover:bg-gray-200 transition-colors"
-                  >
-                    {contractDetails.contractType || "Select Contract Type"}
-                    {isContractTypeDropdownOpen ? (
-                      <ChevronUp className="h-4 w-4 text-gray-600" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4 text-gray-600" />
-                    )}
-                  </div>
-                  {isContractTypeDropdownOpen && (
-                    <div className="absolute z-10 w-full bg-white border rounded-md mt-1 shadow-lg top-full">
-                      {contractTypes.map((type) => (
-                        <button
-                          key={type}
-                          className="w-full text-left px-4 py-2 text-sm text-gray-800 hover:bg-blue-50 transition-colors"
-                          onClick={() => handleContractTypeSelect(type)}
-                        >
-                          {type}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                <div className="absolute z-10 w-full bg-white border rounded-md mt-1 shadow-lg top-full">
+                  {contractTypes.map((type) => (
+                    <button
+                      key={type}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-800 hover:bg-blue-50 transition-colors"
+                      onClick={() => handleContractTypeSelect(type)}
+                    >
+                      {type}
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
             <button
               className="flex items-center space-x-1 p-2 text-black hover:text-gray-700 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors relative group"
-              onClick={() => setIsContractTypeDropdownOpen(!isContractTypeDropdownOpen)}
+              onClick={openContractTypeEditDialog}
               aria-label="Edit Contract Type"
             >
               <Pencil className="h-4 w-4" />
@@ -2006,9 +2121,7 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
       {editDialog.open && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-xl">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">
-              Edit {editDialog.level || editDialog.type} Details
-            </h3>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Edit Details</h3>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1">Percentage</label>
@@ -2022,6 +2135,7 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
                     className="w-full border rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pr-6"
                     min="0"
                     max="100"
+                    placeholder="0"
                   />
                   <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-sm text-gray-500">%</span>
                 </div>
@@ -2047,6 +2161,218 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
                 <button
                   className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 transition-colors"
                   onClick={saveEditDialog}
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {contractTypeEditDialog.open && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-xl flex flex-col">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Edit Contract Type Details</h3>
+            <div className="flex-1 overflow-y-auto max-h-[60vh] space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-1">Contract Type</label>
+                <div className="relative">
+                  <button
+                    className="w-full bg-gray-100 border rounded-md p-2 text-sm text-gray-800 flex items-center justify-between cursor-pointer hover:bg-gray-200 transition-colors"
+                    onClick={() =>
+                      setContractTypeEditDialog((prev) => ({
+                        ...prev,
+                        isTypeDropdownOpen: !prev.isTypeDropdownOpen,
+                      }))
+                    }
+                  >
+                    {contractTypeEditDialog.selectedType || "Select Contract Type"}
+                    {contractTypeEditDialog.isTypeDropdownOpen ? (
+                      <ChevronUp className="h-4 w-4 text-gray-600" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4 text-gray-600" />
+                    )}
+                  </button>
+                  {contractTypeEditDialog.isTypeDropdownOpen && (
+                    <div className="absolute z-10 w-full bg-white border rounded-md mt-1 shadow-lg">
+                      {contractTypes.map((type) => (
+                        <button
+                          key={type}
+                          className="w-full text-left px-4 py-2 text-sm text-gray-800 hover:bg-blue-50 transition-colors"
+                          onClick={() => handleEditDialogTypeSelect(type)}
+                        >
+                          {type}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+              {contractTypeEditDialog.selectedType === "Level Based (Hiring)" && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">Levels</label>
+                  <div className="relative w-2/3">
+                    <button
+                      className="w-full bg-gray-100 border rounded-md p-2 text-sm text-gray-800 flex items-center justify-between hover:bg-gray-200 transition-colors"
+                      onClick={() =>
+                        setContractTypeEditDialog((prev) => ({
+                          ...prev,
+                          isLevelDropdownOpen: !prev.isLevelDropdownOpen,
+                        }))
+                      }
+                    >
+                      {contractTypeEditDialog.selectedLevels.length > 0
+                        ? contractTypeEditDialog.selectedLevels.join(", ")
+                        : "Select Levels"}
+                      {contractTypeEditDialog.isLevelDropdownOpen ? (
+                        <ChevronUp className="h-4 w-4 text-gray-600" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4 text-gray-600" />
+                      )}
+                    </button>
+                    {contractTypeEditDialog.isLevelDropdownOpen && (
+                      <div className="absolute z-10 w-full bg-white border rounded-md mt-1 shadow-lg">
+                        {levelOptions.map((level) => (
+                          <button
+                            key={level}
+                            className={`w-full text-left px-4 py-2 text-sm text-gray-800 hover:bg-blue-50 transition-colors ${
+                              contractTypeEditDialog.selectedLevels.includes(level) ? "bg-blue-100" : ""
+                            }`}
+                            onClick={() => handleEditDialogLevelSelect(level)}
+                          >
+                            {level}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              {contractTypeEditDialog.selectedType && contractTypeEditDialog.selectedType !== "Level Based (Hiring)" && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-1">Percentage</label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        value={contractTypeEditDialog.details[contractTypeEditDialog.selectedType]?.percentage || ""}
+                        onChange={(e) =>
+                          setContractTypeEditDialog((prev) => ({
+                            ...prev,
+                            details: {
+                              ...prev.details,
+                              [prev.selectedType]: {
+                                ...prev.details[prev.selectedType],
+                                percentage: e.target.value,
+                              },
+                            },
+                          }))
+                        }
+                        className="w-full border rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pr-6"
+                        min="0"
+                        max="100"
+                        placeholder="0"
+                      />
+                      <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-sm text-gray-500">%</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-1">Notes</label>
+                    <textarea
+                      value={contractTypeEditDialog.details[contractTypeEditDialog.selectedType]?.notes || ""}
+                      onChange={(e) =>
+                        setContractTypeEditDialog((prev) => ({
+                          ...prev,
+                          details: {
+                            ...prev.details,
+                            [prev.selectedType]: {
+                              ...prev.details[prev.selectedType],
+                              notes: e.target.value,
+                            },
+                          },
+                        }))
+                      }
+                      className="w-full border rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      rows={2}
+                    />
+                  </div>
+                </div>
+              )}
+              {contractTypeEditDialog.selectedType === "Level Based (Hiring)" &&
+                contractTypeEditDialog.selectedLevels.map((level) => (
+                  <div key={level} className="space-y-4">
+                    <h4 className="text-sm font-medium text-gray-700">{level}</h4>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 mb-1">Percentage</label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          value={contractTypeEditDialog.details[level]?.percentage || ""}
+                          onChange={(e) =>
+                            setContractTypeEditDialog((prev) => ({
+                              ...prev,
+                              details: {
+                                ...prev.details,
+                                [level]: {
+                                  ...prev.details[level],
+                                  percentage: e.target.value,
+                                },
+                              },
+                            }))
+                          }
+                          className="w-full border rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pr-6"
+                          min="0"
+                          max="100"
+                          placeholder="0"
+                        />
+                        <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-sm text-gray-500">%</span>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 mb-1">Notes</label>
+                      <textarea
+                        value={contractTypeEditDialog.details[level]?.notes || ""}
+                        onChange={(e) =>
+                          setContractTypeEditDialog((prev) => ({
+                            ...prev,
+                            details: {
+                              ...prev.details,
+                              [level]: {
+                                ...prev.details[level],
+                                notes: e.target.value,
+                              },
+                            },
+                          }))
+                        }
+                        className="w-full border rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        rows={2}
+                      />
+                    </div>
+                  </div>
+                ))}
+            </div>
+            <div className="sticky bottom-0 bg-white pt-4 border-t border-gray-200">
+              <div className="flex justify-end space-x-2">
+                <button
+                  className="px-4 py-2 bg-gray-200 rounded-md text-sm text-gray-800 hover:bg-gray-300 transition-colors"
+                  onClick={() =>
+                    setContractTypeEditDialog({
+                      open: false,
+                      selectedType: "",
+                      selectedLevels: [],
+                      details: {},
+                      isTypeDropdownOpen: false,
+                      isLevelDropdownOpen: false,
+                    })
+                  }
+                >
+                  Cancel
+                </button>
+                <button
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 transition-colors"
+                  onClick={saveContractTypeEditDialog}
+                  disabled={!contractTypeEditDialog.selectedType}
                 >
                   Save
                 </button>

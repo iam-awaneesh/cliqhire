@@ -277,16 +277,6 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     URL.revokeObjectURL(fileUrl);
   };
 
-  // Convert file to base64
-  // const fileToBase64 = (file: File): Promise<string> => {
-  // return new Promise((resolve, reject) => {
-  // const reader = new FileReader();
-  // reader.readAsDataURL(file);
-  // reader.onload = () => resolve(reader.result as string);
-  // reader.onerror = (error) => reject(error);
-  // });
-  // };
-
   // Location suggestions
   useEffect(() => {
     const fetchLocationSuggestions = async () => {
@@ -645,20 +635,32 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
         formDataToSend.append('contractType', formData.contractType);
       }
       
-      if (formData.seniorLevelPercentage) {
-        formDataToSend.append('seniorLevelPercentage', formData.seniorLevelPercentage.toString());
-      }
-      
-      if (formData.executivesPercentage) {
-        formDataToSend.append('executivesPercentage', formData.executivesPercentage.toString());
-      }
-      
-      if (formData.nonExecutivesPercentage) {
-        formDataToSend.append('nonExecutivesPercentage', formData.nonExecutivesPercentage.toString());
-      }
-      
-      if (formData.otherPercentage) {
-        formDataToSend.append('otherPercentage', formData.otherPercentage.toString());
+      // Add percentage and notes fields for Level Based (Hiring)
+      if (formData.contractType === "Level Based (Hiring)") {
+        if (selectedLevels.includes("Senior Level") && formData.seniorLevelPercentage) {
+          formDataToSend.append('seniorLevelPercentage', formData.seniorLevelPercentage.toString());
+        }
+        if (selectedLevels.includes("Executives") && formData.executivesPercentage) {
+          formDataToSend.append('executivesPercentage', formData.executivesPercentage.toString());
+        }
+        if (selectedLevels.includes("Non-Executives") && formData.nonExecutivesPercentage) {
+          formDataToSend.append('nonExecutivesPercentage', formData.nonExecutivesPercentage.toString());
+        }
+        if (selectedLevels.includes("Other") && formData.otherPercentage) {
+          formDataToSend.append('otherPercentage', formData.otherPercentage.toString());
+        }
+        if (selectedLevels.includes("Senior Level") && formData.seniorLevelNotes) {
+          formDataToSend.append('seniorLevelNotes', formData.seniorLevelNotes);
+        }
+        if (selectedLevels.includes("Executives") && formData.executivesNotes) {
+          formDataToSend.append('executivesNotes', formData.executivesNotes);
+        }
+        if (selectedLevels.includes("Non-Executives") && formData.nonExecutivesNotes) {
+          formDataToSend.append('nonExecutivesNotes', formData.nonExecutivesNotes);
+        }
+        if (selectedLevels.includes("Other") && formData.otherNotes) {
+          formDataToSend.append('otherNotes', formData.otherNotes);
+        }
       }
       
       if (formData.cLevelPercentage) {
@@ -688,22 +690,6 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
       
       if (formData.fixWithoutAdvanceNotes) {
         formDataToSend.append('fixWithoutAdvanceNotes', formData.fixWithoutAdvanceNotes);
-      }
-      
-      if (formData.seniorLevelNotes) {
-        formDataToSend.append('seniorLevelNotes', formData.seniorLevelNotes);
-      }
-      
-      if (formData.executivesNotes) {
-        formDataToSend.append('executivesNotes', formData.executivesNotes);
-      }
-      
-      if (formData.nonExecutivesNotes) {
-        formDataToSend.append('nonExecutivesNotes', formData.nonExecutivesNotes);
-      }
-      
-      if (formData.otherNotes) {
-        formDataToSend.append('otherNotes', formData.otherNotes);
       }
       
       // Add all value fields
@@ -743,12 +729,12 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
         }
       }
       
-      // Log FormData for debugging (note: FormData can't be directly logged)
+      // Log FormData for debugging
       console.log("FormData created with the following fields:");
       for (const pair of formDataToSend.entries()) {
         console.log(pair[0], pair[1]);
       }
-      console.log(formDataToSend);
+      
       // Send data to backend
       const result = await createClient(formDataToSend);
       console.log("Client created successfully:", result);
@@ -831,258 +817,6 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     } finally {
       setLoading(false);
     }
-
-    // try {
-    //   // Validate required fields
-    //   if (!formData.name || formData.name.trim() === "") {
-    //     setError("Client Name is required");
-    //     setLoading(false);
-    //     return;
-    //   }
-    //   if (!formData.phoneNumber) {
-    //     setError("Phone Number is required");
-    //     setLoading(false);
-    //     return;
-    //   }
-    //   if (!formData.address) {
-    //     setError("Client Address is required");
-    //     setLoading(false);
-    //     return;
-    //   }
-    //   if (!formData.referredBy) {
-    //     setError("Referred By is required");
-    //     setLoading(false);
-    //     return;
-    //   }
-    //   if (!formData.industry) {
-    //     setError("Client Industry is required");
-    //     setLoading(false);
-    //     return;
-    //   }
-    //   if (!formData.lineOfBusiness || formData.lineOfBusiness.length === 0) {
-    //     setError("Line of Business is required");
-    //     setLoading(false);
-    //     return;
-    //   }
-
-    //   // Validate emails
-    //   const emails = formData.emails.filter((email) => email);
-    //   const invalidEmails = validateEmails(emails);
-    //   if (invalidEmails.length > 0) {
-    //     setError(`Invalid email(s): ${invalidEmails.join(", ")}`);
-    //     setLoading(false);
-    //     return;
-    //   }
-
-    //   // Validate primary contacts
-    //   if (formData.primaryContacts.length === 0) {
-    //     setError("At least one primary contact is required");
-    //     setLoading(false);
-    //     return;
-    //   }
-    //   const invalidContactEmails = formData.primaryContacts.filter(
-    //     (contact) => contact.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email)
-    //   );
-    //   if (invalidContactEmails.length > 0) {
-    //     setError(`Invalid contact email(s): ${invalidContactEmails.map((c) => c.email).join(", ")}`);
-    //     setLoading(false);
-    //     return;
-    //   }
-
-    //   // Validate URLs
-    //   if (formData.website && !validateUrl(formData.website)) {
-    //     setError("Invalid website URL");
-    //     setLoading(false);
-    //     return;
-    //   }
-    //   if (formData.linkedInProfile && !validateUrl(formData.linkedInProfile)) {
-    //     setError("Invalid LinkedIn profile URL");
-    //     setLoading(false);
-    //     return;
-    //   }
-    //   if (formData.googleMapsLink && !validateUrl(formData.googleMapsLink)) {
-    //     setError("Invalid Google Maps link");
-    //     setLoading(false);
-    //     return;
-    //   }
-
-    //   // Prepare JSON data
-    //   const clientData: any = {
-    //     name: formData.name.trim(),
-    //     emails: formData.emails,
-    //     phoneNumber: formData.phoneNumber,
-    //     website: formData.website || undefined,
-    //     industry: formData.industry,
-    //     address: formData.address,
-    //     googleMapsLink: formData.googleMapsLink || undefined,
-    //     lineOfBusiness: Array.isArray(formData.lineOfBusiness) ? formData.lineOfBusiness : typeof formData.lineOfBusiness === 'string' ? formData.lineOfBusiness.split(',').filter(Boolean) : [],
-    //     countryOfBusiness: formData.countryOfBusiness || undefined,
-    //     referredBy: formData.referredBy,
-    //     linkedInProfile: formData.linkedInProfile || undefined,
-    //     countryCode: formData.countryCode || "+966",
-    //     primaryContacts: formData.primaryContacts.map(contact => ({
-    //       name: contact.name,
-    //       email: contact.email,
-    //       phone: contact.phone,
-    //       countryCode: contact.countryCode,
-    //       designation: contact.designation,
-    //       linkedin: contact.linkedin || undefined,
-    //       isPrimary: contact.isPrimary,
-    //     })),
-    //     clientStage: formData.clientStage || "Lead",
-    //     clientTeam: formData.clientTeam || "Enterprise",
-    //     salesLead: formData.salesLead || undefined,
-    //     contractStartDate: formData.contractStartDate
-    //       ? formData.contractStartDate.toISOString().split("T")[0]
-    //       : undefined,
-    //     contractEndDate: formData.contractEndDate
-    //       ? formData.contractEndDate.toISOString().split("T")[0]
-    //       : undefined,
-    //     contractType: formData.contractType || undefined,
-    //     seniorLevelPercentage: formData.seniorLevelPercentage || undefined,
-    //     // profileImage: null,
-    //     crCopy: uploadedFiles.crCopy,
-    //     vatCopy: uploadedFiles.vatCopy,
-    //     gstTinDocument: uploadedFiles.gstTinDocument,
-    //     fixedPercentage: uploadedFiles.fixedPercentage,
-    //     fixedPercentageAdvance: uploadedFiles.fixedPercentageAdvance,
-    //     variablePercentageCLevel: uploadedFiles.variablePercentageCLevel,
-    //     variablePercentageBelowCLevel: uploadedFiles.variablePercentageBelowCLevel,
-    //     fixWithoutAdvance: uploadedFiles.fixWithoutAdvance,
-    //     seniorLevel: uploadedFiles.seniorLevel,
-    //     executives: uploadedFiles.executives,
-    //     nonExecutives: uploadedFiles.nonExecutives,
-    //     other: uploadedFiles.other,
-    //   };
-
-    //   // Add files as base64 strings
-    //   const fileFields = [
-    //     "crCopy",
-    //     "vatCopy",
-    //     "gstTinDocument",
-    //     "fixedPercentage",
-    //     "fixedPercentageAdvance",
-    //     "fixWithoutAdvance",
-    //     "seniorLevel",
-    //     "executives",
-    //     "nonExecutives",
-    //     "other",
-    //   ];
-
-    //   // for (const field of fileFields) {
-    //   // if (uploadedFiles[field]) {
-    //   // const base64 = await fileToBase64(uploadedFiles[field]!);
-    //   // clientData[`${field}File`] = {
-    //   // name: uploadedFiles[field]!.name,
-    //   // type: uploadedFiles[field]!.type,
-    //   // data: base64,
-    //   // };
-    //   // }
-    //   // }
-
-    //   // Log clientData for debugging
-    //   console.log("clientData before sending:", JSON.stringify(clientData, null, 2));
-    //   let backendData = new FormData();
-
-    //   // Handle complex objects properly
-    //   for (let key in clientData) {
-    //     const value = clientData[key];
-
-    //     if (key === 'primaryContacts' && Array.isArray(value)) {
-    //       // Handle primaryContacts array specially
-    //       backendData.append('primaryContacts', JSON.stringify(value));
-    //     }
-    //     else if (key === 'lineOfBusiness' && Array.isArray(value)) {
-    //       // Handle lineOfBusiness array specially
-    //       backendData.append('lineOfBusiness', JSON.stringify(value));
-    //     }
-    //     else if (key === 'emails' && Array.isArray(value)) {
-    //       // Handle emails array specially
-    //       backendData.append('emails', JSON.stringify(value));
-    //     }
-    //     else if (value !== undefined && value !== null) {
-    //       backendData.append(key, value);
-    //     }
-    //   }
-    //   const result = await createClient(backendData);
-    //   console.log("Client created successfully:", result);
-
-    //   // Reset form
-    //   setFormData({
-    //     name: "",
-    //     emails: [],
-    //     phoneNumber: "",
-    //     website: "",
-    //     industry: "",
-    //     location: "",
-    //     address: "",
-    //     googleMapsLink: "",
-    //     incorporationDate: "",
-    //     registrationNumber: "",
-    //     lineOfBusiness: [],
-    //     countryOfBusiness: "",
-    //     referredBy: "",
-    //     linkedInProfile: "",
-    //     linkedInPage: "",
-    //     countryCode: "+966",
-    //     primaryContacts: [],
-    //     clientStage: "Lead",
-    //     clientTeam: "Enterprise",
-    //     clientRm: "",
-    //     clientAge: 0,
-    //     contractNumber: "",
-    //     contractStartDate: null,
-    //     contractEndDate: null,
-    //     contractValue: 0,
-    //     contractType: "",
-    //     cLevelPercentage: 0,
-    //     belowCLevelPercentage: 0,
-    //     fixedPercentageNotes: "",
-    //     fixedPercentageAdvanceNotes: "",
-    //     cLevelPercentageNotes: "",
-    //     belowCLevelPercentageNotes: "",
-    //     fixWithoutAdvanceNotes: "",
-    //     seniorLevelPercentage: 0,
-    //     executivesPercentage: 0,
-    //     nonExecutivesPercentage: 0,
-    //     otherPercentage: 0,
-    //     seniorLevelNotes: "",
-    //     executivesNotes: "",
-    //     nonExecutivesNotes: "",
-    //     otherNotes: "",
-    //     salesLead: "",
-    //   });
-    //   setEmailInput("");
-    //   setUploadedFiles({
-    //     profileImage: null,
-    //     crCopy: null,
-    //     vatCopy: null,
-    //     gstTinDocument: null,
-    //     fixedPercentage: null,
-    //     fixedPercentageAdvance: null,
-    //     variablePercentageCLevel: null,
-    //     variablePercentageBelowCLevel: null,
-    //     fixWithoutAdvance: null,
-    //     seniorLevel: null,
-    //     executives: null,
-    //     nonExecutives: null,
-    //     other: null,
-    //   });
-    //   setNewContact({ name: "", email: "", phone: "", countryCode: "+966", designation: "", linkedin: "", isPrimary: true });
-    //   setCurrentTab(0);
-    //   setIsContactModalOpen(false);
-    //   setSelectedLevels([]);
-    //   setActiveLevel(null);
-    //   onOpenChange(false);
-    // } catch (error: any) {
-    //   console.error("Failed to create client:", error);
-    //   const errorMessage = error.message.includes("Client validation failed")
-    //     ? "Invalid data provided. Please check all fields and try again."
-    //     : error.message || "Failed to create client. Please try again.";
-    //   setError(errorMessage);
-    // } finally {
-    //   setLoading(false);
-    // }
   };
 
   const handleNext = () => {
