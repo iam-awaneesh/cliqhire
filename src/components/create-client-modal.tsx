@@ -118,7 +118,7 @@ interface LocationSuggestion {
 const createClient = async (data: FormData) => {
   try {
     const response = await axios.post(
-      "https://aems-backend.onrender.com/api/clients",
+      "http://localhost:5000/api/clients",
       data,
       {
         headers: {
@@ -524,46 +524,31 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
       }
 
       // Create FormData object to send both form data and files
-      const formDataToSend = new FormData();
-      
-      // Add label type data if we have selected levels
-      if (selectedLevels && selectedLevels.length > 0) {
-        const labelType: Record<string, string> = {};
-        
-        // Map the selected levels to the correct fields
-        selectedLevels.forEach(level => {
-          const levelKey = level.toLowerCase().replace(/\s+/g, '');
-          let fieldName = '';
-          
-          // Determine the field name based on the level key
-          if (levelKey.includes('senior') || levelKey.includes('level')) {
-            fieldName = 'seniorLevel';
-          } else if (levelKey.includes('execut')) {
-            fieldName = 'executives';
-          } else if (levelKey.includes('non') || levelKey.includes('execut')) {
-            fieldName = 'nonExecutives';
-          } else {
-            fieldName = 'other';
-          }
-          
-          // Only set the label if it's not already set
-          if (!labelType[fieldName]) {
-            labelType[fieldName] = level;
-          }
-        });
-        
-        // Add the structured labelType object
-        formDataToSend.append('labelType', JSON.stringify(labelType));
-        
-        // Also add individual fields for backward compatibility
-        if (labelType.seniorLevel) formDataToSend.append('seniorLevel', labelType.seniorLevel);
-        if (labelType.executives) formDataToSend.append('executives', labelType.executives);
-        if (labelType.nonExecutives) formDataToSend.append('nonExecutives', labelType.nonExecutives);
-        if (labelType.other) formDataToSend.append('other', labelType.other);
-      }
-      
-      // Add all form data fields
-      formDataToSend.append('name', formData.name.trim());
+     const formDataToSend = new FormData();
+
+if (selectedLevels?.length) {
+  const labelType: Record<string, string> = {};
+  const fieldMap: Record<string, string> = {
+    'Senior Level': 'seniorLevel',
+    'Executives': 'executives',
+    'Non-Executives': 'nonExecutives'
+  };
+
+  selectedLevels.forEach(level => {
+    const fieldName = fieldMap[level] || 'other';
+    
+    if (!labelType[fieldName]) {
+      labelType[fieldName] = level;
+      formDataToSend.append(fieldName, level);
+    }
+  });
+
+  formDataToSend.append('labelType', JSON.stringify(labelType));
+}
+console.log("formDataToSend", formDataToSend);
+
+// Add all form data fields
+formDataToSend.append('name', formData.name.trim());
       
       // Handle arrays properly by stringifying them
       if (formData.emails && formData.emails.length > 0) {
@@ -624,11 +609,17 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
       }
       
       if (formData.contractStartDate) {
-        formDataToSend.append('contractStartDate', formData.contractStartDate.toISOString().split("T")[0]);
+        // Format date as YYYY-MM-DD without timezone conversion
+        const startDate = new Date(formData.contractStartDate);
+        const startDateStr = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`;
+        formDataToSend.append('contractStartDate', startDateStr);
       }
       
       if (formData.contractEndDate) {
-        formDataToSend.append('contractEndDate', formData.contractEndDate.toISOString().split("T")[0]);
+        // Format date as YYYY-MM-DD without timezone conversion
+        const endDate = new Date(formData.contractEndDate);
+        const endDateStr = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
+        formDataToSend.append('contractEndDate', endDateStr);
       }
       
       if (formData.contractType) {
@@ -637,17 +628,17 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
       
       // Add percentage and notes fields for Level Based (Hiring)
       if (formData.contractType === "Level Based (Hiring)") {
-        if (selectedLevels.includes("Senior Level") && formData.seniorLevelPercentage) {
-          formDataToSend.append('seniorLevelPercentage', formData.seniorLevelPercentage.toString());
+        if (selectedLevels.includes("Senior Level")) {
+          formDataToSend.append('seniorLevelPercentage', (formData.seniorLevelPercentage ?? 0).toString());
         }
-        if (selectedLevels.includes("Executives") && formData.executivesPercentage) {
-          formDataToSend.append('executivesPercentage', formData.executivesPercentage.toString());
+        if (selectedLevels.includes("Executives")) {
+          formDataToSend.append('executivesPercentage', (formData.executivesPercentage ?? 0).toString());
         }
-        if (selectedLevels.includes("Non-Executives") && formData.nonExecutivesPercentage) {
-          formDataToSend.append('nonExecutivesPercentage', formData.nonExecutivesPercentage.toString());
+        if (selectedLevels.includes("Non-Executives")) {
+          formDataToSend.append('nonExecutivesPercentage', (formData.nonExecutivesPercentage ?? 0).toString());
         }
-        if (selectedLevels.includes("Other") && formData.otherPercentage) {
-          formDataToSend.append('otherPercentage', formData.otherPercentage.toString());
+        if (selectedLevels.includes("Other")) {
+          formDataToSend.append('otherPercentage', (formData.otherPercentage ?? 0).toString());
         }
         if (selectedLevels.includes("Senior Level") && formData.seniorLevelNotes) {
           formDataToSend.append('seniorLevelNotes', formData.seniorLevelNotes);
@@ -1589,15 +1580,16 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                                       e.stopPropagation()
                                     }
                                     onChange={(e) => {
-                                      const fieldName = `${level.replace(/\s+/g, "").toLowerCase()}Percentage` as keyof ClientForm;
+                                      const fieldName = level === 'Senior Level' ? 'seniorLevelPercentage' : level === 'Non-Executives' ? 'nonExecutivesPercentage' : `${level.replace(/\s+/g, "").toLowerCase()}Percentage` as keyof ClientForm;
                                       const value = e.target.value ? parseFloat(e.target.value) : 0;
+                                      console.log(`DEBUG Level Based Input: Level='${level}', FieldName='${fieldName}', RawValue='${e.target.value}', ParsedValue=${value}, FinalValueToSet=${isNaN(value) ? 0 : Math.min(100, Math.max(0, value))}`);
                                       setFormData(prev => ({
                                         ...prev,
                                         [fieldName]: isNaN(value) ? 0 : Math.min(100, Math.max(0, value))
                                       }));
                                     }}
                                     value={
-                                      (formData as any)[`${level.replace(/\s+/g, "").toLowerCase()}Percentage`] || ""
+                                      (formData as any)[level === 'Senior Level' ? 'seniorLevelPercentage' : level === 'Non-Executives' ? 'nonExecutivesPercentage' : `${level.replace(/\s+/g, "").toLowerCase()}Percentage`] || ""
                                     }
                                     className="h-8 pl-2 pr-6 text-xs"
                                   />
@@ -1612,14 +1604,14 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
                                     e.stopPropagation()
                                   }
                                   onChange={(e) => {
-                                    const fieldName = `${level.replace(/\s+/g, "").toLowerCase()}Notes` as keyof ClientForm;
+                                    const fieldName = level === 'Senior Level' ? 'seniorLevelNotes' : level === 'Non-Executives' ? 'nonExecutivesNotes' : `${level.replace(/\s+/g, "").toLowerCase()}Notes` as keyof ClientForm;
                                     setFormData(prev => ({
                                       ...prev,
                                       [fieldName]: e.target.value
                                     }));
                                   }}
                                   value={
-                                    (formData as any)[`${level.replace(/\s+/g, "").toLowerCase()}Notes`] || ""
+                                    (formData as any)[level === 'Senior Level' ? 'seniorLevelNotes' : level === 'Non-Executives' ? 'nonExecutivesNotes' : `${level.replace(/\s+/g, "").toLowerCase()}Notes`] || ""
                                   }
                                   className="h-8 text-xs flex-1"
                                 />
