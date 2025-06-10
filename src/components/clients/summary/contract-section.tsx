@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { ChevronDown, ChevronUp, Pencil, Trash2, Check, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { DetailRow } from "./detail-row";
 import { FileUploadRow } from "./file-upload-row";
 import {
@@ -24,7 +26,7 @@ interface ContractDetailsState {
   contractTypeDetails: Record<string, ContractTypeDetail>;
   selectedLevels: string[];
   referralPercentage: string;
-  lineOfBusiness: string;
+  lineOfBusiness: string[];
   contractDocument: File | null;
   contractDocumentName: string;
   clientName: string;
@@ -42,12 +44,13 @@ interface ContractSectionProps {
 export function ContractSection({ clientId, clientData }: ContractSectionProps) {
   const levelOptions = ["Senior Level", "Executives", "Non-Executives", "Other"];
   const contractTypes = ["Fixed Percentage", "Fix with Advance", "Fix without Advance", "Level Based (Hiring)"];
+  const lineOfBusinessOptions = ["Recruitment", "HR Consulting", "Mgt Consulting", "Outsourcing", "HR Managed Services", "IT & Technology"];
   const [contract, setContract] = useState<ContractResponse | null>(null);
   const [contractDetails, setContractDetails] = useState<ContractDetailsState>({
     contractStartDate: null,
     contractEndDate: null,
     referralPercentage: "",
-    lineOfBusiness: "",
+    lineOfBusiness: [],
     contractDocument: null,
     contractDocumentName: "",
     contractType: "",
@@ -57,10 +60,12 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
   });
   const [isContractTypeDropdownOpen, setIsContractTypeDropdownOpen] = useState(false);
   const [isLevelDropdownOpen, setIsLevelDropdownOpen] = useState(false);
+  const [isLineOfBusinessDropdownOpen, setIsLineOfBusinessDropdownOpen] = useState(false);
+  const [tempLineOfBusiness, setTempLineOfBusiness] = useState<string[]>([]);
   const [editDialog, setEditDialog] = useState({ open: false, type: "", level: "", percentage: "", notes: "" });
   const [editingLevel, setEditingLevel] = useState<string | null>(null);
   const [isEditingContractType, setIsEditingContractType] = useState(false);
-  const [status, setStatus] = useState({ loading: false, error: "" });
+  const [status, setStatus] = useState<{ loading: boolean; error: string | null }>({ loading: false, error: null });
 
   const patchClientData = useCallback(
     async (field: string, value: any) => {
@@ -158,18 +163,25 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
         agreement: client.agreement || null,
         referralPercentage: parseFloat(client.referralPercentage) || 0,
         notes: client.contractNotes || client.notes || "",
-        lineOfBusiness: client.lineOfBusiness || "",
+        lineOfBusiness: client.lineOfBusiness || [],
         createdBy: client.createdBy,
         createdAt: client.createdAt || new Date().toISOString(),
         updatedAt: client.updatedAt || new Date().toISOString(),
       });
 
+      let lob: string[] = [];
+      if (Array.isArray(client.lineOfBusiness)) {
+        lob = client.lineOfBusiness;
+      } else if (typeof client.lineOfBusiness === 'string' && client.lineOfBusiness) {
+                lob = client.lineOfBusiness.split(',').map((s: string) => s.trim());
+      }
+
       updateContractDetails({
         contractStartDate,
         contractEndDate,
         referralPercentage: client.referralPercentage?.toString() || "",
-        lineOfBusiness: Array.isArray(client.lineOfBusiness) ? client.lineOfBusiness.join(", ") : String(client.lineOfBusiness || ""),
-        contractDocumentName: client.agreement?.fileName || "",
+        lineOfBusiness: lob,
+        contractDocumentName: (client.agreement && (typeof client.agreement === 'string' ? client.agreement : client.agreement.fileName)) || "",
         contractType,
         contractTypeDetails,
         selectedLevels,
@@ -228,7 +240,13 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
   );
 
   const handleContractDocumentUpload = useCallback(
-    async (file: File) => {
+    async (file: File | null) => {
+      if (!file) {
+        // Handle the case where no file is selected or the file is removed.
+        // For example, you might want to clear the contract document state.
+        updateContractDetails({ contractDocument: null, contractDocumentName: "" });
+        return;
+      }
       try {
         updateContractDetails({ contractDocument: file, contractDocumentName: file.name });
         const formData = new FormData();
@@ -249,33 +267,62 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
         localStorage.setItem("contractUpdate", JSON.stringify({ clientId, timestamp: Date.now(), updatedField: "agreement" }));
       } catch (error) {
         setStatus((prev) => ({ ...prev, error: "Failed to upload agreement" }));
-        updateContractDetails({ contractDocument: null, contractDocumentName: contract?.agreement?.fileName || "" });
+        updateContractDetails({ contractDocument: null, contractDocumentName: (contract?.agreement && (typeof contract.agreement === 'string' ? contract.agreement : contract.agreement.fileName)) || "" });
       }
     },
     [contract, clientId, contractDetails.clientName, updateContractDetails]
   );
 
   const handleDownloadContractDocument = useCallback(async () => {
-    if (!contract?._id) return;
+    const fileName = contract?.agreement && (typeof contract.agreement === 'string' ? contract.agreement : contract.agreement.fileName);
+    if (!fileName) {
+      setStatus((prev) => ({ ...prev, error: "Agreement file is missing." }));
+      return;
+    }
     try {
-      const blob = await downloadAgreement(contract._id);
+      setStatus((prev) => ({ ...prev, loading: true, error: null }));
+      const blob = await downloadAgreement(fileName);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = contract.agreement?.fileName || "agreement.pdf";
+      a.download = fileName || "agreement.pdf";
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       a.remove();
     } catch (error) {
-      setStatus((prev) => ({ ...prev, error: "Failed to download agreement" }));
+      console.error("Detailed download error:", error);
+      setStatus((prev) => ({ ...prev, error: "Failed to download agreement. See console for details." }));
+    } finally {
+      setStatus((prev) => ({ ...prev, loading: false }));
+    }
+  }, [contract]);
+
+  const handlePreviewContractDocument = useCallback(async () => {
+    const fileName = contract?.agreement && (typeof contract.agreement === 'string' ? contract.agreement : contract.agreement.fileName);
+    if (!fileName) {
+       setStatus((prev) => ({ ...prev, error: "Agreement file is missing." }));
+      return;
+    }
+    try {
+      setStatus((prev) => ({ ...prev, loading: true, error: null }));
+      const blob = await downloadAgreement(fileName);
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      setTimeout(() => window.URL.revokeObjectURL(url), 100);
+    } catch (error) {
+      console.error("Detailed preview error:", error);
+      setStatus((prev) => ({ ...prev, error: "Failed to preview agreement. See console for details." }));
+    } finally {
+      setStatus((prev) => ({ ...prev, loading: false }));
     }
   }, [contract]);
 
   const handleDeleteContractDocument = useCallback(async () => {
-    if (!contract?._id) return;
+    const fileName = contract?.agreement && (typeof contract.agreement === 'string' ? contract.agreement : contract.agreement.fileName);
+    if (!fileName) return;
     try {
-      const updatedContract = await deleteAgreement(contract._id);
+      const updatedContract = await deleteAgreement(fileName);
       setContract(updatedContract);
       updateContractDetails({ contractDocument: null, contractDocumentName: "" });
       localStorage.setItem("contractUpdate", JSON.stringify({ clientId, timestamp: Date.now(), updatedField: "agreement" }));
@@ -331,6 +378,39 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
     },
     [contract, clientId, contractDetails, patchClientData, updateContractDetails]
   );
+
+  const openLineOfBusinessDropdown = () => {
+    setTempLineOfBusiness(contractDetails.lineOfBusiness);
+    setIsLineOfBusinessDropdownOpen(true);
+  };
+
+  const handleTempLineOfBusinessSelect = (option: string) => {
+    const newLOB = tempLineOfBusiness.includes(option)
+      ? tempLineOfBusiness.filter((item) => item !== option)
+      : [...tempLineOfBusiness, option];
+    setTempLineOfBusiness(newLOB);
+  };
+
+  const saveLineOfBusiness = useCallback(async () => {
+    try {
+      const updatedClient = await patchClientData("lineOfBusiness", tempLineOfBusiness);
+      updateContractDetails({ lineOfBusiness: tempLineOfBusiness });
+      setContract((prev) => ({
+        ...prev!,
+        ...updatedClient,
+        lineOfBusiness: tempLineOfBusiness,
+      }));
+      localStorage.setItem("contractUpdate", JSON.stringify({ clientId, timestamp: Date.now(), updatedField: "lineOfBusiness" }));
+      setIsLineOfBusinessDropdownOpen(false);
+    } catch (error) {
+      console.error("Failed to update Line of Business", error);
+      setStatus((prev) => ({ ...prev, error: "Failed to save Line of Business" }));
+    }
+  }, [clientId, tempLineOfBusiness, patchClientData, updateContractDetails]);
+
+  const cancelLineOfBusinessEdit = () => {
+    setIsLineOfBusinessDropdownOpen(false);
+  };
 
   const startEditing = useCallback((type: "level" | "contractType", level?: string) => {
     if (type === "level" && level) {
@@ -769,14 +849,62 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
             ))}
           </div>
         )}
-        <DetailRow label="Line of Business" value={contractDetails.lineOfBusiness} onUpdate={(value) => handleUpdateField("lineOfBusiness", value)} />
+        <div className="flex items-center space-x-4 py-2 border-t border-gray-200">
+          <label className="w-1/4 text-sm font-medium text-gray-600">Line of Business</label>
+          <div className="relative w-3/4 flex space-x-2">
+            <div className="flex-1 relative">
+              <div
+                className="w-full bg-gray-100 border rounded-md p-2 text-sm text-gray-800 flex justify-between items-center"
+              >
+                <span className="truncate pr-8">
+                  {contractDetails.lineOfBusiness.length > 0
+                    ? contractDetails.lineOfBusiness.join(", ")
+                    : "Select Line of Business"}
+                </span>
+              </div>
+              {isLineOfBusinessDropdownOpen && (
+                <div className="absolute z-20 w-full bg-white border rounded-md mt-1 shadow-lg">
+                  {lineOfBusinessOptions.map((option) => (
+                    <label
+                      key={option}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-800 hover:bg-blue-50 flex items-center cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={tempLineOfBusiness.includes(option)}
+                        onChange={() => handleTempLineOfBusinessSelect(option)}
+                        className="mr-2 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      {option}
+                    </label>
+                  ))}
+                  <div className="flex justify-end space-x-2 p-2 bg-gray-50 border-t">
+                    <button onClick={cancelLineOfBusinessEdit} className="px-4 py-2 text-sm rounded-md border hover:bg-gray-100">Cancel</button>
+                    <button onClick={saveLineOfBusiness} className="px-4 py-2 text-sm rounded-md border bg-blue-600 text-white hover:bg-blue-700">Save</button>
+                  </div>
+                </div>
+              )}
+            </div>
+            <button
+              className="p-2 border rounded-md hover:bg-gray-100 group relative"
+              onClick={openLineOfBusinessDropdown}
+              aria-label="Edit Line of Business"
+            >
+              <Pencil className="h-4 w-4" />
+              <span className="absolute hidden group-hover:block text-xs bg-gray-800 text-white rounded p-1 -top-8 left-1/2 -translate-x-1/2">
+                Edit
+              </span>
+            </button>
+          </div>
+        </div>
         <FileUploadRow
+          id="contract-document-upload"
           label="Contract Document"
-          accept=".pdf,.doc,.docx"
           onFileSelect={handleContractDocumentUpload}
+          docUrl={contract?.agreement?.filePath}
           currentFileName={contractDetails.contractDocumentName}
+          onPreview={contract?.agreement ? handlePreviewContractDocument : undefined}
           onDownload={contract?.agreement ? handleDownloadContractDocument : undefined}
-          onDelete={contract?.agreement ? handleDeleteContractDocument : undefined}
         />
       </div>
       {editDialog.open && (

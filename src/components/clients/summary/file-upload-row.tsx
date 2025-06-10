@@ -1,108 +1,65 @@
-"use client"
+"use client";
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Upload, File } from "lucide-react"
-import { useRef } from "react"
+import { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { UploadIcon, Eye, Download as DownloadIcon } from "lucide-react";
 
 interface FileUploadRowProps {
-  label: string
-  accept: string
-  onFileSelect: (file: File) => void
-  currentFileName?: string
-  showOnlyIfOverseas?: boolean
-  showFileName?: boolean
-  showPreviewButton?: boolean
-  showDownloadButton?: boolean
-  onPreview?: () => void
-  onDownload?: () => void
-  onDelete?: () => Promise<void>;
+  id: string;
+  label: string;
+  onFileSelect: (file: File | null) => void | Promise<void>;
+  docUrl?: string;
+  currentFileName?: string;
+  onPreview?: () => void;
+  onDownload?: () => void;
+  className?: string;
 }
 
-export function FileUploadRow({
-  label,
-  accept,
-  onFileSelect,
-  currentFileName,
-  showOnlyIfOverseas,
-  showFileName = true,
-  showPreviewButton = false,
-  showDownloadButton = false,
-  onPreview,
-  onDownload
-}: FileUploadRowProps) {
-  const inputRef = useRef<HTMLInputElement>(null)
+export const FileUploadRow = ({ id, label, onFileSelect, docUrl, currentFileName, onPreview, onDownload, className }: FileUploadRowProps) => {
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-  const handleClick = () => {
-    inputRef.current?.click()
-  }
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] || null;
+    setSelectedFile(file);
+    onFileSelect(file);
+  };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file && typeof onFileSelect === "function") {
-      onFileSelect(file);
-    } else {
-      console.error("onFileSelect is not a function or no file selected");
-    }
-  }
-
-  // If showOnlyIfOverseas is true and client is not overseas, don't show the component
-  // This is a placeholder condition - you should replace it with your actual overseas check
-  if (showOnlyIfOverseas && !true) {
-    return null
-  }
+  const fileName = selectedFile
+    ? selectedFile.name
+    : currentFileName || (docUrl ? docUrl.split(/[\\/]/).pop() : "");
 
   return (
-    <div className="flex items-center py-2 border-b last:border-b-0">
-      <span className="text-sm text-muted-foreground w-1/3">{label}</span>
-      <div className="flex items-center justify-between flex-1">
-        {showFileName && currentFileName ? (
-          <div className="flex items-center gap-2">
-            <File className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm">{currentFileName}</span>
-          </div>
-        ) : (
-          <span className="text-sm text-muted-foreground">Upload file</span>
-        )}
-        <div className="flex items-center gap-2">
-          {currentFileName && showPreviewButton && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-8"
-              onClick={onPreview}
-            >
-              Preview
+    <div className={`grid grid-cols-2 items-center gap-2 py-2 ${className || ''}`}>
+      <p className="text-sm font-medium text-gray-700">{label}</p>
+      <div className="flex items-center justify-between">
+        <span className="text-sm text-gray-800 truncate" title={fileName || "No Details"}>
+          {fileName || <span className="text-gray-400">No Details</span>}
+        </span>
+        <div className="flex items-center gap-4">
+          {onPreview && (
+            <Button variant="ghost" className="p-2 h-auto" onClick={onPreview} title="Preview">
+              <Eye className="h-4 w-4" />
             </Button>
           )}
-          {currentFileName && showDownloadButton && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-8"
-              onClick={onDownload}
-            >
-              Download
+          {onDownload && (
+            <Button variant="ghost" className="p-2 h-auto" onClick={onDownload} title="Download">
+              <DownloadIcon className="h-4 w-4" />
             </Button>
           )}
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-8"
-            onClick={handleClick}
-          >
-            <Upload className="h-3 w-3 mr-1" />
-            Upload
+          <Button asChild variant="ghost" className="p-2 h-auto" title="Upload">
+            <label htmlFor={id} className="cursor-pointer">
+              <UploadIcon className="h-4 w-4" />
+            </label>
           </Button>
+          <Input
+            id={id}
+            type="file"
+            onChange={handleFileChange}
+            className="hidden"
+          />
         </div>
       </div>
-      <input
-        type="file"
-        ref={inputRef}
-        className="hidden"
-        accept={accept}
-        onChange={handleFileChange}
-      />
     </div>
-  )
-}
+  );
+};

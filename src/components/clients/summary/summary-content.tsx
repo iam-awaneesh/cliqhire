@@ -233,14 +233,16 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
     }
   };
 
-  const handleFileUpload = (field: keyof ClientDetails) => (file: File) => {
-    const uploadFile = async () => {
+  const handleFileUpload = (field: keyof ClientDetails) => (file: File | null): void => {
+    if (!file) return;
+    (async () => {
       try {
         const formData = new FormData();
-        formData.append("file", file);
+        formData.append("file", file);      // The file itself
+        formData.append("field", field);    // The field name (e.g., "vatCopy" or "crCopy")
 
         const response = await fetch(
-          `https://aems-backend.onrender.com/api/clients/${clientId}/upload?field=${field}`,
+          `http://localhost:5000/api/clients/${clientId}/upload`,
           {
             method: "POST",
             body: formData,
@@ -252,7 +254,7 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
         }
 
         const result = await response.json();
-        const fileUrl = result.fileUrl || file.name;
+        const fileUrl = result.data?.filePath || file.name;
 
         setClientDetails((prev) => ({
           ...prev,
@@ -264,13 +266,11 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
         console.error(`Error uploading ${field}:`, error);
         setClientDetails((prev) => ({
           ...prev,
-          [field]: file.name,
+          [field]: file?.name || '',
         }));
         setError(`Failed to upload ${field} to server. File name stored locally.`);
       }
-    };
-
-    uploadFile();
+    })();
   };
 
   const handleUpdateField = (field: keyof ClientDetails) => (value: string) => {
@@ -304,22 +304,34 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
 
   const handlePreviewFile = (fileName: string) => {
     if (fileName) {
-      window.open(fileName, "_blank");
+      const fileUrl = fileName.startsWith("http") ? fileName : `http://localhost:5000/${fileName}`;
+      window.open(fileUrl, "_blank");
     } else {
       console.log("No file to preview");
     }
   };
 
-  const handleDownloadFile = (fileName: string) => {
+  const handleDownloadFile = async (fileName: string) => {
     if (fileName) {
-      const link = document.createElement("a");
-      link.href = fileName;
-      link.download = fileName.split("/").pop() || "download";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      const fileUrl = fileName.startsWith("http") ? fileName : `http://localhost:5000/${fileName}`;
+      try {
+        const response = await fetch(fileUrl);
+        if (!response.ok) throw new Error('Network response was not ok.');
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', fileName.split('/').pop() || 'download');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error('Download failed:', error);
+        window.open(fileUrl, '_blank');
+      }
     } else {
-      console.log("No file to download");
+      console.log('No file to download');
     }
   };
 
@@ -480,22 +492,21 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
               onUpdate={handleUpdateField(clientDetails.linkedInPage ? "linkedInPage" : "clientLinkedInPage")}
             />
             <FileUploadRow
+              id="vat-copy-upload"
               label="VAT Copy"
-              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+              className="border-b"
               onFileSelect={handleFileUpload("vatCopy")}
+              docUrl={clientDetails.vatCopy}
               currentFileName={typeof clientDetails.vatCopy === "string" ? clientDetails.vatCopy.split("/").pop() || "" : ""}
-              showPreviewButton={true}
-              showDownloadButton={true}
               onPreview={() => handlePreviewFile(clientDetails.vatCopy || "")}
               onDownload={() => handleDownloadFile(clientDetails.vatCopy || "")}
             />
             <FileUploadRow
+              id="cr-copy-upload"
               label="CR Copy"
-              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
               onFileSelect={handleFileUpload("crCopy")}
+              docUrl={clientDetails.crCopy}
               currentFileName={typeof clientDetails.crCopy === "string" ? clientDetails.crCopy.split("/").pop() || "" : ""}
-              showPreviewButton={true}
-              showDownloadButton={true}
               onPreview={() => handlePreviewFile(clientDetails.crCopy || "")}
               onDownload={() => handleDownloadFile(clientDetails.crCopy || "")}
             />
