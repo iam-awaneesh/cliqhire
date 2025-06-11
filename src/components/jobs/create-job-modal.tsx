@@ -364,26 +364,29 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
         }))
       }
       setLocationInput("")
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        location: suggestion.display_name
-      }))
-    }
+  } else {
+    setFormData(prev => ({
+      ...prev,
+      location: suggestion.display_name
+    }));
+    setLocationInput(suggestion.display_name); // Update input field to show selected location
+  }
+  setShowLocationSuggestions(false);
+}
+
+const addLocation = () => {
+  if (locationInput.trim() && !selectedLocations.includes(locationInput.trim())) {
+    setSelectedLocations(prev => [...prev, locationInput.trim()])
+    setFormData(prev => ({
+      ...prev,
+      locations: [...prev.locations, locationInput.trim()]
+    }))
+    setLocationInput("")
     setShowLocationSuggestions(false)
   }
+}
 
-  const addLocation = () => {
-    if (locationInput.trim() && !selectedLocations.includes(locationInput.trim())) {
-      setSelectedLocations(prev => [...prev, locationInput.trim()])
-      setFormData(prev => ({
-        ...prev,
-        locations: [...prev.locations, locationInput.trim()]
-      }))
-      setLocationInput("")
-      setShowLocationSuggestions(false)
-    }
-  }
+
 
   const handleLocationKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
@@ -505,7 +508,7 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
         department: "General",
         client: formData.client,
         jobPosition: [formData.jobTitle], // Convert to array
-        location: [],
+        location: location, // Use the calculated location string
         headcount: numberOfPositions,
         stage: formData.stage,
         minimumSalary: parseInt(formData.salaryRange.min) || 0,
@@ -522,6 +525,8 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
         },
         gender: formData.gender,
         deadline: formData.deadline ? formData.deadline.toISOString() : "",
+        clientDeadline: formData.clientDeadline ? formData.clientDeadline.toISOString() : null,
+        internalDeadline: formData.internalDeadline ? formData.internalDeadline.toISOString() : null,
         relationshipManager: formData.relationshipManager,
         reportingTo: formData.reportingTo,
         teamSize: formData.teamSize,
@@ -727,7 +732,7 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
                             <div
                               key={index}
                               className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                              onClick={() => handleLocationSelect(suggestion)}
+                              onMouseDown={() => handleLocationSelect(suggestion)}
                             >
                               {suggestion.display_name}
                             </div>
@@ -740,9 +745,26 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
                   <div className="relative">
                     <Input
                       id="location"
-                      value={formData.location}
-                      onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                      onFocus={() => setShowLocationSuggestions(true)}
+                      value={locationInput} // Bind to locationInput for live search
+                      onChange={(e) => {
+                        setLocationInput(e.target.value);
+                        // If user types, clear the official formData.location until a new suggestion is selected.
+                        if (formData.location && e.target.value !== formData.location) {
+                           setFormData(prev => ({ ...prev, location: "" }));
+                        }
+                      }}
+                      onFocus={() => {
+                        // If focusing and input is empty but a location was previously selected, populate input for editing.
+                        if (!locationInput && formData.location) {
+                          setLocationInput(formData.location);
+                        }
+                        setShowLocationSuggestions(true);
+                      }}
+                      onBlur={() => {
+                        // Hide suggestions after a delay to allow click.
+                        setTimeout(() => setShowLocationSuggestions(false), 200);
+                      }}
+                      placeholder="Type to search location"
                       required
                     />
                     {showLocationSuggestions && locationSuggestions.length > 0 && (
@@ -751,7 +773,7 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
                           <div
                             key={index}
                             className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                            onClick={() => handleLocationSelect(suggestion)}
+                            onMouseDown={() => handleLocationSelect(suggestion)}
                           >
                             {suggestion.display_name}
                           </div>
