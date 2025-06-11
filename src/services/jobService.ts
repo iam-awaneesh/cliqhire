@@ -49,7 +49,7 @@ export interface ClientRef {
 }
 
 export interface Job extends JobData {
-  _id: string;
+  _id:string;
   client: ClientRef;
   createdAt: string;
   updatedAt: string;
@@ -100,16 +100,23 @@ const handleApiError = (error: any, context: string) => {
 
 // Process job data before sending to API
 const processJobData = (jobData: JobData | Partial<JobData>) => {
+  const dataToSend = { ...jobData };
+
+  // Ensure client is just the ID string before sending
+  if (dataToSend.client && typeof dataToSend.client === 'object' && (dataToSend.client as ClientRef)._id) {
+    dataToSend.client = (dataToSend.client as ClientRef)._id;
+  }
+
   return {
-    ...jobData,
-    deadlineclient: jobData.deadlineclient ? new Date(jobData.deadlineclient).toISOString() : null,
-    deadlineinternal: jobData.deadlineinternal ? new Date(jobData.deadlineinternal).toISOString() : null,
-    jobType: jobData.jobType?.toLowerCase(),
-    gender: jobData.gender?.toLowerCase(),
-    salaryRange: jobData.salaryRange || (jobData.minimumSalary !== undefined || jobData.maximumSalary !== undefined ? {
-      min: jobData.minimumSalary || 0,
-      max: jobData.maximumSalary || 0,
-      currency: jobData.salaryCurrency || 'SAR'
+    ...dataToSend,
+    deadlineclient: dataToSend.deadlineclient ? new Date(dataToSend.deadlineclient).toISOString() : null,
+    deadlineinternal: dataToSend.deadlineinternal ? new Date(dataToSend.deadlineinternal).toISOString() : null,
+    jobType: dataToSend.jobType?.toLowerCase(),
+    gender: dataToSend.gender?.toLowerCase(),
+    salaryRange: dataToSend.salaryRange || (dataToSend.minimumSalary !== undefined || dataToSend.maximumSalary !== undefined ? {
+      min: dataToSend.minimumSalary || 0,
+      max: dataToSend.maximumSalary || 0,
+      currency: dataToSend.salaryCurrency || 'SAR'
     } : undefined)
   };
 };

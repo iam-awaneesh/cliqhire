@@ -171,36 +171,134 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
   const fileInputRef = React.useRef<HTMLInputElement | null>(null)
   const [isInputFocused, setIsInputFocused] = useState(false)
 
+  // const fetchClients = async () => {
+  //   setIsLoadingClients(true)
+  //   setClientError(null)
+  //   try {
+  //     const clientNames = await getClientNames()
+  //     console.log('Raw client data from getClientNames:', clientNames)
+      
+  //     // Ensure clientNames is an array and transform to ClientData[]
+  //     const clientData: ClientData[] = Array.isArray(clientNames)
+  //       ? clientNames
+  //           .filter((item): item is string => typeof item === 'string')
+  //           .map((name, index) => ({
+  //             _id: `client-${index}`,
+  //             name,
+  //             jobCount: 0
+  //           }))
+  //       : []
+      
+  //     console.log('Transformed clients:', clientData)
+  //     setClients(clientData)
+  //     if (clientData.length === 0) {
+  //       setClientError("No clients found in the database")
+  //     }
+  //   } catch (error: any) {
+  //     console.error("Error fetching client names:", error.message)
+  //     setClientError(`Failed to load clients: ${error.message}`)
+  //   } finally {
+  //     setIsLoadingClients(false)
+  //   }
+  // }
+
   const fetchClients = async () => {
-    setIsLoadingClients(true)
-    setClientError(null)
-    try {
-      const clientNames = await getClientNames()
-      console.log('Raw client data from getClientNames:', clientNames)
+  setIsLoadingClients(true);
+  setClientError(null);
+  try {
+    // Get the full client objects from your API
+    const clientsFromApi = await getClientNames(); 
+    console.log('Raw client data from getClientNames:', clientsFromApi);
+    
+    // Ensure the response is an array of client objects
+    if (Array.isArray(clientsFromApi)) {
+      // Check if the array contains objects with _id and name properties
+      const validClients = clientsFromApi.filter(client => 
+        client && 
+        typeof client === 'object' && 
+        client._id && 
+        client.name
+      );
       
-      // Ensure clientNames is an array and transform to ClientData[]
-      const clientData: ClientData[] = Array.isArray(clientNames)
-        ? clientNames
-            .filter((item): item is string => typeof item === 'string')
-            .map((name, index) => ({
-              _id: `client-${index}`,
-              name,
-              jobCount: 0
-            }))
-        : []
-      
-      console.log('Transformed clients:', clientData)
-      setClients(clientData)
-      if (clientData.length === 0) {
-        setClientError("No clients found in the database")
+      if (validClients.length > 0) {
+        setClients(validClients);
+      } else {
+        // If we get an array of strings instead of objects, handle it
+        const clientData: ClientData[] = clientsFromApi
+          .filter((item): item is string => typeof item === 'string')
+          .map((name, index) => ({
+            _id: `temp-${index}`, // Temporary ID - this won't work with backend
+            name,
+            jobCount: 0
+          }));
+        
+        setClients(clientData);
+        console.warn('Received client names as strings instead of objects. Backend integration may fail.');
       }
-    } catch (error: any) {
-      console.error("Error fetching client names:", error.message)
-      setClientError(`Failed to load clients: ${error.message}`)
-    } finally {
-      setIsLoadingClients(false)
+      
+      if (clientsFromApi.length === 0) {
+        setClientError("No clients found in the database");
+      }
+    } else {
+      console.error("Received unexpected data format for clients:", clientsFromApi);
+      setClientError("Failed to load clients due to unexpected data format.");
+      setClients([]);
     }
+  } catch (error: any) {
+    console.error("Error fetching client names:", error.message);
+    setClientError(`Failed to load clients: ${error.message}`);
+  } finally {
+    setIsLoadingClients(false);
   }
+};
+
+// Update the fetchClients function to handle the API response correctly
+// const fetchClients = async () => {
+//   setIsLoadingClients(true);
+//   setClientError(null);
+//   try {
+//     const response = await getClientNames(); 
+//     console.log('Raw client data from getClientNames:', response);
+    
+//     // Check if response has the expected structure
+//     if (response && response.success && Array.isArray(response.data)) {
+//       // Transform the array of names into ClientData objects
+//       const clientData: ClientData[] = response.data
+//         .filter((name: string) => name && name.trim()) // Filter out empty strings
+//         .map((name: string, index: number) => ({
+//           _id: name, // Use the name as the ID since backend expects the name
+//           name: name,
+//           jobCount: 0
+//         }));
+      
+//       setClients(clientData);
+      
+//       if (clientData.length === 0) {
+//         setClientError("No clients found in the database");
+//       }
+//     } else if (Array.isArray(response)) {
+//       // Handle direct array response (fallback)
+//       const clientData: ClientData[] = response
+//         .filter((name: string) => name && name.trim())
+//         .map((name: string, index: number) => ({
+//           _id: name, // Use the name as the ID
+//           name: name,
+//           jobCount: 0
+//         }));
+      
+//       setClients(clientData);
+//     } else {
+//       console.error("Received unexpected data format for clients:", response);
+//       setClientError("Failed to load clients due to unexpected data format.");
+//       setClients([]);
+//     }
+//   } catch (error: any) {
+//     console.error("Error fetching client names:", error.message);
+//     setClientError(`Failed to load clients: ${error.message}`);
+//   } finally {
+//     setIsLoadingClients(false);
+//   }
+// };
 
   useEffect(() => {
     fetchClients()
