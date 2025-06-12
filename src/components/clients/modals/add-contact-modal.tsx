@@ -9,14 +9,16 @@ import { useState } from "react";
 interface AddContactModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAdd: (contact: { name: string; email: string; phone: string; countryCode: string; position: string; linkedin: string }) => void;
+  onAdd: (contact: { firstName: string; lastName: string; gender: string; email: string; phone: string; countryCode: string; position: string; linkedin: string }) => void;
   countryCodes: { code: string; label: string }[];
   positionOptions: { value: string; label: string }[];
 }
 
 export function AddContactModal({ open, onOpenChange, onAdd, countryCodes, positionOptions }: AddContactModalProps) {
   const [formData, setFormData] = useState({
-    name: "",
+    firstName: "",
+    lastName: "",
+    gender: "Any",
     email: "",
     phone: "",
     countryCode: "+966",
@@ -26,13 +28,14 @@ export function AddContactModal({ open, onOpenChange, onAdd, countryCodes, posit
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Validate only required fields
-    if (!formData.name || !formData.email || !formData.phone || !formData.position) {
+    if (!formData.firstName || !formData.email || !formData.phone || !formData.position) {
       alert("Please fill all required fields.");
       return;
     }
     onAdd({
-      name: formData.name.trim(),
+      firstName: formData.firstName.trim(),
+      lastName: formData.lastName.trim(),
+      gender: formData.gender,
       email: formData.email.trim(),
       phone: formData.phone.trim(),
       countryCode: formData.countryCode,
@@ -41,7 +44,9 @@ export function AddContactModal({ open, onOpenChange, onAdd, countryCodes, posit
     });
     onOpenChange(false);
     setFormData({
-      name: "",
+      firstName: "",
+      lastName: "",
+      gender: "Any",
       email: "",
       phone: "",
       countryCode: "+966",
@@ -58,14 +63,37 @@ export function AddContactModal({ open, onOpenChange, onAdd, countryCodes, posit
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="firstName">First Name</Label>
+                <Input
+                  id="firstName"
+                  value={formData.firstName}
+                  onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lastName">Last Name</Label>
+                <Input
+                  id="lastName"
+                  value={formData.lastName}
+                  onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
+                />
+              </div>
+            </div>
             <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                required
-              />
+              <Label htmlFor="gender">Gender</Label>
+              <select
+                id="gender"
+                value={formData.gender}
+                onChange={(e) => setFormData(prev => ({ ...prev, gender: e.target.value }))}
+                className="w-full border rounded p-2"
+              >
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Any">Any</option>
+              </select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>

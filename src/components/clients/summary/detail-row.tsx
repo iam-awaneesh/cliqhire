@@ -137,9 +137,11 @@ export function DetailRow({
           open={isEditing}
           onClose={() => setIsEditing(false)}
           fieldName={label}
-          currentValue={value?.toString() || ""}
+          currentValue={typeof value === 'string' ? value : ''}
           onSave={onUpdate}
           isDate={isDate}
+          isNumber={isNumber}
+          options={options}
         />
       )}
     </div>

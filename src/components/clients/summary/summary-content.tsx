@@ -33,6 +33,8 @@ interface ClientResponse {
 }
 
 interface ClientDetails {
+  clientPriority: string;
+  clientSegment: string;
   name: string;
   website?: string;
   industry?: string;
@@ -73,7 +75,9 @@ interface ClientDetails {
 }
 
 interface PrimaryContact {
-  name: string;
+  firstName: string;
+  lastName: string;
+  gender: string;
   email: string;
   phone: string;
   countryCode: string;
@@ -98,6 +102,8 @@ interface ContactType {
 
 export function SummaryContent({ clientId }: SummaryContentProps) {
   const [clientDetails, setClientDetails] = useState<ClientDetails>({
+    clientPriority: "1",
+    clientSegment: "A",
     name: "",
   });
   const [teamMembers, setTeamMembers] = useState<TeamMemberType[]>([
@@ -160,6 +166,8 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
 
         // Set the client details with fallback values
         setClientDetails({
+          clientPriority: clientData.clientPriority || "1",
+          clientSegment: clientData.clientSegment || "A",
           name: clientData.name || "",
           website: clientData.website || "",
           industry: clientData.industry || "",
@@ -379,6 +387,30 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
           <h2 className="text-sm font-semibold">Details</h2>
           <div className="space-y-3 mt-4">
             <DetailRow
+              label="Client Priority"
+              value={clientDetails.clientPriority}
+              onUpdate={handleUpdateField("clientPriority")}
+              options={[
+                { value: "1", label: "1" },
+                { value: "2", label: "2" },
+                { value: "3", label: "3" },
+                { value: "4", label: "4" },
+                { value: "5", label: "5" },
+              ]}
+            />
+            <DetailRow
+              label="Client Segment"
+              value={clientDetails.clientSegment}
+              onUpdate={handleUpdateField("clientSegment")}
+              options={[
+                { value: "A", label: "A" },
+                { value: "B", label: "B" },
+                { value: "C", label: "C" },
+                { value: "D", label: "D" },
+                { value: "E", label: "E" },
+              ]}
+            />
+            <DetailRow
               label="Client Name"
               value={clientDetails.name}
               onUpdate={handleUpdateField("name")}
@@ -410,7 +442,7 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
                   {clientDetails.primaryContacts?.map((contact, index) => (
                     <div key={index} className="p-3 bg-muted/30 rounded-lg">
                       <div className="block space-y-1">
-                        <div className="font-medium">{contact.name || "Unnamed Contact"}</div>
+                        <div className="font-medium">{`${contact.firstName} ${contact.lastName}` || "Unnamed Contact"}</div>
                         <div className="text-sm text-muted-foreground">
                           {contact.position || "No position"}
                         </div>
