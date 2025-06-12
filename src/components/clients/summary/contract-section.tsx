@@ -43,7 +43,7 @@ interface ContractSectionProps {
 
 export function ContractSection({ clientId, clientData }: ContractSectionProps) {
   const levelOptions = ["Senior Level", "Executives", "Non-Executives", "Other"];
-  const contractTypes = ["Fixed Percentage", "Fix with Advance", "Fix without Advance", "Level Based (Hiring)"];
+  const contractTypes = ["Fix with Advance", "Fix without Advance", "Level Based (Hiring)"];
   const lineOfBusinessOptions = ["Recruitment", "HR Consulting", "Mgt Consulting", "Outsourcing", "HR Managed Services", "IT & Technology"];
   const [contract, setContract] = useState<ContractResponse | null>(null);
   const [contractDetails, setContractDetails] = useState<ContractDetailsState>({

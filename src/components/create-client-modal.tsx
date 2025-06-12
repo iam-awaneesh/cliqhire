@@ -1308,7 +1308,6 @@ formDataToSend.append('name', formData.name.trim());
                     <SelectValue placeholder="Select contract type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Fixed Percentage">Fixed Percentage</SelectItem>
                     <SelectItem value="Fix with Advance">Fix with Advance</SelectItem>
                     <SelectItem value="Fix without Advance">Fix without Advance</SelectItem>
                     <SelectItem value="Level Based (Hiring)">Level Based (Hiring)</SelectItem>
