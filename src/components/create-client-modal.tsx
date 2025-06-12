@@ -890,7 +890,7 @@ formDataToSend.append('name', formData.name.trim());
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 py-4">
               <div className="space-y-2">
                 <Label htmlFor="salesLead" className="text-sm sm:text-base">
-                  Sales Lead *
+                  Sales Lead (Internal)*
                 </Label>
                 <Select
                   value={formData.salesLead || ""}
@@ -907,6 +907,19 @@ formDataToSend.append('name', formData.name.trim());
                   </SelectContent>
                 </Select>
               </div>
+
+               <div className="space-y-2">
+                <Label htmlFor="referredBy" className="text-sm sm:text-base">
+                  Referred By (External) *
+                </Label>
+                <Input
+                  id="referredBy"
+                  value={formData.referredBy}
+                  onChange={handleInputChange("referredBy")}
+                  required
+                  className="w-full"
+                />
+               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="clientPriority" className="text-sm sm:text-base">Client Priority</Label>
@@ -1240,17 +1253,7 @@ formDataToSend.append('name', formData.name.trim());
 
           {currentTab === 2 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="referredBy" className="text-sm sm:text-base">
-                  Referred By *
-                </Label>
-                <Input
-                  id="referredBy"
-                  value={formData.referredBy}
-                  onChange={handleInputChange("referredBy")}
-                  required
-                  className="w-full"
-                />
+               <div className="space-y-2">
                 <Label htmlFor="contractStartDate" className="text-sm sm:text-base">
                   Contract Start Date
                 </Label>
