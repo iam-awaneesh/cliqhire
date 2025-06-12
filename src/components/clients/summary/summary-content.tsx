@@ -441,14 +441,11 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
                 <div className="space-y-3">
                   {clientDetails.primaryContacts?.map((contact, index) => (
                     <div key={index} className="p-3 bg-muted/30 rounded-lg">
-                      <div className="block space-y-1">
+                      <div key={index} className="p-3 rounded-md border">
                         <div className="font-medium">{`${contact.firstName} ${contact.lastName}` || "Unnamed Contact"}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {contact.position || "No position"}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {contact.email || "No email"}
-                        </div>
+                        {contact.gender && <div className="text-sm text-muted-foreground">{contact.gender}</div>}
+                        <p className="text-sm text-muted-foreground">{contact.position}</p>
+                        <p className="text-sm text-muted-foreground">{contact.email}</p>
                         <div className="text-sm text-muted-foreground">
                           {getCountryCodeLabel(contact.countryCode)} {contact.phone || "No phone"}
                         </div>

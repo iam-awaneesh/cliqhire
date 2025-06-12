@@ -18,7 +18,7 @@ export function AddContactModal({ open, onOpenChange, onAdd, countryCodes, posit
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
-    gender: "Any",
+    gender: "Other",
     email: "",
     phone: "",
     countryCode: "+966",
@@ -46,7 +46,7 @@ export function AddContactModal({ open, onOpenChange, onAdd, countryCodes, posit
     setFormData({
       firstName: "",
       lastName: "",
-      gender: "Any",
+      gender: "Other",
       email: "",
       phone: "",
       countryCode: "+966",
@@ -92,7 +92,7 @@ export function AddContactModal({ open, onOpenChange, onAdd, countryCodes, posit
               >
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
-                <option value="Any">Any</option>
+                <option value="Other">Other</option>
               </select>
             </div>
             <div className="space-y-2">
