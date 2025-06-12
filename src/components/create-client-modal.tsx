@@ -598,6 +598,7 @@ formDataToSend.append('name', formData.name.trim());
       if (formData.primaryContacts && formData.primaryContacts.length > 0) {
         formDataToSend.append('primaryContacts', JSON.stringify(formData.primaryContacts.map(contact => ({
           name: `${contact.firstName || ''} ${contact.lastName || ''}`.trim(),
+          gender: contact.gender,
           email: contact.email,
           phone: contact.phone,
           countryCode: contact.countryCode,
@@ -1140,9 +1141,14 @@ formDataToSend.append('name', formData.name.trim());
                       {formData.primaryContacts.map((contact, index) => (
                         <div key={index} className="p-3 bg-muted/30 rounded-lg">
                           <div className="block space-y-1">
-                            <div className="font-medium">{contact.firstName} {contact.lastName}</div>
-                            <div className="text-xs sm:text-sm text-muted-foreground">
-                              {contact.designation || "No designation"}
+                            <div className="font-medium">
+                              {contact.firstName} {contact.lastName}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {contact.gender}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {contact.designation}
                             </div>
                             <div className="text-xs sm:text-sm text-muted-foreground">
                               {contact.email || "No email"}
@@ -1222,9 +1228,6 @@ formDataToSend.append('name', formData.name.trim());
                   required
                   className="w-full"
                 />
-              </div>
-
-              <div className="space-y-2">
                 <Label htmlFor="contractStartDate" className="text-sm sm:text-base">
                   Contract Start Date
                 </Label>
@@ -1951,7 +1954,7 @@ formDataToSend.append('name', formData.name.trim());
                     <SelectContent>
                       <SelectItem value="Male">Male</SelectItem>
                       <SelectItem value="Female">Female</SelectItem>
-                      <SelectItem value="Any">Any</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
