@@ -824,13 +824,13 @@ formDataToSend.append('name', formData.name.trim());
         executives: null,
         nonExecutives: null,
         other: null,
-        seniorLevelMoney: undefined,
+        seniorLevelMoney: null,
         seniorLevelCurrency: "USD",
-        executivesMoney: undefined,
+        executivesMoney: null,
         executivesCurrency: "USD",
-        nonExecutivesMoney: undefined,
+        nonExecutivesMoney: null,
         nonExecutivesCurrency: "USD",
-        otherMoney: undefined,
+        otherMoney: null,
         otherCurrency: "USD",
       });
       setNewContact({ firstName: "", lastName: "", gender: "", email: "", phone: "", countryCode: "+966", designation: "", linkedin: "", isPrimary: true });
