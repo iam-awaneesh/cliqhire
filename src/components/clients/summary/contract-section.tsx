@@ -669,30 +669,32 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
                 />
                 <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-gray-500">%</span>
               </div>
-              <input
-                type="text"
-                value={contractDetails.contractTypeDetails[contractDetails.contractType]?.notes || ""}
-                onChange={(e) =>
-                  updateContractDetails({
-                    contractTypeDetails: {
-                      ...contractDetails.contractTypeDetails,
-                      [contractDetails.contractType]: {
-                        ...contractDetails.contractTypeDetails[contractDetails.contractType],
-                        notes: e.target.value,
+              <div className="w-2/3">
+                <input
+                  type="text"
+                  value={contractDetails.contractTypeDetails[contractDetails.contractType]?.notes || ""}
+                  onChange={(e) =>
+                    updateContractDetails({
+                      contractTypeDetails: {
+                        ...contractDetails.contractTypeDetails,
+                        [contractDetails.contractType]: {
+                          ...contractDetails.contractTypeDetails[contractDetails.contractType],
+                          notes: e.target.value,
+                        },
                       },
-                    },
-                  })
-                }
-                readOnly={editingLevel !== "contractType"}
-                className={`w-2/3 border rounded-md p-2 text-sm ${
-                  editingLevel === "contractType"
-                    ? "focus:ring-2 focus:ring-blue-500 bg-white"
-                    : "bg-gray-50 cursor-not-allowed"
-                }`}
-                placeholder="Notes"
-              />
+                    })
+                  }
+                  readOnly={editingLevel !== "contractType"}
+                  className={`w-full border rounded-md p-2 text-sm ${
+                    editingLevel === "contractType"
+                      ? "focus:ring-2 focus:ring-blue-500 bg-white"
+                      : "bg-gray-50 cursor-not-allowed"
+                  }`}
+                  placeholder="Notes"
+                />
+              </div>
 
-              <div className="flex space-x-1">
+              <div className="flex space-x-1 ml-8">
                 {editingLevel === "contractType" ? (
                   <>
                     <button
@@ -833,7 +835,7 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
                   </div>
 
                   {/* Actions */}
-                  <div className="col-span-1 flex space-x-1 justify-end">
+                  <div className="col-span-1 flex space-x- ml-15">
                     {isEditing ? (
                       <>
                         <button
@@ -968,7 +970,7 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
               <div className="flex justify-end space-x-2">
                 <button
                   className="px-4 py-2 bg-gray-200 rounded-md text-sm text-gray-800 hover:bg-gray-300"
-                  onClick={() => setEditDialog({ open: false, type: "", level: "", percentage: "", notes: "" })}
+                  onClick={() => setEditDialog({ open: false, type: "", level: "", percentage: "", notes: "", money: "", currency: "" })}
                 >
                   Cancel
                 </button>
