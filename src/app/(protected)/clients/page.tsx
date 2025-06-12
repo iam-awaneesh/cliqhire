@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/table";
 import { Plus, RefreshCcw, SlidersHorizontal, MoreVertical } from "lucide-react";
 import { CreateClientModal } from "@/components/create-client-modal";
-import { getClients, updateClientStage } from "@/services/clientService";
+import { getClients, updateClientStage, ClientResponse } from "@/services/clientService";
 import { ClientStageBadge } from "@/components/client-stage-badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -111,13 +111,13 @@ export default function ClientsPage() {
         
         if (response && response.clients && Array.isArray(response.clients)) {
           // Extract data from response
-          const apiClients = response.clients;
+          const apiClients: ClientResponse[] = response.clients;
           const total = apiClients.length;
           
           console.log(`Fetched ${total} clients from API`);
           
           // Map API clients to our format
-          const mappedClients = apiClients.map(client => ({
+          const mappedClients = apiClients.map((client: ClientResponse) => ({
             id: client._id,
             name: client.name || 'Unnamed Client',
             industry: client.industry || '',
@@ -165,7 +165,7 @@ export default function ClientsPage() {
       
       // Process the direct API response
       if (directResponse.data && directResponse.data.success) {
-        const apiClients = Array.isArray(directResponse.data.data) ? 
+        const apiClients: ClientResponse[] = Array.isArray(directResponse.data.data) ? 
           directResponse.data.data : 
           (directResponse.data.data && Array.isArray(directResponse.data.data.clients) ? 
             directResponse.data.data.clients : []);
@@ -173,7 +173,7 @@ export default function ClientsPage() {
         console.log(`Fetched ${apiClients.length} clients directly from API`);
         
         // Map API clients to our format
-        const mappedClients = apiClients.map(client => ({
+        const mappedClients = apiClients.map((client: ClientResponse) => ({
           id: client._id,
           name: client.name || 'Unnamed Client',
           industry: client.industry || '',
@@ -403,14 +403,13 @@ export default function ClientsPage() {
 
     setIsUpdating(true);
     setError(null);
-    
+    let isSuccess = false;
+
     try {
       console.log('Updating client stage:', pendingChange.clientId, 'to', pendingChange.stage);
-      
-      // Update the client stage in the database
+
       const updatedClient = await updateClientStage(pendingChange.clientId, pendingChange.stage);
-      
-      // Update the UI with the updated client data
+
       setClients(prevClients =>
         prevClients.map(client =>
           client.id === pendingChange.clientId
@@ -418,20 +417,17 @@ export default function ClientsPage() {
             : client
         )
       );
-      
+
       console.log('Stage update successful for client:', pendingChange.clientId);
-      
-      // Close the dialog on success
+
+      isSuccess = true;
       setShowConfirmDialog(false);
     } catch (error: any) {
       console.error('Error updating client stage:', error);
-      // Set the error message to be displayed in the dialog
       setError(error.message || 'Failed to update client stage. Please try again.');
-      return; // Don't close the dialog on error
     } finally {
       setIsUpdating(false);
-      // Only clear pending change if there was no error
-      if (!error) {
+      if (isSuccess) {
         setPendingChange(null);
       }
     }
@@ -562,7 +558,7 @@ export default function ClientsPage() {
                     Client Stage
                   </TableHead>
                   <TableHead className="text-xs uppercase text-muted-foreground font-medium">
-                    Client Rm
+                    Sales RM
                   </TableHead>
                   <TableHead className="text-xs uppercase text-muted-foreground font-medium">
                     Client Team

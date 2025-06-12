@@ -31,7 +31,9 @@ import { INDUSTRIES } from "@/lib/constants";
 
 // Interfaces
 interface PrimaryContact {
-  name: string;
+  firstName: string;
+  lastName: string;
+  gender: string;
   email: string;
   phone: string;
   countryCode: string;
@@ -192,7 +194,9 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
   const [currentTab, setCurrentTab] = useState(0);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [newContact, setNewContact] = useState<PrimaryContact>({
-    name: "",
+    firstName: "",
+    lastName: "",
+    gender: "",
     email: "",
     phone: "",
     countryCode: "+966",
@@ -419,8 +423,8 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
   };
 
   const handleAddContact = (contact: PrimaryContact) => {
-    if (!contact.name || contact.name.trim() === "") {
-      setError("Contact name is required");
+    if (!contact.firstName || contact.firstName.trim() === "") {
+      setError("Contact first name is required");
       return;
     }
     if (contact.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email)) {
@@ -440,7 +444,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
       ...prev,
       primaryContacts: [...prev.primaryContacts, { ...contact }],
     }));
-    setNewContact({ name: "", email: "", phone: "", countryCode: "+966", designation: "", linkedin: "", isPrimary: true });
+    setNewContact({ firstName: "", lastName: "", gender: "", email: "", phone: "", countryCode: "+966", designation: "", linkedin: "", isPrimary: true });
     setIsContactModalOpen(false);
     setError(null);
   };
@@ -593,7 +597,7 @@ formDataToSend.append('name', formData.name.trim());
       // Handle primaryContacts array
       if (formData.primaryContacts && formData.primaryContacts.length > 0) {
         formDataToSend.append('primaryContacts', JSON.stringify(formData.primaryContacts.map(contact => ({
-          name: contact.name,
+          name: `${contact.firstName || ''} ${contact.lastName || ''}`.trim(),
           email: contact.email,
           phone: contact.phone,
           countryCode: contact.countryCode,
@@ -805,7 +809,7 @@ formDataToSend.append('name', formData.name.trim());
         nonExecutives: null,
         other: null,
       });
-      setNewContact({ name: "", email: "", phone: "", countryCode: "+966", designation: "", linkedin: "", isPrimary: true });
+      setNewContact({ firstName: "", lastName: "", gender: "", email: "", phone: "", countryCode: "+966", designation: "", linkedin: "", isPrimary: true });
       setCurrentTab(0);
       setIsContactModalOpen(false);
       setSelectedLevels([]);
@@ -1109,7 +1113,9 @@ formDataToSend.append('name', formData.name.trim());
                       size="sm"
                       onClick={() => {
                         setNewContact({
-                          name: "",
+                          firstName: "",
+                          lastName: "",
+                          gender: "",
                           email: "",
                           phone: "",
                           countryCode: "+966",
@@ -1134,7 +1140,7 @@ formDataToSend.append('name', formData.name.trim());
                       {formData.primaryContacts.map((contact, index) => (
                         <div key={index} className="p-3 bg-muted/30 rounded-lg">
                           <div className="block space-y-1">
-                            <div className="font-medium">{contact.name || "Unnamed Contact"}</div>
+                            <div className="font-medium">{contact.firstName} {contact.lastName}</div>
                             <div className="text-xs sm:text-sm text-muted-foreground">
                               {contact.designation || "No designation"}
                             </div>
@@ -1926,17 +1932,28 @@ formDataToSend.append('name', formData.name.trim());
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">First Name *</Label>
+                    <Input id="firstName" value={newContact.firstName} onChange={(e) => setNewContact({ ...newContact, firstName: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Last Name</Label>
+                    <Input id="lastName" value={newContact.lastName} onChange={(e) => setNewContact({ ...newContact, lastName: e.target.value })} />
+                  </div>
+                </div>
                 <div className="space-y-2">
-                  <Label htmlFor="contactName" className="text-sm sm:text-base">
-                    Name *
-                  </Label>
-                  <Input
-                    id="contactName"
-                    value={newContact.name}
-                    onChange={(e) => setNewContact((prev) => ({ ...prev, name: e.target.value }))}
-                    required
-                    className="w-full"
-                  />
+                  <Label htmlFor="gender">Gender</Label>
+                  <Select onValueChange={(value) => setNewContact({ ...newContact, gender: value })} value={newContact.gender}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Male">Male</SelectItem>
+                      <SelectItem value="Female">Female</SelectItem>
+                      <SelectItem value="Any">Any</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="contactEmail" className="text-sm sm:text-base">
@@ -2017,7 +2034,9 @@ formDataToSend.append('name', formData.name.trim());
                   variant="outline"
                   onClick={() => {
                     setNewContact({
-                      name: "",
+                      firstName: "",
+                      lastName: "",
+                      gender: "",
                       email: "",
                       phone: "",
                       countryCode: "+966",

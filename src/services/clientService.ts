@@ -72,6 +72,7 @@ export interface ClientResponse {
   salesLead?: string;
   createdAt: string;
   updatedAt?: string;
+  __v?: number;
   error?: string;
   labelType?: {
     seniorLevel?: string;
@@ -535,19 +536,19 @@ const getClientById = async (id: string): Promise<ClientResponse> => {
 const updateClient = async (
   id: string,
   rawData: Omit<ClientResponse, "_id" | "createdAt" | "updatedAt"> & {
-    profileImage?: File | null;
-    crCopy?: File | null;
-    vatCopy?: File | null;
-    gstTinDocument?: File | null;
-    fixedPercentage?: File | null;
-    fixedPercentageAdvance?: File | null;
-    variablePercentageCLevel?: File | null;
-    variablePercentageBelowCLevel?: File | null;
-    fixWithoutAdvance?: File | null;
-    seniorLevel?: File | null;
-    executives?: File | null;
-    nonExecutives?: File | null;
-    other?: File | null;
+    profileImage?: File | string | null;
+    crCopy?: File | string | null;
+    vatCopy?: File | string | null;
+    gstTinDocument?: File | string | null;
+    fixedPercentage?: File | string | null;
+    fixedPercentageAdvance?: File | string | null;
+    variablePercentageCLevel?: File | string | null;
+    variablePercentageBelowCLevel?: File | string | null;
+    fixWithoutAdvance?: File | string | null;
+    seniorLevel?: File | string | null;
+    executives?: File | string | null;
+    nonExecutives?: File | string | null;
+    other?: File | string | null;
   }
 ): Promise<ClientResponse> => {
   try {
@@ -556,9 +557,36 @@ const updateClient = async (
       'put',
       rawData
     );
-    return response.data.data;
+    return response.data.client;
   } catch (error: any) {
     throw handleError(error);
+  }
+};
+
+// Update client stage
+const updateClientStage = async (
+  id: string,
+  stage: "Lead" | "Engaged" | "Negotiation" | "Signed"
+): Promise<ClientResponse> => {
+  try {
+    // Fetch the full client data to avoid backend issues with partial updates.
+    const currentClient = await getClientById(id);
+
+    const dataToUpdate = {
+      ...currentClient,
+      clientStage: stage,
+    };
+
+    // Remove fields that should not be sent in an update payload.
+    const { _id, createdAt, updatedAt, __v, ...updatePayload } = dataToUpdate;
+
+    // Call the main updateClient function to reuse its logic, including validation.
+    return await updateClient(id, updatePayload);
+
+  } catch (error: any) {
+    console.error("Error updating client stage:", error);
+    // The error is already handled by `updateClient`, so we just re-throw it.
+    throw error;
   }
 };
 
@@ -623,62 +651,6 @@ const addPrimaryContact = async (
     return response.data.data;
   } catch (error: any) {
     throw handleError(error);
-  }
-};
-
-// Update client stage
-const updateClientStage = async (id: string, stage: "Lead" | "Engaged" | "Negotiation" | "Signed"): Promise<ClientResponse> => {
-  try {
-    // First, get the current client data
-    const currentClient = await getClientById(id);
-    
-    // Update only the clientStage field
-    const updatedClient = {
-      ...currentClient,
-      clientStage: stage,
-      updatedAt: new Date().toISOString()
-    };
-    
-    // Use the main update endpoint with PUT method
-    const response = await axios.put<ApiResponse<ClientResponse>>(
-      `${API_URL}/clients/${id}`,
-      updatedClient,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        timeout: 10000
-      }
-    );
-    
-    // If the API returns a success flag, check it
-    if (response.data.success === false) {
-      throw new Error(response.data.error || 'Failed to update client stage');
-    }
-    
-    return response.data.data;
-  } catch (error: any) {
-    let errorMessage = 'Failed to update client stage. Please try again.';
-    
-    if (error.response) {
-      // Server responded with a status code outside 2xx
-      const { data, status } = error.response;
-      
-      if (status === 404) {
-        errorMessage = 'Client not found. Please refresh the page and try again.';
-      } else {
-        errorMessage = data?.error || data?.message || errorMessage;
-      }
-    } else if (error.request) {
-      // Request was made but no response received
-      errorMessage = 'No response from server. Please check your connection.';
-    } else if (error.message) {
-      // Something happened in setting up the request
-      errorMessage = error.message;
-    }
-    
-    console.error('Client stage update error:', error);
-    throw new Error(errorMessage);
   }
 };
 
