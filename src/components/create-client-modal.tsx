@@ -88,6 +88,8 @@ interface ClientForm {
   nonExecutivesNotes?: string;
   otherNotes?: string;
   salesLead?: string;
+  clientPriority?: number;
+  clientSegment?: string;
   // File upload fields
   crCopy?: any;
   vatCopy?: any;
@@ -607,6 +609,14 @@ formDataToSend.append('name', formData.name.trim());
       if (formData.salesLead) {
         formDataToSend.append('salesLead', formData.salesLead);
       }
+
+      if (formData.clientPriority) {
+        formDataToSend.append('clientPriority', formData.clientPriority.toString());
+      }
+
+      if (formData.clientSegment) {
+        formDataToSend.append('clientSegment', formData.clientSegment);
+      }
       
       if (formData.contractStartDate) {
         // Format date as YYYY-MM-DD without timezone conversion
@@ -776,6 +786,8 @@ formDataToSend.append('name', formData.name.trim());
         nonExecutivesNotes: "",
         otherNotes: "",
         salesLead: "",
+        clientPriority: 1,
+        clientSegment: "",
       });
       setEmailInput("");
       setUploadedFiles({
@@ -864,6 +876,52 @@ formDataToSend.append('name', formData.name.trim());
                     <SelectItem value="rocky">Rocky</SelectItem>
                     <SelectItem value="hamed">Hamed</SelectItem>
                     <SelectItem value="abhay">Abhay</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="clientPriority" className="text-sm sm:text-base">Client Priority</Label>
+                <Select
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({ ...prev, clientPriority: parseInt(value, 10) }))
+                  }
+                  value={formData.clientPriority?.toString()}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select priority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>Priority</SelectLabel>
+                      <SelectItem value="1">1</SelectItem>
+                      <SelectItem value="2">2</SelectItem>
+                      <SelectItem value="3">3</SelectItem>
+                      <SelectItem value="4">4</SelectItem>
+                      <SelectItem value="5">5</SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="clientSegment" className="text-sm sm:text-base">Client Segment</Label>
+                <Select
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({ ...prev, clientSegment: value }))
+                  }
+                  value={formData.clientSegment}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select segment" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>Segment</SelectLabel>
+                      <SelectItem value="A">A</SelectItem>
+                      <SelectItem value="B">B</SelectItem>
+                      <SelectItem value="C">C</SelectItem>
+                    </SelectGroup>
                   </SelectContent>
                 </Select>
               </div>
