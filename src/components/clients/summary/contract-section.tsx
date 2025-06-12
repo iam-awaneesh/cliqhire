@@ -17,6 +17,8 @@ import {
 interface ContractTypeDetail {
   percentage: string;
   notes: string;
+  money?: string;
+  currency?: string;
 }
 
 interface ContractDetailsState {
@@ -43,7 +45,7 @@ interface ContractSectionProps {
 
 export function ContractSection({ clientId, clientData }: ContractSectionProps) {
   const levelOptions = ["Senior Level", "Executives", "Non-Executives", "Other"];
-  const contractTypes = ["Fix with Advance", "Fix without Advance", "Level Based (Hiring)"];
+  const contractTypes = ["Fix with Advance", "Fix without Advance", "Level Based (Hiring)", "Level Based With Advance"];
   const lineOfBusinessOptions = ["Recruitment", "HR Consulting", "Mgt Consulting", "Outsourcing", "HR Managed Services", "IT & Technology"];
   const [contract, setContract] = useState<ContractResponse | null>(null);
   const [contractDetails, setContractDetails] = useState<ContractDetailsState>({
@@ -62,7 +64,7 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
   const [isLevelDropdownOpen, setIsLevelDropdownOpen] = useState(false);
   const [isLineOfBusinessDropdownOpen, setIsLineOfBusinessDropdownOpen] = useState(false);
   const [tempLineOfBusiness, setTempLineOfBusiness] = useState<string[]>([]);
-  const [editDialog, setEditDialog] = useState({ open: false, type: "", level: "", percentage: "", notes: "" });
+  const [editDialog, setEditDialog] = useState({ open: false, type: "", level: "", percentage: "", notes: "", money: "", currency: "" });
   const [editingLevel, setEditingLevel] = useState<string | null>(null);
   const [isEditingContractType, setIsEditingContractType] = useState(false);
   const [status, setStatus] = useState<{ loading: boolean; error: string | null }>({ loading: false, error: null });
@@ -110,12 +112,7 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
       const contractTypeDetails: Record<string, ContractTypeDetail> = {};
       let selectedLevels: string[] = [];
 
-      if (contractType === "Fixed Percentage") {
-        contractTypeDetails[contractType] = {
-          percentage: client.fixedPercentageValue?.toString() || "",
-          notes: client.fixedPercentageNotes || "",
-        };
-      } else if (contractType === "Fix with Advance") {
+      if (contractType === "Fix with Advance") {
         contractTypeDetails[contractType] = {
           percentage: client.fixWithAdvanceValue?.toString() || "",
           notes: client.fixedPercentageAdvanceNotes || "",
@@ -125,20 +122,26 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
           percentage: client.fixWithoutAdvanceValue?.toString() || "",
           notes: client.fixWithoutAdvanceNotes || "",
         };
-      } else if (contractType === "Level Based (Hiring)") {
+      } else if (["Level Based (Hiring)", "Level Based With Advance"].includes(contractType)) {
         const levelsData: Record<string, ContractTypeDetail> = {};
         const activeLevels: string[] = [];
-        const processLevel = (level: string, percentage: any, notes: any) => {
-          if (percentage != null || notes) {
-            const percentageStr = percentage != null ? String(percentage) : "";
-            levelsData[level] = { percentage: percentageStr, notes: String(notes || "") };
+        levelOptions.forEach(level => {
+          const fieldMap = levelFieldMap[level];
+          const percentage = client[fieldMap.percentage as keyof typeof client];
+          const notes = client[fieldMap.notes as keyof typeof client];
+          const money = client[fieldMap.money as keyof typeof client];
+          const currency = client[fieldMap.currency as keyof typeof client];
+
+          if (percentage != null || notes != null || (contractType === "Level Based With Advance" && (money != null || currency != null))) {
+            levelsData[level] = {
+              percentage: percentage != null ? String(percentage) : "",
+              notes: notes != null ? String(notes) : "",
+              money: money != null ? String(money) : "",
+              currency: currency != null ? String(currency) : "",
+            };
             activeLevels.push(level);
           }
-        };
-        processLevel("Senior Level", client.seniorLevelPercentage, client.seniorLevelNotes);
-        processLevel("Executives", client.executivesPercentage, client.executivesNotes);
-        processLevel("Non-Executives", client.nonExecutivesPercentage, client.nonExecutivesNotes);
-        processLevel("Other", client.otherPercentage, client.otherNotes);
+        });
         Object.assign(contractTypeDetails, levelsData);
         selectedLevels = activeLevels.sort((a, b) => levelOptions.indexOf(a) - levelOptions.indexOf(b));
       }
@@ -336,8 +339,8 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
       try {
         updateContractDetails({
           contractType: type,
-          selectedLevels: type === "Level Based (Hiring)" ? contractDetails.selectedLevels : [],
-          contractTypeDetails: type === "Level Based (Hiring)" ? contractDetails.contractTypeDetails : {},
+          selectedLevels: ["Level Based (Hiring)", "Level Based With Advance"].includes(type) ? contractDetails.selectedLevels : [],
+          contractTypeDetails: ["Level Based (Hiring)", "Level Based With Advance"].includes(type) ? contractDetails.contractTypeDetails : {},
         });
         const updatedClient = await patchClientData("contractType", type);
         setContract((prev) => ({
@@ -420,49 +423,12 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
     }
   }, []);
 
-  const levelFieldMap: Record<string, { percentage: string; notes: string }> = {
-    "Senior Level": { percentage: "seniorLevelPercentage", notes: "seniorLevelNotes" },
-    "Executives": { percentage: "executivesPercentage", notes: "executivesNotes" },
-    "Non-Executives": { percentage: "nonExecutivesPercentage", notes: "nonExecutivesNotes" },
-    "Other": { percentage: "otherPercentage", notes: "otherNotes" },
+  const levelFieldMap: Record<string, { percentage: string; notes: string; money: string; currency: string; }> = {
+    "Senior Level": { percentage: "seniorLevelPercentage", notes: "seniorLevelNotes", money: "seniorLevelMoney", currency: "seniorLevelCurrency" },
+    "Executives": { percentage: "executivesPercentage", notes: "executivesNotes", money: "executivesMoney", currency: "executivesCurrency" },
+    "Non-Executives": { percentage: "nonExecutivesPercentage", notes: "nonExecutivesNotes", money: "nonExecutivesMoney", currency: "nonExecutivesCurrency" },
+    "Other": { percentage: "otherPercentage", notes: "otherNotes", money: "otherMoney", currency: "otherCurrency" },
   };
-
-  const saveEdit = useCallback(
-    async (type: "level" | "contractType", level?: string) => {
-      try {
-        const newDetails = { ...contractDetails.contractTypeDetails };
-        if (type === "level" && level) {
-          const { percentage, notes } = newDetails[level] || {};
-          const percentageField = levelFieldMap[level]?.percentage;
-          const notesField = levelFieldMap[level]?.notes;
-          if (percentageField && notesField) {
-            await patchClientDataBulk({
-              [percentageField]: Number(percentage) || 0,
-              [notesField]: notes || "",
-            });
-          }
-        } else {
-          const key = contractDetails.contractType;
-          if (key === "Fixed Percentage") {
-            await patchClientData("fixedPercentageValue", newDetails[key]?.percentage || "");
-            await patchClientData("fixedPercentageNotes", newDetails[key]?.notes || "");
-          } else if (key === "Fix with Advance") {
-            await patchClientData("fixWithAdvanceValue", newDetails[key]?.percentage || "");
-            await patchClientData("fixedPercentageAdvanceNotes", newDetails[key]?.notes || "");
-          } else if (key === "Fix without Advance") {
-            await patchClientData("fixWithoutAdvanceValue", newDetails[key]?.percentage || "");
-            await patchClientData("fixWithoutAdvanceNotes", newDetails[key]?.notes || "");
-          }
-        }
-        localStorage.setItem("contractUpdate", JSON.stringify({ clientId, timestamp: Date.now(), updatedField: type === "level" && level ? level : "contractType" }));
-        setEditingLevel(null);
-        await fetchContractData();
-      } catch (error) {
-        setStatus((prev) => ({ ...prev, error: "Failed to save changes" }));
-      }
-    },
-    [clientId, contractDetails.contractType, contractDetails.contractTypeDetails, patchClientData, fetchContractData]
-  );
 
   const patchClientDataBulk = useCallback(
     async (fields: Record<string, any>) => {
@@ -489,6 +455,47 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
     [clientId, contractDetails.clientName]
   );
 
+  const saveEdit = useCallback(
+    async (type: "level" | "contractType", level?: string) => {
+      try {
+        const newDetails = { ...contractDetails.contractTypeDetails };
+        if (type === "level" && level) {
+          const { percentage, notes, money, currency } = newDetails[level] || {};
+          const fieldsToUpdate: Record<string, any> = {};
+          const fieldMap = levelFieldMap[level];
+
+          if (fieldMap) {
+            fieldsToUpdate[fieldMap.percentage] = Number(percentage) || 0;
+            fieldsToUpdate[fieldMap.notes] = notes || "";
+            if (contractDetails.contractType === "Level Based With Advance") {
+              fieldsToUpdate[fieldMap.money] = Number(money) || 0;
+              fieldsToUpdate[fieldMap.currency] = currency || "";
+            }
+          }
+          
+          if (Object.keys(fieldsToUpdate).length > 0) {
+            await patchClientDataBulk(fieldsToUpdate);
+          }
+        } else {
+          const key = contractDetails.contractType;
+          if (key === "Fix with Advance") {
+            await patchClientData("fixWithAdvanceValue", newDetails[key]?.percentage || "");
+            await patchClientData("fixedPercentageAdvanceNotes", newDetails[key]?.notes || "");
+          } else if (key === "Fix without Advance") {
+            await patchClientData("fixWithoutAdvanceValue", newDetails[key]?.percentage || "");
+            await patchClientData("fixWithoutAdvanceNotes", newDetails[key]?.notes || "");
+          }
+        }
+        localStorage.setItem("contractUpdate", JSON.stringify({ clientId, timestamp: Date.now(), updatedField: type === "level" && level ? level : "contractType" }));
+        setEditingLevel(null);
+        await fetchContractData();
+      } catch (error) {
+        setStatus((prev) => ({ ...prev, error: "Failed to save changes" }));
+      }
+    },
+    [clientId, contractDetails, patchClientDataBulk, fetchContractData, patchClientData]
+  );
+
   const cancelEdit = useCallback(
     (type: "level" | "contractType", level?: string) => {
       setEditingLevel(null);
@@ -510,23 +517,34 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
         level: level || "",
         percentage: level ? contractDetails.contractTypeDetails[level]?.percentage || "" : contractDetails.contractTypeDetails[type]?.percentage || "",
         notes: level ? contractDetails.contractTypeDetails[level]?.notes || "" : contractDetails.contractTypeDetails[type]?.notes || "",
+        money: level ? contractDetails.contractTypeDetails[level]?.money || "" : contractDetails.contractTypeDetails[type]?.money || "",
+        currency: level ? contractDetails.contractTypeDetails[level]?.currency || "" : contractDetails.contractTypeDetails[type]?.currency || "",
       });
     },
     [contractDetails]
   );
 
+  const updateLevelDetail = (level: string, field: keyof ContractTypeDetail, value: string) => {
+    updateContractDetails({
+      contractTypeDetails: {
+        ...contractDetails.contractTypeDetails,
+        [level]: {
+          ...contractDetails.contractTypeDetails[level],
+          [field]: value,
+        },
+      },
+    });
+  };
+
   const saveEditDialog = useCallback(
     async () => {
       try {
-        const { type, level, percentage, notes } = editDialog;
+        const { type, level, percentage, notes, money, currency } = editDialog;
         const key = level || type;
-        const newDetails = { ...contractDetails.contractTypeDetails, [key]: { percentage, notes } };
+        const newDetails = { ...contractDetails.contractTypeDetails, [key]: { percentage, notes, money, currency } };
         updateContractDetails({ contractTypeDetails: newDetails });
 
-        if (contractDetails.contractType === "Fixed Percentage") {
-          await patchClientData("fixedPercentageValue", percentage);
-          await patchClientData("fixedPercentageNotes", notes);
-        } else if (contractDetails.contractType === "Fix with Advance") {
+        if (contractDetails.contractType === "Fix with Advance") {
           await patchClientData("fixWithAdvanceValue", percentage);
           await patchClientData("fixedPercentageAdvanceNotes", notes);
         } else if (contractDetails.contractType === "Fix without Advance") {
@@ -535,16 +553,20 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
         } else if (level) {
           const percentageField = levelFieldMap[level]?.percentage;
           const notesField = levelFieldMap[level]?.notes;
-          if (percentageField && notesField) {
+          const moneyField = levelFieldMap[level]?.money;
+          const currencyField = levelFieldMap[level]?.currency;
+          if (percentageField && notesField && moneyField && currencyField) {
             await patchClientDataBulk({
               [percentageField]: Number(percentage) || 0,
               [notesField]: notes || "",
+              [moneyField]: Number(money) || 0,
+              [currencyField]: currency || "",
             });
           }
         }
         await fetchContractData();
         localStorage.setItem("contractUpdate", JSON.stringify({ clientId, timestamp: Date.now(), updatedField: level || type }));
-        setEditDialog({ open: false, type: "", level: "", percentage: "", notes: "" });
+        setEditDialog({ open: false, type: "", level: "", percentage: "", notes: "", money: "", currency: "" });
       } catch (error) {
         setStatus((prev) => ({ ...prev, error: "Failed to save contract details" }));
       }
@@ -616,7 +638,7 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
             </button>
           </div>
         </div>
-        {contractDetails.contractType && contractDetails.contractType !== "Level Based (Hiring)" && (
+        {contractDetails.contractType && !["Level Based (Hiring)", "Level Based With Advance"].includes(contractDetails.contractType) && (
           <div className="ml-8 flex items-center space-x-4">
             <label className="w-1/3 text-sm font-medium text-gray-600">{contractDetails.contractType}</label>
             <div className="w-2/3 flex items-center space-x-2">
@@ -669,6 +691,7 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
                 }`}
                 placeholder="Notes"
               />
+
               <div className="flex space-x-1">
                 {editingLevel === "contractType" ? (
                   <>
@@ -709,7 +732,7 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
             </div>
           </div>
         )}
-        {contractDetails.contractType === "Level Based (Hiring)" && (
+        {["Level Based (Hiring)", "Level Based With Advance"].includes(contractDetails.contractType) && (
           <div className="ml-8 space-y-4">
             <div className="flex items-center space-x-4">
               <label className="w-1/4 text-sm font-medium text-gray-600">Levels</label>
@@ -748,75 +771,84 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
                 )}
               </div>
             </div>
-            {contractDetails.selectedLevels.map((level) => (
-              <div key={level} className="ml-4 flex items-center space-x-4">
-                <label className="w-1/4 text-sm font-medium text-gray-600">{level}</label>
-                <div className="w-3/4 flex items-center space-x-2">
-                  <div className="relative w-1/3">
+            {contractDetails.selectedLevels.map((level) => {
+              const details = contractDetails.contractTypeDetails[level] || {};
+              const isEditing = editingLevel === level;
+              return (
+                <div key={level} className="grid grid-cols-12 gap-2 items-center p-2 rounded-md hover:bg-gray-50">
+                  <label className="col-span-2 text-sm font-medium text-gray-800 truncate">{level}</label>
+                  {/* Percentage */}
+                  <div className="col-span-2 relative">
                     <input
                       type="number"
-                      value={contractDetails.contractTypeDetails[level]?.percentage || ""}
-                      onChange={(e) =>
-                        updateContractDetails({
-                          contractTypeDetails: {
-                            ...contractDetails.contractTypeDetails,
-                            [level]: { ...contractDetails.contractTypeDetails[level], percentage: e.target.value },
-                          },
-                        })
-                      }
-                      readOnly={editingLevel !== level}
-                      className={`w-full border rounded-md p-2 text-sm pr-6 ${
-                        editingLevel === level
-                          ? "focus:ring-2 focus:ring-blue-500 bg-white"
-                          : "bg-gray-50 cursor-not-allowed"
-                      }`}
+                      value={details.percentage}
+                      onChange={(e) => updateLevelDetail(level, "percentage", e.target.value)}
+                      readOnly={!isEditing}
+                      className={`w-full border rounded-md p-2 text-sm pr-6 ${isEditing ? "bg-white focus:ring-2 focus:ring-blue-500" : "bg-gray-100"}`}
+                      placeholder="0"
                       min="0"
                       max="100"
-                      placeholder="0"
                     />
                     <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-gray-500">%</span>
                   </div>
-                  <input
-                    type="text"
-                    value={contractDetails.contractTypeDetails[level]?.notes || ""}
-                    onChange={(e) =>
-                      updateContractDetails({
-                        contractTypeDetails: {
-                          ...contractDetails.contractTypeDetails,
-                          [level]: { ...contractDetails.contractTypeDetails[level], notes: e.target.value },
-                        },
-                      })
-                    }
-                    readOnly={editingLevel !== level}
-                    className={`w-2/3 border rounded-md p-2 text-sm ${
-                      editingLevel === level
-                        ? "focus:ring-2 focus:ring-blue-500 bg-white"
-                        : "bg-gray-50 cursor-not-allowed"
-                    }`}
-                    placeholder="Notes"
-                  />
-                  <div className="flex space-x-1">
-                    {editingLevel === level ? (
+
+                  {/* Currency & Money (only for Level Based With Advance) */}
+                  {contractDetails.contractType === "Level Based With Advance" ? (
+                    <>
+                      <div className="col-span-2">
+                        <select
+                          value={details.currency || "USD"}
+                          onChange={(e) => updateLevelDetail(level, "currency", e.target.value)}
+                          disabled={!isEditing}
+                          className={`w-full border rounded-md p-2 text-sm ${isEditing ? "bg-white focus:ring-2 focus:ring-blue-500" : "bg-gray-100"}`}
+                        >
+                          {["USD", "EUR", "GBP", "SAR", "AED", "INR"].map(c => <option key={c} value={c}>{c}</option>)}
+                        </select>
+                      </div>
+                      <div className="col-span-2">
+                        <input
+                          type="number"
+                          value={details.money}
+                          onChange={(e) => updateLevelDetail(level, "money", e.target.value)}
+                          readOnly={!isEditing}
+                          className={`w-full border rounded-md p-2 text-sm ${isEditing ? "bg-white focus:ring-2 focus:ring-blue-500" : "bg-gray-100"}`}
+                          placeholder="Amount"
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <><div className="col-span-2"></div><div className="col-span-2"></div></>)
+                  }
+
+                  {/* Notes */}
+                  <div className="col-span-3 min-w-0">
+                    <input
+                      type="text"
+                      value={details.notes}
+                      onChange={(e) => updateLevelDetail(level, "notes", e.target.value)}
+                      readOnly={!isEditing}
+                      className={`w-full border rounded-md p-2 text-sm min-w-0 truncate ${isEditing ? "bg-white focus:ring-2 focus:ring-blue-500" : "bg-gray-100"}`}
+                      placeholder="Notes"
+                    />
+                  </div>
+
+                  {/* Actions */}
+                  <div className="col-span-1 flex space-x-1 justify-end">
+                    {isEditing ? (
                       <>
                         <button
                           className="p-2 border rounded-md hover:bg-green-50 group relative"
                           onClick={() => saveEdit("level", level)}
-                          aria-label={`Save ${level} Details`}
+                          aria-label="Save Changes"
                         >
                           <Check className="h-4 w-4 text-green-600" />
-                          <span className="absolute hidden group-hover:block text-xs bg-gray-800 text-white rounded p-1 -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                            Save Changes
-                          </span>
                         </button>
                         <button
                           className="p-2 border rounded-md hover:bg-gray-100 group relative"
                           onClick={() => cancelEdit("level", level)}
-                          aria-label={`Cancel Edit`}
+                          aria-label="Cancel Edit"
                         >
                           <X className="h-4 w-4" />
-                          <span className="absolute hidden group-hover:block text-xs bg-gray-800 text-white rounded p-1 -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                            Cancel
-                          </span>
                         </button>
                       </>
                     ) : (
@@ -845,23 +877,30 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
                     )}
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
         <div className="flex items-center space-x-4 py-2 border-t border-gray-200">
           <label className="w-1/4 text-sm font-medium text-gray-600">Line of Business</label>
           <div className="relative w-3/4 flex space-x-2">
             <div className="flex-1 relative">
-              <div
+              <button
                 className="w-full bg-gray-100 border rounded-md p-2 text-sm text-gray-800 flex justify-between items-center"
+                onClick={() => {
+                  if (!isLineOfBusinessDropdownOpen) {
+                    setTempLineOfBusiness([...contractDetails.lineOfBusiness]);
+                  }
+                  setIsLineOfBusinessDropdownOpen(!isLineOfBusinessDropdownOpen);
+                }}
               >
                 <span className="truncate pr-8">
                   {contractDetails.lineOfBusiness.length > 0
                     ? contractDetails.lineOfBusiness.join(", ")
                     : "Select Line of Business"}
                 </span>
-              </div>
+                {isLineOfBusinessDropdownOpen ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
+              </button>
               {isLineOfBusinessDropdownOpen && (
                 <div className="absolute z-20 w-full bg-white border rounded-md mt-1 shadow-lg">
                   {lineOfBusinessOptions.map((option) => (
@@ -885,16 +924,6 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
                 </div>
               )}
             </div>
-            <button
-              className="p-2 border rounded-md hover:bg-gray-100 group relative"
-              onClick={openLineOfBusinessDropdown}
-              aria-label="Edit Line of Business"
-            >
-              <Pencil className="h-4 w-4" />
-              <span className="absolute hidden group-hover:block text-xs bg-gray-800 text-white rounded p-1 -top-8 left-1/2 -translate-x-1/2">
-                Edit
-              </span>
-            </button>
           </div>
         </div>
         <FileUploadRow
