@@ -41,6 +41,7 @@ interface ClientDetails {
   registrationNumber?: string;
   countryOfBusiness?: string;
   description?: string;
+  salesLead?: string;
   referredBy?: string;
   linkedInProfile?: string;
   clientLinkedInPage?: string;
@@ -163,6 +164,7 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
           registrationNumber: clientData.registrationNumber || "",
           countryOfBusiness: clientData.countryOfBusiness || "",
           description: clientData.description || "",
+          salesLead: clientData.salesLead || "",
           referredBy: clientData.referredBy || "",
           linkedInProfile: clientData.linkedInProfile || "",
           clientLinkedInPage: clientData.linkedInPage || clientData.clientLinkedInPage || "",
@@ -454,6 +456,11 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
                 </div>
               )}
             </div>
+            <DetailRow
+              label="Sales Lead"
+              value={clientDetails.salesLead}
+              onUpdate={handleUpdateField("salesLead")}
+            />
             <DetailRow
               label="Referred By"
               value={clientDetails.referredBy}
