@@ -250,7 +250,7 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
         formData.append("field", field);    // The field name (e.g., "vatCopy" or "crCopy")
 
         const response = await fetch(
-          `http://localhost:5000/api/clients/${clientId}/upload`,
+          `https://aems-backend.onrender.com/api/clients/${clientId}/upload`,
           {
             method: "POST",
             body: formData,
@@ -312,7 +312,7 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
 
   const handlePreviewFile = (fileName: string) => {
     if (fileName) {
-      const fileUrl = fileName.startsWith("http") ? fileName : `http://localhost:5000/${fileName}`;
+      const fileUrl = fileName.startsWith("http") ? fileName : `https://aems-backend.onrender.com/${fileName}`;
       window.open(fileUrl, "_blank");
     } else {
       console.log("No file to preview");
@@ -321,7 +321,7 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
 
   const handleDownloadFile = async (fileName: string) => {
     if (fileName) {
-      const fileUrl = fileName.startsWith("http") ? fileName : `http://localhost:5000/${fileName}`;
+      const fileUrl = fileName.startsWith("http") ? fileName : `https://aems-backend.onrender.com/${fileName}`;
       try {
         const response = await fetch(fileUrl);
         if (!response.ok) throw new Error('Network response was not ok.');

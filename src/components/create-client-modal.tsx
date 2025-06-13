@@ -130,7 +130,7 @@ interface LocationSuggestion {
 const createClient = async (data: FormData) => {
   try {
     const response = await axios.post(
-      "http://localhost:5000/api/clients",
+      "https://aems-backend.onrender.com/api/clients",
       data,
       {
         headers: {
@@ -825,13 +825,13 @@ formDataToSend.append('name', formData.name.trim());
         nonExecutives: null,
         other: null,
         seniorLevelMoney: null,
-        seniorLevelCurrency: "USD",
+        seniorLevelCurrency: null as File | null,
         executivesMoney: null,
-        executivesCurrency: "USD",
+        executivesCurrency: null as File | null,
         nonExecutivesMoney: null,
-        nonExecutivesCurrency: "USD",
+        nonExecutivesCurrency: null as File | null,
         otherMoney: null,
-        otherCurrency: "USD",
+        otherCurrency: null as File | null,
       });
       setNewContact({ firstName: "", lastName: "", gender: "", email: "", phone: "", countryCode: "+966", designation: "", linkedin: "", isPrimary: true });
       setCurrentTab(0);
