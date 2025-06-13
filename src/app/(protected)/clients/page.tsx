@@ -413,7 +413,7 @@ export default function ClientsPage() {
       setClients(prevClients =>
         prevClients.map(client =>
           client.id === pendingChange.clientId
-            ? { ...client, stage: updatedClient.clientStage || pendingChange.stage }
+            ? { ...client, stage: updatedClient?.clientStage || pendingChange.stage }
             : client
         )
       );

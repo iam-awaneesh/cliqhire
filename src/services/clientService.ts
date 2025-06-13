@@ -580,6 +580,14 @@ const updateClientStage = async (
     // Remove fields that should not be sent in an update payload.
     const { _id, createdAt, updatedAt, __v, ...updatePayload } = dataToUpdate;
 
+    // Manually remove file URL fields to prevent backend errors.
+    const fileFields = [
+      'profileImage', 'crCopy', 'vatCopy', 'gstTinDocument', 'fixedPercentage', 
+      'fixedPercentageAdvance', 'variablePercentageCLevel', 'variablePercentageBelowCLevel', 
+      'fixWithoutAdvance', 'seniorLevel', 'executives', 'nonExecutives', 'other'
+    ];
+    fileFields.forEach(field => delete (updatePayload as any)[field]);
+
     // Call the main updateClient function to reuse its logic, including validation.
     return await updateClient(id, updatePayload);
 
