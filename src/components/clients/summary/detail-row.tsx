@@ -44,7 +44,11 @@ export function DetailRow({
   const handleDateChange = (date: Date | null) => {
     setSelectedDate(date)
     if (date) {
-      onUpdate(date.toISOString())
+      // Create a new date in local timezone without time component
+      const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+      // Convert to ISO string and remove time component
+      const dateString = localDate.toISOString().split('T')[0]
+      onUpdate(dateString)
     }
     setShowDatePicker(false)
   }
@@ -52,8 +56,15 @@ export function DetailRow({
   const displayValue = () => {
     if (!value) return null
     if (isDate) {
-      const date = value instanceof Date ? value : new Date(value)
-      return date.toLocaleDateString()
+      try {
+        // Handle both string and Date objects, ensuring we don't show timezone-shifted dates
+        const date = value instanceof Date ? value : new Date(value)
+        // Format as YYYY-MM-DD to avoid timezone issues
+        return date.toISOString().split('T')[0]
+      } catch (e) {
+        console.error('Error formatting date:', e)
+        return 'Invalid date'
+      }
     }
     if (isNumber) {
       return `${value}${suffix || ''}`
@@ -126,9 +137,11 @@ export function DetailRow({
           open={isEditing}
           onClose={() => setIsEditing(false)}
           fieldName={label}
-          currentValue={value?.toString() || ""}
+          currentValue={typeof value === 'string' ? value : ''}
           onSave={onUpdate}
           isDate={isDate}
+          isNumber={isNumber}
+          options={options}
         />
       )}
     </div>

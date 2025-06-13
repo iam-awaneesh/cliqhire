@@ -171,36 +171,42 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
   const fileInputRef = React.useRef<HTMLInputElement | null>(null)
   const [isInputFocused, setIsInputFocused] = useState(false)
 
-  const fetchClients = async () => {
-    setIsLoadingClients(true)
-    setClientError(null)
-    try {
-      const clientNames = await getClientNames()
-      console.log('Raw client data from getClientNames:', clientNames)
-      
-      // Ensure clientNames is an array and transform to ClientData[]
-      const clientData: ClientData[] = Array.isArray(clientNames)
-        ? clientNames
-            .filter((item): item is string => typeof item === 'string')
-            .map((name, index) => ({
-              _id: `client-${index}`,
-              name,
-              jobCount: 0
-            }))
-        : []
-      
-      console.log('Transformed clients:', clientData)
-      setClients(clientData)
+const fetchClients = async () => {
+  setIsLoadingClients(true);
+  setClientError(null);
+  try {
+    // Get the client names from the API
+    const clientsFromApi = await getClientNames();
+    console.log('Raw client data from getClientNames:', clientsFromApi);
+
+    // Ensure the response is an array of strings
+    if (Array.isArray(clientsFromApi)) {
+      const clientData: ClientData[] = clientsFromApi
+        .filter((name): name is string => typeof name === 'string' && name.trim() !== '') // Filter out any non-string or empty values
+        .map((name, index) => ({
+          _id: name, // Use name as _id, as expected by backend
+          name,
+          jobCount: 0,
+        }));
+
+      setClients(clientData);
+
       if (clientData.length === 0) {
-        setClientError("No clients found in the database")
+        setClientError('No clients found in the database');
       }
-    } catch (error: any) {
-      console.error("Error fetching client names:", error.message)
-      setClientError(`Failed to load clients: ${error.message}`)
-    } finally {
-      setIsLoadingClients(false)
+    } else {
+      console.error('Received unexpected data format for clients:', clientsFromApi);
+      setClientError('Failed to load clients due to unexpected data format.');
+      setClients([]);
     }
+  } catch (error: any) {
+    console.error('Error fetching client names:', error.message);
+    setClientError(`Failed to load clients: ${error.message}`);
+    setClients([]);
+  } finally {
+    setIsLoadingClients(false);
   }
+};
 
   useEffect(() => {
     fetchClients()
@@ -270,9 +276,10 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
       setFormData(prev => ({
         ...prev,
         location: suggestion.display_name
-      }))
+      }));
+      setLocationInput(suggestion.display_name); // Update input field to show selected location
     }
-    setShowLocationSuggestions(false)
+    setShowLocationSuggestions(false);
   }
 
   const addLocation = () => {
@@ -397,54 +404,107 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
     return clientName.includes(searchClient.toLowerCase())
   })
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    try {
-      const numberOfPositions = parseInt(formData.numberOfPositions) || 1
-      const location = numberOfPositions > 1 ? formData.locations.join(", ") : formData.location
-      const jobData = {
-        jobTitle: formData.jobTitle,
-        department: "General",
-        client: formData.client,
-        jobPosition: [formData.jobTitle], // Convert to array
-        location: [],
-        headcount: numberOfPositions,
-        stage: formData.stage,
-        minimumSalary: parseInt(formData.salaryRange.min) || 0,
-        maximumSalary: parseInt(formData.salaryRange.max) || 0,
-        salaryCurrency: formData.salaryRange.currency,
-        jobType: formData.jobTypes,
-        experience: formData.experience,
-        jobDescription: formData.jobDescription,
-        nationalities: formData.nationalities,
-        salaryRange: {
-          min: parseInt(formData.salaryRange.min) || 0,
-          max: parseInt(formData.salaryRange.max) || 0,
-          currency: formData.salaryRange.currency
-        },
-        gender: formData.gender,
-        deadline: formData.deadline ? formData.deadline.toISOString() : "",
-        relationshipManager: formData.relationshipManager,
-        reportingTo: formData.reportingTo,
-        teamSize: formData.teamSize,
-        link: formData.link,
-        keySkills: formData.keySkills,
-        dateRange: {
-          start: formData.dateRange.start,
-          end: formData.dateRange.end
-        },
-        otherBenefits: formData.otherBenefits,
-        certifications: formData.certifications
-      }
+  // const handleSubmit = async (e: React.FormEvent) => {
+  //   e.preventDefault()
+  //   try {
+  //     const numberOfPositions = parseInt(formData.numberOfPositions) || 1
+  //     const location = numberOfPositions > 1 ? formData.locations.join(", ") : formData.location
+  //     const jobData = {
+  //       jobTitle: formData.jobTitle,
+  //       department: "General",
+  //       client: formData.client,
+  //       jobPosition: [formData.jobTitle], // Convert to array
+  //       location: location, // Use the calculated location string
+  //       headcount: numberOfPositions,
+  //       stage: formData.stage,
+  //       minimumSalary: parseInt(formData.salaryRange.min) || 0,
+  //       maximumSalary: parseInt(formData.salaryRange.max) || 0,
+  //       salaryCurrency: formData.salaryRange.currency,
+  //       jobType: formData.jobTypes,
+  //       experience: formData.experience,
+  //       jobDescription: formData.jobDescription,
+  //       nationalities: formData.nationalities,
+  //       salaryRange: {
+  //         min: parseInt(formData.salaryRange.min) || 0,
+  //         max: parseInt(formData.salaryRange.max) || 0,
+  //         currency: formData.salaryRange.currency
+  //       },
+  //       gender: formData.gender,
+  //       deadline: formData.deadline ? formData.deadline.toISOString() : "",
+  //       clientDeadline: formData.clientDeadline ? formData.clientDeadline.toISOString() : null,
+  //       internalDeadline: formData.internalDeadline ? formData.internalDeadline.toISOString() : null,
+  //       relationshipManager: formData.relationshipManager,
+  //       reportingTo: formData.reportingTo,
+  //       teamSize: formData.teamSize,
+  //       link: formData.link,
+  //       keySkills: formData.keySkills,
+  //       dateRange: {
+  //         start: formData.dateRange.start,
+  //         end: formData.dateRange.end
+  //       },
+  //       otherBenefits: formData.otherBenefits,
+  //       certifications: formData.certifications
+  //     }
 
-      const response = await createJob(jobData)
-      console.log("Job created successfully:", response)
-      setCurrentTab(0)
-      onOpenChange(false)
-    } catch (error: any) {
-      console.error("Error creating job:", error)
+  //     const response = await createJob(jobData)
+  //     console.log("Job created successfully:", response)
+  //     setCurrentTab(0)
+  //     onOpenChange(false)
+  //   } catch (error: any) {
+  //     console.error("Error creating job:", error)
+  //   }
+  // }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault()
+  try {
+    const numberOfPositions = parseInt(formData.numberOfPositions) || 1
+    const location = numberOfPositions > 1 ? formData.locations : [formData.location]
+    const jobData = {
+      jobTitle: formData.jobTitle,
+      department: "General",
+      client: formData.client,
+      jobPosition: [formData.jobTitle], // Convert to array
+      location: location, // Use the array of locations
+      headcount: numberOfPositions,
+      stage: formData.stage,
+      minimumSalary: parseInt(formData.salaryRange.min) || 0,
+      maximumSalary: parseInt(formData.salaryRange.max) || 0,
+      salaryCurrency: formData.salaryRange.currency,
+      jobType: formData.jobTypes,
+      experience: formData.experience,
+      jobDescription: formData.jobDescription,
+      nationalities: formData.nationalities,
+      salaryRange: {
+        min: parseInt(formData.salaryRange.min) || 0,
+        max: parseInt(formData.salaryRange.max) || 0,
+        currency: formData.salaryRange.currency
+      },
+      gender: formData.gender,
+      deadline: formData.deadline ? formData.deadline.toISOString() : "",
+      clientDeadline: formData.clientDeadline ? formData.clientDeadline.toISOString() : null,
+      internalDeadline: formData.internalDeadline ? formData.internalDeadline.toISOString() : null,
+      relationshipManager: formData.relationshipManager,
+      reportingTo: formData.reportingTo,
+      teamSize: formData.teamSize,
+      link: formData.link,
+      keySkills: formData.keySkills,
+      dateRange: {
+        start: formData.dateRange.start,
+        end: formData.dateRange.end
+      },
+      otherBenefits: formData.otherBenefits,
+      certifications: formData.certifications
     }
+
+    const response = await createJob(jobData)
+    console.log("Job created successfully:", response)
+    setCurrentTab(0)
+    onOpenChange(false)
+  } catch (error: any) {
+    console.error("Error creating job:", error)
   }
+}
 
   function handleRemoveFile(): void {
     setSelectedFile(null)
@@ -629,7 +689,7 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
                             <div
                               key={index}
                               className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                              onClick={() => handleLocationSelect(suggestion)}
+                              onMouseDown={() => handleLocationSelect(suggestion)}
                             >
                               {suggestion.display_name}
                             </div>
@@ -642,9 +702,26 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
                   <div className="relative">
                     <Input
                       id="location"
-                      value={formData.location}
-                      onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                      onFocus={() => setShowLocationSuggestions(true)}
+                      value={locationInput} // Bind to locationInput for live search
+                      onChange={(e) => {
+                        setLocationInput(e.target.value);
+                        // If user types, clear the official formData.location until a new suggestion is selected.
+                        if (formData.location && e.target.value !== formData.location) {
+                          setFormData(prev => ({ ...prev, location: "" }));
+                        }
+                      }}
+                      onFocus={() => {
+                        // If focusing and input is empty but a location was previously selected, populate input for editing.
+                        if (!locationInput && formData.location) {
+                          setLocationInput(formData.location);
+                        }
+                        setShowLocationSuggestions(true);
+                      }}
+                      onBlur={() => {
+                        // Hide suggestions after a delay to allow click.
+                        setTimeout(() => setShowLocationSuggestions(false), 200);
+                      }}
+                      placeholder="Type to search location"
                       required
                     />
                     {showLocationSuggestions && locationSuggestions.length > 0 && (
@@ -653,7 +730,7 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
                           <div
                             key={index}
                             className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                            onClick={() => handleLocationSelect(suggestion)}
+                            onMouseDown={() => handleLocationSelect(suggestion)}
                           >
                             {suggestion.display_name}
                           </div>

@@ -43,6 +43,7 @@ export interface ClientResponse {
   cLevelPercentage?: number;
   belowCLevelPercentage?: number;
   fixedPercentageNotes?: string;
+  fixedPercentageValue?:string;
   fixedPercentageAdvanceNotes?: string;
   cLevelPercentageNotes?: string;
   belowCLevelPercentageNotes?: string;
@@ -71,11 +72,19 @@ export interface ClientResponse {
   salesLead?: string;
   createdAt: string;
   updatedAt?: string;
+  __v?: number;
   error?: string;
+  labelType?: {
+    seniorLevel?: string;
+    executives?: string;
+    nonExecutives?: string;
+    other?: string;
+  };
 }
 
 interface ApiResponse<T> {
   status: string;
+  success: boolean;
   results?: number;
   data: T;
   message?: string;
@@ -182,6 +191,23 @@ const validateAndSanitizeClientData = (data: any) => {
       });
     }
     
+    // Validate labelType
+    if (sanitized.labelType && typeof sanitized.labelType === 'object') {
+      sanitized.labelType = {
+        seniorLevel: sanitized.labelType.seniorLevel || '',
+        executives: sanitized.labelType.executives || '',
+        nonExecutives: sanitized.labelType.nonExecutives || '',
+        other: sanitized.labelType.other || '',
+      };
+    } else {
+      sanitized.labelType = {
+        seniorLevel: '',
+        executives: '',
+        nonExecutives: '',
+        other: '',
+      };
+    }
+    
     return sanitized;
   } catch (error: unknown) {
     console.error('Data validation error:', error);
@@ -215,12 +241,18 @@ const prepareFormData = (data: any): FormData => {
       return;
     }
 
-    if (Array.isArray(value) || typeof value === 'object') {
+    if (Array.isArray(value) || (typeof value === 'object' && key === 'labelType')) {
       try {
         formData.append(key, JSON.stringify(value));
       } catch (error) {
         console.warn(`Could not stringify field ${key}:`, error);
         // Skip this field if it can't be stringified
+      }
+    } else if (typeof value === 'object') {
+      try {
+        formData.append(key, JSON.stringify(value));
+      } catch (error) {
+        console.warn(`Could not stringify field ${key}:`, error);
       }
     } else {
       formData.append(key, String(value));
@@ -410,7 +442,7 @@ const createClient = async (rawData: FormData | Omit<ClientResponse, "_id" | "cr
       return response.data.data;
     } else {
       console.log('Creating client with data:', { name: rawData.name, stage: rawData.clientStage });
-      const response = await sendClientRequest(`${API_URL}clients`, 'post', rawData);
+      const response = await sendClientRequest(`${API_URL}/clients`, 'post', rawData);
       return response.data.data;
     }
   } catch (error: any) {
@@ -429,17 +461,44 @@ const getClients = async (queryParams: {
   clientTeam?: "Enterprise" | "SMB" | "Mid-Market";
 } = {}): Promise<{ clients: ClientResponse[]; total: number; page: number; pages: number }> => {
   try {
-    const response = await axios.get<ApiResponse<{ 
-      clients: ClientResponse[]; 
-      total: number; 
-      page: number; 
-      pages: number 
-    }>>(`${API_URL}/clients`, { 
+    const response = await axios.get(`${API_URL}/clients`, { 
       params: queryParams,
       timeout: 15000
     });
-    return response.data.data;
+    
+    // Log the response for debugging
+    console.log('API Response in service:', response.data);
+    
+    // Handle different response formats
+    if (response.data.success && Array.isArray(response.data.data)) {
+      // Format is { success: true, data: [...clients] }
+      const clients = response.data.data;
+      const meta = response.data.meta || { total: clients.length, page: 1, pages: 1 };
+      
+      return {
+        clients: clients,
+        total: meta.total || clients.length,
+        page: meta.page || 1,
+        pages: meta.pages || 1
+      };
+    } else if (response.data.data && response.data.data.clients) {
+      // Format is { data: { clients: [...], total: X, page: Y, pages: Z } }
+      return response.data.data;
+    } else {
+      // Fallback for unexpected format
+      console.error('Unexpected API response format:', response.data);
+      const clients = Array.isArray(response.data) ? response.data : 
+                    (Array.isArray(response.data.data) ? response.data.data : []);
+      
+      return {
+        clients: clients,
+        total: clients.length,
+        page: 1,
+        pages: 1
+      };
+    }
   } catch (error: any) {
+    console.error('Error in getClients:', error);
     throw handleError(error);
   }
 };
@@ -477,19 +536,19 @@ const getClientById = async (id: string): Promise<ClientResponse> => {
 const updateClient = async (
   id: string,
   rawData: Omit<ClientResponse, "_id" | "createdAt" | "updatedAt"> & {
-    profileImage?: File | null;
-    crCopy?: File | null;
-    vatCopy?: File | null;
-    gstTinDocument?: File | null;
-    fixedPercentage?: File | null;
-    fixedPercentageAdvance?: File | null;
-    variablePercentageCLevel?: File | null;
-    variablePercentageBelowCLevel?: File | null;
-    fixWithoutAdvance?: File | null;
-    seniorLevel?: File | null;
-    executives?: File | null;
-    nonExecutives?: File | null;
-    other?: File | null;
+    profileImage?: File | string | null;
+    crCopy?: File | string | null;
+    vatCopy?: File | string | null;
+    gstTinDocument?: File | string | null;
+    fixedPercentage?: File | string | null;
+    fixedPercentageAdvance?: File | string | null;
+    variablePercentageCLevel?: File | string | null;
+    variablePercentageBelowCLevel?: File | string | null;
+    fixWithoutAdvance?: File | string | null;
+    seniorLevel?: File | string | null;
+    executives?: File | string | null;
+    nonExecutives?: File | string | null;
+    other?: File | string | null;
   }
 ): Promise<ClientResponse> => {
   try {
@@ -498,9 +557,44 @@ const updateClient = async (
       'put',
       rawData
     );
-    return response.data.data;
+    return response.data.client;
   } catch (error: any) {
     throw handleError(error);
+  }
+};
+
+// Update client stage
+const updateClientStage = async (
+  id: string,
+  stage: "Lead" | "Engaged" | "Negotiation" | "Signed"
+): Promise<ClientResponse> => {
+  try {
+    // Fetch the full client data to avoid backend issues with partial updates.
+    const currentClient = await getClientById(id);
+
+    const dataToUpdate = {
+      ...currentClient,
+      clientStage: stage,
+    };
+
+    // Remove fields that should not be sent in an update payload.
+    const { _id, createdAt, updatedAt, __v, ...updatePayload } = dataToUpdate;
+
+    // Manually remove file URL fields to prevent backend errors.
+    const fileFields = [
+      'profileImage', 'crCopy', 'vatCopy', 'gstTinDocument', 'fixedPercentage', 
+      'fixedPercentageAdvance', 'variablePercentageCLevel', 'variablePercentageBelowCLevel', 
+      'fixWithoutAdvance', 'seniorLevel', 'executives', 'nonExecutives', 'other'
+    ];
+    fileFields.forEach(field => delete (updatePayload as any)[field]);
+
+    // Call the main updateClient function to reuse its logic, including validation.
+    return await updateClient(id, updatePayload);
+
+  } catch (error: any) {
+    console.error("Error updating client stage:", error);
+    // The error is already handled by `updateClient`, so we just re-throw it.
+    throw error;
   }
 };
 
@@ -574,6 +668,7 @@ export {
   getClientNames,
   getClientById,
   updateClient,
+  updateClientStage,
   deleteClient,
   uploadClientFile,
   addPrimaryContact,

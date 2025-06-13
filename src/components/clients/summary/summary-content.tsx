@@ -20,11 +20,6 @@ interface SummaryContentProps {
   clientId: string;
 }
 
-interface ApiResponse {
-  status: string;
-  data: ClientDetails;
-}
-
 interface ClientResponse {
   client?: ClientDetails;
   result?: ClientDetails;
@@ -33,6 +28,8 @@ interface ClientResponse {
 }
 
 interface ClientDetails {
+  clientPriority: string;
+  clientSegment: string;
   name: string;
   website?: string;
   industry?: string;
@@ -44,6 +41,7 @@ interface ClientDetails {
   registrationNumber?: string;
   countryOfBusiness?: string;
   description?: string;
+  salesLead?: string;
   referredBy?: string;
   linkedInProfile?: string;
   clientLinkedInPage?: string;
@@ -58,10 +56,24 @@ interface ClientDetails {
   position?: string;
   email?: string;
   primaryContacts?: PrimaryContact[];
+  labelType?: {
+    seniorLevel?: string;
+    executives?: string;
+    nonExecutives?: string;
+    other?: string;
+  };
+  seniorLevel?: string;
+  executives?: string;
+  nonExecutives?: string;
+  other?: string;
+  contractStartDate?: string;
+  contractEndDate?: string;
 }
 
 interface PrimaryContact {
-  name: string;
+  firstName: string;
+  lastName: string;
+  gender: string;
   email: string;
   phone: string;
   countryCode: string;
@@ -86,6 +98,8 @@ interface ContactType {
 
 export function SummaryContent({ clientId }: SummaryContentProps) {
   const [clientDetails, setClientDetails] = useState<ClientDetails>({
+    clientPriority: "1",
+    clientSegment: "A",
     name: "",
   });
   const [teamMembers, setTeamMembers] = useState<TeamMemberType[]>([
@@ -106,48 +120,40 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
 
         const response: ClientResponse = await getClientById(clientId);
 
-        // Add detailed logging to debug the response structure
-        console.log("Raw response:", response);
-        console.log("Response type:", typeof response);
-        console.log("Response keys:", response ? Object.keys(response) : "No response");
-
         // Handle different possible response structures
         let clientData: ClientDetails;
 
         if (response && typeof response === 'object') {
-          // Check if response has a 'data' property
           if ('data' in response && response.data) {
             clientData = response.data;
-          }
-          // Check if response itself is the client data
-          else if ('name' in response) {
+          } else if ('name' in response) {
             clientData = response as ClientDetails;
-          }
-          // Check if response is wrapped in another structure
-          else if (response.client) {
+          } else if (response.client) {
             clientData = response.client;
-          }
-          // Check for other possible structures
-          else if (response.result) {
+          } else if (response.result) {
             clientData = response.result;
-          }
-          else {
-            console.error("Unexpected response structure:", response);
+          } else {
             throw new Error("Invalid response structure from API");
           }
         } else {
-          console.error("Invalid response:", response);
           throw new Error("No valid response received from API");
         }
 
-        // Validate that we have the required data
-        if (!clientData || typeof clientData !== 'object') {
-          console.error("Client data is not an object:", clientData);
-          throw new Error("Invalid client data structure");
-        }
+        // --- MAPPING PRIMARY CONTACTS ---
+        const mappedContacts = (clientData.primaryContacts || []).map((c: any) => ({
+          firstName: c.firstName || (c.name ? c.name.split(' ')[0] : ''),
+          lastName: c.lastName || (c.name ? c.name.split(' ').slice(1).join(' ') : ''),
+          gender: c.gender || '',
+          email: c.email || '',
+          phone: c.phone || '',
+          countryCode: c.countryCode || '',
+          position: c.position || c.designation || '',
+          linkedin: c.linkedin || '',
+        }));
 
-        // Set the client details with fallback values
         setClientDetails({
+          clientPriority: clientData.clientPriority || "1",
+          clientSegment: clientData.clientSegment || "A",
           name: clientData.name || "",
           website: clientData.website || "",
           industry: clientData.industry || "",
@@ -158,6 +164,7 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
           registrationNumber: clientData.registrationNumber || "",
           countryOfBusiness: clientData.countryOfBusiness || "",
           description: clientData.description || "",
+          salesLead: clientData.salesLead || "",
           referredBy: clientData.referredBy || "",
           linkedInProfile: clientData.linkedInProfile || "",
           clientLinkedInPage: clientData.linkedInPage || clientData.clientLinkedInPage || "",
@@ -167,12 +174,19 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
           vatCopy: clientData.vatCopy || "",
           phoneNumber: clientData.phoneNumber || "",
           googleMapsLink: clientData.googleMapsLink || "",
-          primaryContacts: clientData.primaryContacts || []
+          primaryContacts: mappedContacts,
+          labelType: clientData.labelType || {
+            seniorLevel: clientData.seniorLevel || "",
+            executives: clientData.executives || "",
+            nonExecutives: clientData.nonExecutives || "",
+            other: clientData.other || ""
+          },
+          contractStartDate: clientData.contractStartDate || "",
+          contractEndDate: clientData.contractEndDate || ""
         });
 
         setLoading(false);
       } catch (error) {
-        console.error("Error fetching client data:", error);
         const errorMessage = error instanceof Error ? error.message : "Failed to load client data";
         setError(`${errorMessage}. Please try again.`);
         setLoading(false);
@@ -186,6 +200,7 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
       setLoading(false);
     }
   }, [clientId]);
+
 
   const updateClientDetails = async (fieldName: string, value: string) => {
     try {
@@ -213,14 +228,16 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
     }
   };
 
-  const handleFileUpload = (field: keyof ClientDetails) => (file: File) => {
-    const uploadFile = async () => {
+  const handleFileUpload = (field: keyof ClientDetails) => (file: File | null): void => {
+    if (!file) return;
+    (async () => {
       try {
         const formData = new FormData();
-        formData.append("file", file);
+        formData.append("file", file);      // The file itself
+        formData.append("field", field);    // The field name (e.g., "vatCopy" or "crCopy")
 
         const response = await fetch(
-          `https://aems-backend.onrender.com/api/clients/${clientId}/upload?field=${field}`,
+          `https://aems-backend.onrender.com/api/clients/${clientId}/upload`,
           {
             method: "POST",
             body: formData,
@@ -232,7 +249,7 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
         }
 
         const result = await response.json();
-        const fileUrl = result.fileUrl || file.name;
+        const fileUrl = result.data?.filePath || file.name;
 
         setClientDetails((prev) => ({
           ...prev,
@@ -244,13 +261,11 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
         console.error(`Error uploading ${field}:`, error);
         setClientDetails((prev) => ({
           ...prev,
-          [field]: file.name,
+          [field]: file?.name || '',
         }));
         setError(`Failed to upload ${field} to server. File name stored locally.`);
       }
-    };
-
-    uploadFile();
+    })();
   };
 
   const handleUpdateField = (field: keyof ClientDetails) => (value: string) => {
@@ -284,22 +299,34 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
 
   const handlePreviewFile = (fileName: string) => {
     if (fileName) {
-      window.open(fileName, "_blank");
+      const fileUrl = fileName.startsWith("http") ? fileName : `https://aems-backend.onrender.com/${fileName}`;
+      window.open(fileUrl, "_blank");
     } else {
       console.log("No file to preview");
     }
   };
 
-  const handleDownloadFile = (fileName: string) => {
+  const handleDownloadFile = async (fileName: string) => {
     if (fileName) {
-      const link = document.createElement("a");
-      link.href = fileName;
-      link.download = fileName.split("/").pop() || "download";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      const fileUrl = fileName.startsWith("http") ? fileName : `https://aems-backend.onrender.com/${fileName}`;
+      try {
+        const response = await fetch(fileUrl);
+        if (!response.ok) throw new Error('Network response was not ok.');
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', fileName.split('/').pop() || 'download');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error('Download failed:', error);
+        window.open(fileUrl, '_blank');
+      }
     } else {
-      console.log("No file to download");
+      console.log('No file to download');
     }
   };
 
@@ -347,6 +374,30 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
           <h2 className="text-sm font-semibold">Details</h2>
           <div className="space-y-3 mt-4">
             <DetailRow
+              label="Client Priority"
+              value={clientDetails.clientPriority}
+              onUpdate={handleUpdateField("clientPriority")}
+              options={[
+                { value: "1", label: "1" },
+                { value: "2", label: "2" },
+                { value: "3", label: "3" },
+                { value: "4", label: "4" },
+                { value: "5", label: "5" },
+              ]}
+            />
+            <DetailRow
+              label="Client Segment"
+              value={clientDetails.clientSegment}
+              onUpdate={handleUpdateField("clientSegment")}
+              options={[
+                { value: "A", label: "A" },
+                { value: "B", label: "B" },
+                { value: "C", label: "C" },
+                { value: "D", label: "D" },
+                { value: "E", label: "E" },
+              ]}
+            />
+            <DetailRow
               label="Client Name"
               value={clientDetails.name}
               onUpdate={handleUpdateField("name")}
@@ -377,14 +428,11 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
                 <div className="space-y-3">
                   {clientDetails.primaryContacts?.map((contact, index) => (
                     <div key={index} className="p-3 bg-muted/30 rounded-lg">
-                      <div className="block space-y-1">
-                        <div className="font-medium">{contact.name || "Unnamed Contact"}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {contact.position || "No position"}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {contact.email || "No email"}
-                        </div>
+                      <div key={index} className="p-3 rounded-md border">
+                        <div className="font-medium">{`${contact.firstName} ${contact.lastName}` || "Unnamed Contact"}</div>
+                        {contact.gender && <div className="text-sm text-muted-foreground">{contact.gender}</div>}
+                        <p className="text-sm text-muted-foreground">{contact.position}</p>
+                        <p className="text-sm text-muted-foreground">{contact.email}</p>
                         <div className="text-sm text-muted-foreground">
                           {getCountryCodeLabel(contact.countryCode)} {contact.phone || "No phone"}
                         </div>
@@ -409,7 +457,12 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
               )}
             </div>
             <DetailRow
-              label="Referred By"
+              label="Sales Lead (Internal)"
+              value={clientDetails.salesLead}
+              onUpdate={handleUpdateField("salesLead")}
+            />
+            <DetailRow
+              label="Referred By (External)"
               value={clientDetails.referredBy}
               onUpdate={handleUpdateField("referredBy")}
             />
@@ -460,22 +513,21 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
               onUpdate={handleUpdateField(clientDetails.linkedInPage ? "linkedInPage" : "clientLinkedInPage")}
             />
             <FileUploadRow
+              id="vat-copy-upload"
               label="VAT Copy"
-              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+              className="border-b"
               onFileSelect={handleFileUpload("vatCopy")}
+              docUrl={clientDetails.vatCopy}
               currentFileName={typeof clientDetails.vatCopy === "string" ? clientDetails.vatCopy.split("/").pop() || "" : ""}
-              showPreviewButton={true}
-              showDownloadButton={true}
               onPreview={() => handlePreviewFile(clientDetails.vatCopy || "")}
               onDownload={() => handleDownloadFile(clientDetails.vatCopy || "")}
             />
             <FileUploadRow
+              id="cr-copy-upload"
               label="CR Copy"
-              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
               onFileSelect={handleFileUpload("crCopy")}
+              docUrl={clientDetails.crCopy}
               currentFileName={typeof clientDetails.crCopy === "string" ? clientDetails.crCopy.split("/").pop() || "" : ""}
-              showPreviewButton={true}
-              showDownloadButton={true}
               onPreview={() => handlePreviewFile(clientDetails.crCopy || "")}
               onDownload={() => handleDownloadFile(clientDetails.crCopy || "")}
             />
@@ -483,7 +535,14 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
         </div>
       </div>
       <div className="space-y-6">
-        <ContractSection clientId={clientId} />
+        <ContractSection 
+          clientId={clientId} 
+          clientData={{
+            contractStartDate: clientDetails.contractStartDate,
+            contractEndDate: clientDetails.contractEndDate,
+            labelType: clientDetails.labelType
+          }} 
+        />
         <div className="bg-white rounded-lg border shadow-sm p-4">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold">Team</h2>

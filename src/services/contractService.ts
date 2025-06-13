@@ -9,15 +9,13 @@ export interface ContractResponse {
   clientId: string;
   contractStartDate?: string | null;
   contractEndDate?: string | null;
-  fixedPercentage: number;
-  fixWithAdvance?: number;
-  fixWithoutAdvance?: number;
-  variablePercentage: {
-    seniorLevel?: number;
-    executives?: number;
-    nonExecutives?: number;
-    other?: number;
-  };
+  contractType?: "Fixed Percentage" | "Fix with Advance" | "Fix without Advance" | "Level Based (Hiring)" | null;
+  levelBasedDetails?: {
+    seniorLevel?: { percentage: number; notes: string };
+    executives?: { percentage: number; notes: string };
+    nonExecutives?: { percentage: number; notes: string };
+    other?: { percentage: number; notes: string };
+  } | null;
   agreement?: {
     fileName: string;
     filePath: string;
@@ -25,7 +23,8 @@ export interface ContractResponse {
     fileSize: number;
   } | null;
   referralPercentage: number;
-  lineOfBusiness?: string;
+  notes?: string;
+  lineOfBusiness?: string[];
   createdBy?: string;
   createdAt: string;
   updatedAt: string;
@@ -35,11 +34,12 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://aems-backend.onrende
 
 const api = axios.create({
   baseURL: API_URL,
+  withCredentials: true,
 });
 
 const createContract = async (contractData: ContractData) => {
   try {
-    const response = await api.post("/contracts", contractData, {
+    const response = await api.post("/clients", contractData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
@@ -52,7 +52,7 @@ const createContract = async (contractData: ContractData) => {
 
 const updateContract = async (id: string, contractData: ContractData) => {
   try {
-    const response = await api.patch(`/contracts/${id}`, contractData, {
+    const response = await api.patch(`/uplodas/${id}`, contractData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
@@ -65,16 +65,16 @@ const updateContract = async (id: string, contractData: ContractData) => {
 
 const getContractByClient = async (clientId: string): Promise<ContractResponse> => {
   try {
-    const response = await api.get(`/contracts/client/${clientId}`);
+    const response = await api.get(`/clients/${clientId}`);
     return response.data.data as ContractResponse;
   } catch (error: any) {
     throw handleError(error, "Error fetching contract");
   }
 };
 
-const downloadAgreement = async (contractId: string): Promise<Blob> => {
+const downloadAgreement = async (fileName: string): Promise<Blob> => {
   try {
-    const response = await api.get(`/contracts/${contractId}/agreement/download`, {
+    const response = await api.get(`/uploads/${fileName}`, {
       responseType: 'blob',
     });
     return response.data;
@@ -83,9 +83,9 @@ const downloadAgreement = async (contractId: string): Promise<Blob> => {
   }
 };
 
-const deleteAgreement = async (contractId: string) => {
+const deleteAgreement = async (fileName: string) => {
   try {
-    const response = await api.delete(`/contracts/${contractId}/agreement`);
+    const response = await api.delete(`/uploads/delete/${fileName}`);
     return response.data.data as ContractResponse;
   } catch (error: any) {
     throw handleError(error, "Error deleting agreement");
