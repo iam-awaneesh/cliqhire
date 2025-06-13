@@ -31,7 +31,9 @@ import { INDUSTRIES } from "@/lib/constants";
 
 // Interfaces
 interface PrimaryContact {
-  name: string;
+  firstName: string;
+  lastName: string;
+  gender: string;
   email: string;
   phone: string;
   countryCode: string;
@@ -73,6 +75,7 @@ interface ClientForm {
   fixedPercentageValue?: string | number;
   fixedPercentageAdvanceNotes?: string;
   fixWithAdvanceValue?: string | number;
+  fixWithAdvanceMoney?: string | number; // Added for money value
   advanceMoneyCurrency?: string;
   advanceMoneyAmount?: number;
   fixWithoutAdvanceValue?: string | number;
@@ -88,6 +91,8 @@ interface ClientForm {
   nonExecutivesNotes?: string;
   otherNotes?: string;
   salesLead?: string;
+  clientPriority?: number;
+  clientSegment?: string;
   // File upload fields
   crCopy?: any;
   vatCopy?: any;
@@ -101,7 +106,16 @@ interface ClientForm {
   executives?: any;
   nonExecutives?: any;
   other?: any;
+  seniorLevelMoney?: number;
+  seniorLevelCurrency?: string;
+  executivesMoney?: number;
+  executivesCurrency?: string;
+  nonExecutivesMoney?: number;
+  nonExecutivesCurrency?: string;
+  otherMoney?: number;
+  otherCurrency?: string;
 }
+
 
 interface CreateClientModalProps {
   open: boolean;
@@ -118,7 +132,7 @@ interface LocationSuggestion {
 const createClient = async (data: FormData) => {
   try {
     const response = await axios.post(
-      "http://localhost:5000/api/clients",
+      "https://aems-backend.onrender.com/api/clients",
       data,
       {
         headers: {
@@ -167,6 +181,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     fixedPercentageValue: "",
     fixedPercentageAdvanceNotes: "",
     fixWithAdvanceValue: "",
+    fixWithAdvanceMoney: "", // Added for money value
     fixWithoutAdvanceValue: "",
     cLevelPercentageNotes: "",
     belowCLevelPercentageNotes: "",
@@ -180,17 +195,31 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     nonExecutivesNotes: "",
     otherNotes: "",
     salesLead: "",
+    advanceMoneyCurrency: "SAR",
+    seniorLevelCurrency: "SAR",
+    executivesCurrency: "SAR",
+    nonExecutivesCurrency: "SAR",
+    otherCurrency: "SAR",
   });
 
   const [emailInput, setEmailInput] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const levelFieldMap: Record<string, { percentage: keyof ClientForm; notes: keyof ClientForm; money: keyof ClientForm; currency: keyof ClientForm; }> = {
+    "Senior Level": { percentage: "seniorLevelPercentage", notes: "seniorLevelNotes", money: "seniorLevelMoney", currency: "seniorLevelCurrency" },
+    "Executives": { percentage: "executivesPercentage", notes: "executivesNotes", money: "executivesMoney", currency: "executivesCurrency" },
+    "Non-Executives": { percentage: "nonExecutivesPercentage", notes: "nonExecutivesNotes", money: "nonExecutivesMoney", currency: "nonExecutivesCurrency" },
+    "Other": { percentage: "otherPercentage", notes: "otherNotes", money: "otherMoney", currency: "otherCurrency" },
+  };
   const [locationSuggestions, setLocationSuggestions] = useState<LocationSuggestion[]>([]);
   const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
   const [currentTab, setCurrentTab] = useState(0);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [newContact, setNewContact] = useState<PrimaryContact>({
-    name: "",
+    firstName: "",
+    lastName: "",
+    gender: "",
     email: "",
     phone: "",
     countryCode: "+966",
@@ -417,8 +446,8 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
   };
 
   const handleAddContact = (contact: PrimaryContact) => {
-    if (!contact.name || contact.name.trim() === "") {
-      setError("Contact name is required");
+    if (!contact.firstName || contact.firstName.trim() === "") {
+      setError("Contact first name is required");
       return;
     }
     if (contact.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email)) {
@@ -438,7 +467,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
       ...prev,
       primaryContacts: [...prev.primaryContacts, { ...contact }],
     }));
-    setNewContact({ name: "", email: "", phone: "", countryCode: "+966", designation: "", linkedin: "", isPrimary: true });
+    setNewContact({ firstName: "", lastName: "", gender: "", email: "", phone: "", countryCode: "+966", designation: "", linkedin: "", isPrimary: true });
     setIsContactModalOpen(false);
     setError(null);
   };
@@ -591,7 +620,8 @@ formDataToSend.append('name', formData.name.trim());
       // Handle primaryContacts array
       if (formData.primaryContacts && formData.primaryContacts.length > 0) {
         formDataToSend.append('primaryContacts', JSON.stringify(formData.primaryContacts.map(contact => ({
-          name: contact.name,
+          name: `${contact.firstName || ''} ${contact.lastName || ''}`.trim(),
+          gender: contact.gender,
           email: contact.email,
           phone: contact.phone,
           countryCode: contact.countryCode,
@@ -604,8 +634,15 @@ formDataToSend.append('name', formData.name.trim());
       formDataToSend.append('clientStage', formData.clientStage || "Lead");
       formDataToSend.append('clientTeam', formData.clientTeam || "Enterprise");
       
-      if (formData.salesLead) {
-        formDataToSend.append('salesLead', formData.salesLead);
+      // Always append salesLead, even if empty, for consistency
+      formDataToSend.append('salesLead', formData.salesLead ?? "");
+
+      if (formData.clientPriority) {
+        formDataToSend.append('clientPriority', formData.clientPriority.toString());
+      }
+
+      if (formData.clientSegment) {
+        formDataToSend.append('clientSegment', formData.clientSegment);
       }
       
       if (formData.contractStartDate) {
@@ -625,8 +662,7 @@ formDataToSend.append('name', formData.name.trim());
       if (formData.contractType) {
         formDataToSend.append('contractType', formData.contractType);
       }
-      
-      // Add percentage and notes fields for Level Based (Hiring)
+            // Add percentage and notes fields for Level Based (Hiring)
       if (formData.contractType === "Level Based (Hiring)") {
         if (selectedLevels.includes("Senior Level")) {
           formDataToSend.append('seniorLevelPercentage', (formData.seniorLevelPercentage ?? 0).toString());
@@ -653,7 +689,61 @@ formDataToSend.append('name', formData.name.trim());
           formDataToSend.append('otherNotes', formData.otherNotes);
         }
       }
-      
+
+      // Add percentage, money, and notes fields for Fix with Advance
+      if (formData.contractType === "Fix with Advance") {
+        if (formData.fixWithAdvanceValue !== undefined && formData.fixWithAdvanceValue !== null)
+          formDataToSend.append('fixWithAdvanceValue', formData.fixWithAdvanceValue.toString());
+        if (formData.fixWithAdvanceMoney !== undefined && formData.fixWithAdvanceMoney !== null && formData.fixWithAdvanceMoney !== "")
+          formDataToSend.append('fixWithAdvanceMoney', formData.fixWithAdvanceMoney.toString());
+        if (formData.fixedPercentageAdvanceNotes)
+          formDataToSend.append('fixedPercentageAdvanceNotes', formData.fixedPercentageAdvanceNotes);
+      }
+
+      // Add money, currency, and notes fields for Level Based With Advance
+      if (formData.contractType === "Level Based With Advance") {
+        if (selectedLevels.includes("Senior Level")) {
+          if (formData.seniorLevelPercentage !== undefined)
+            formDataToSend.append('seniorLevelPercentage', (formData.seniorLevelPercentage ?? 0).toString());
+          if (formData.seniorLevelMoney !== undefined && formData.seniorLevelMoney !== null)
+            formDataToSend.append('seniorLevelMoney', formData.seniorLevelMoney.toString());
+          if (formData.seniorLevelCurrency)
+            formDataToSend.append('seniorLevelCurrency', formData.seniorLevelCurrency);
+          if (formData.seniorLevelNotes)
+            formDataToSend.append('seniorLevelNotes', formData.seniorLevelNotes);
+        }
+        if (selectedLevels.includes("Executives")) {
+          if (formData.executivesPercentage !== undefined)
+            formDataToSend.append('executivesPercentage', (formData.executivesPercentage ?? 0).toString());
+          if (formData.executivesMoney !== undefined && formData.executivesMoney !== null)
+            formDataToSend.append('executivesMoney', formData.executivesMoney.toString());
+          if (formData.executivesCurrency)
+            formDataToSend.append('executivesCurrency', formData.executivesCurrency);
+          if (formData.executivesNotes)
+            formDataToSend.append('executivesNotes', formData.executivesNotes);
+        }
+        if (selectedLevels.includes("Non-Executives")) {
+          if (formData.nonExecutivesPercentage !== undefined)
+            formDataToSend.append('nonExecutivesPercentage', (formData.nonExecutivesPercentage ?? 0).toString());
+          if (formData.nonExecutivesMoney !== undefined && formData.nonExecutivesMoney !== null)
+            formDataToSend.append('nonExecutivesMoney', formData.nonExecutivesMoney.toString());
+          if (formData.nonExecutivesCurrency)
+            formDataToSend.append('nonExecutivesCurrency', formData.nonExecutivesCurrency);
+          if (formData.nonExecutivesNotes)
+            formDataToSend.append('nonExecutivesNotes', formData.nonExecutivesNotes);
+        }
+        if (selectedLevels.includes("Other")) {
+          if (formData.otherPercentage !== undefined)
+            formDataToSend.append('otherPercentage', (formData.otherPercentage ?? 0).toString());
+          if (formData.otherMoney !== undefined && formData.otherMoney !== null)
+            formDataToSend.append('otherMoney', formData.otherMoney.toString());
+          if (formData.otherCurrency)
+            formDataToSend.append('otherCurrency', formData.otherCurrency);
+          if (formData.otherNotes)
+            formDataToSend.append('otherNotes', formData.otherNotes);
+        }
+      }
+
       if (formData.cLevelPercentage) {
         formDataToSend.append('cLevelPercentage', formData.cLevelPercentage.toString());
       }
@@ -665,10 +755,6 @@ formDataToSend.append('name', formData.name.trim());
       // Add all notes fields
       if (formData.fixedPercentageNotes) {
         formDataToSend.append('fixedPercentageNotes', formData.fixedPercentageNotes);
-      }
-      
-      if (formData.fixedPercentageAdvanceNotes) {
-        formDataToSend.append('fixedPercentageAdvanceNotes', formData.fixedPercentageAdvanceNotes);
       }
       
       if (formData.cLevelPercentageNotes) {
@@ -686,10 +772,6 @@ formDataToSend.append('name', formData.name.trim());
       // Add all value fields
       if (formData.fixedPercentageValue) {
         formDataToSend.append('fixedPercentageValue', formData.fixedPercentageValue.toString());
-      }
-      
-      if (formData.fixWithAdvanceValue) {
-        formDataToSend.append('fixWithAdvanceValue', formData.fixWithAdvanceValue.toString());
       }
       
       if (formData.fixWithoutAdvanceValue) {
@@ -776,6 +858,8 @@ formDataToSend.append('name', formData.name.trim());
         nonExecutivesNotes: "",
         otherNotes: "",
         salesLead: "",
+        clientPriority: 1,
+        clientSegment: "",
       });
       setEmailInput("");
       setUploadedFiles({
@@ -792,8 +876,16 @@ formDataToSend.append('name', formData.name.trim());
         executives: null,
         nonExecutives: null,
         other: null,
+        seniorLevelMoney: null,
+        seniorLevelCurrency: null as File | null,
+        executivesMoney: null,
+        executivesCurrency: null as File | null,
+        nonExecutivesMoney: null,
+        nonExecutivesCurrency: null as File | null,
+        otherMoney: null,
+        otherCurrency: null as File | null,
       });
-      setNewContact({ name: "", email: "", phone: "", countryCode: "+966", designation: "", linkedin: "", isPrimary: true });
+      setNewContact({ firstName: "", lastName: "", gender: "", email: "", phone: "", countryCode: "+966", designation: "", linkedin: "", isPrimary: true });
       setCurrentTab(0);
       setIsContactModalOpen(false);
       setSelectedLevels([]);
@@ -850,7 +942,7 @@ formDataToSend.append('name', formData.name.trim());
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 py-4">
               <div className="space-y-2">
                 <Label htmlFor="salesLead" className="text-sm sm:text-base">
-                  Sales Lead *
+                  Sales Lead (Internal)*
                 </Label>
                 <Select
                   value={formData.salesLead || ""}
@@ -864,6 +956,65 @@ formDataToSend.append('name', formData.name.trim());
                     <SelectItem value="rocky">Rocky</SelectItem>
                     <SelectItem value="hamed">Hamed</SelectItem>
                     <SelectItem value="abhay">Abhay</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+               <div className="space-y-2">
+                <Label htmlFor="referredBy" className="text-sm sm:text-base">
+                  Referred By (External) *
+                </Label>
+                <Input
+                  id="referredBy"
+                  value={formData.referredBy}
+                  onChange={handleInputChange("referredBy")}
+                  required
+                  className="w-full"
+                />
+               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="clientPriority" className="text-sm sm:text-base">Client Priority</Label>
+                <Select
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({ ...prev, clientPriority: parseInt(value, 10) }))
+                  }
+                  value={formData.clientPriority?.toString()}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select priority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>Priority</SelectLabel>
+                      <SelectItem value="1">1</SelectItem>
+                      <SelectItem value="2">2</SelectItem>
+                      <SelectItem value="3">3</SelectItem>
+                      <SelectItem value="4">4</SelectItem>
+                      <SelectItem value="5">5</SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="clientSegment" className="text-sm sm:text-base">Client Segment</Label>
+                <Select
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({ ...prev, clientSegment: value }))
+                  }
+                  value={formData.clientSegment}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select segment" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>Segment</SelectLabel>
+                      <SelectItem value="A">A</SelectItem>
+                      <SelectItem value="B">B</SelectItem>
+                      <SelectItem value="C">C</SelectItem>
+                    </SelectGroup>
                   </SelectContent>
                 </Select>
               </div>
@@ -1051,7 +1202,9 @@ formDataToSend.append('name', formData.name.trim());
                       size="sm"
                       onClick={() => {
                         setNewContact({
-                          name: "",
+                          firstName: "",
+                          lastName: "",
+                          gender: "",
                           email: "",
                           phone: "",
                           countryCode: "+966",
@@ -1076,9 +1229,14 @@ formDataToSend.append('name', formData.name.trim());
                       {formData.primaryContacts.map((contact, index) => (
                         <div key={index} className="p-3 bg-muted/30 rounded-lg">
                           <div className="block space-y-1">
-                            <div className="font-medium">{contact.name || "Unnamed Contact"}</div>
-                            <div className="text-xs sm:text-sm text-muted-foreground">
-                              {contact.designation || "No designation"}
+                            <div className="font-medium">
+                              {contact.firstName} {contact.lastName}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {contact.gender}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {contact.designation}
                             </div>
                             <div className="text-xs sm:text-sm text-muted-foreground">
                               {contact.email || "No email"}
@@ -1147,20 +1305,7 @@ formDataToSend.append('name', formData.name.trim());
 
           {currentTab === 2 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="referredBy" className="text-sm sm:text-base">
-                  Referred By *
-                </Label>
-                <Input
-                  id="referredBy"
-                  value={formData.referredBy}
-                  onChange={handleInputChange("referredBy")}
-                  required
-                  className="w-full"
-                />
-              </div>
-
-              <div className="space-y-2">
+               <div className="space-y-2">
                 <Label htmlFor="contractStartDate" className="text-sm sm:text-base">
                   Contract Start Date
                 </Label>
@@ -1241,93 +1386,15 @@ formDataToSend.append('name', formData.name.trim());
                     <SelectValue placeholder="Select contract type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Fixed Percentage">Fixed Percentage</SelectItem>
                     <SelectItem value="Fix with Advance">Fix with Advance</SelectItem>
                     <SelectItem value="Fix without Advance">Fix without Advance</SelectItem>
                     <SelectItem value="Level Based (Hiring)">Level Based (Hiring)</SelectItem>
+                    <SelectItem value="Level Based With Advance">Level Based With Advance</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              {formData.contractType === "Fixed Percentage" && (
-                <div className="space-y-4 col-span-1 sm:col-span-2 border rounded-lg p-4">
-                  <div className="border-2 shadow-sm rounded-lg p-2 cursor-pointer transition-colors w-full border-primary bg-primary/5">
-                    <div className="flex flex-col sm:flex-row items-center sm:space-x-4 space-y-2 sm:space-y-0">
-                      <h4 className="font-medium text-xs sm:text-sm w-28">Fixed Percentage</h4>
-                      <div className="flex items-center space-x-2 w-full sm:w-auto">
-                        <div className="relative w-24">
-                          <Input
-                            type="number"
-                            placeholder="0"
-                            min="0"
-                            max="100"
-                            onChange={handleInputChange("fixedPercentageValue")}
-                            value={formData.fixedPercentageValue || ""}
-                            className="h-8 pl-2 pr-6 text-xs"
-                          />
-                          <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-muted-foreground">
-                            %
-                          </span>
-                        </div>
-                        <Input
-                          type="text"
-                          placeholder="Notes"
-                          onChange={handleInputChange("fixedPercentageNotes")}
-                          value={formData.fixedPercentageNotes || ""}
-                          className="h-8 text-xs flex-1"
-                        />
-                      </div>
-                    </div>
-                  </div>
 
-                  <div className="space-y-2">
-                    <Label className="text-sm sm:text-base font-semibold">
-                      Contract Document
-                    </Label>
-                    <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 items-center">
-                      <div
-                        className="border-2 border-dashed rounded-lg p-2 text-center cursor-pointer hover:bg-muted/50 flex-1 w-full"
-                        onClick={() => document.getElementById("fixedPercentageInput")?.click()}
-                      >
-                        <Upload className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
-                        <p className="text-xs text-muted-foreground">Upload (PDF, JPEG, PNG)</p>
-                      </div>
-                      <input
-                        id="fixedPercentageInput"
-                        type="file"
-                        accept=".pdf,.jpg,.jpeg,.png"
-                        className="hidden"
-                        onChange={handleFileChange("fixedPercentage")}
-                      />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 text-xs px-2 gap-1"
-                        onClick={() => handlePreview(uploadedFiles.fixedPercentage)}
-                        disabled={!uploadedFiles.fixedPercentage}
-                      >
-                        <Eye className="h-3 w-3" />
-                        <span>Preview</span>
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 text-xs px-2 gap-1"
-                        onClick={() => handleDownload(uploadedFiles.fixedPercentage)}
-                        disabled={!uploadedFiles.fixedPercentage}
-                      >
-                        <Download className="h-3 w-3" />
-                        <span>Download</span>
-                      </Button>
-                    </div>
-                    {uploadedFiles.fixedPercentage && (
-                      <p className="text-xs text-muted-foreground truncate">
-                        Selected file: {uploadedFiles.fixedPercentage.name}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
 
               {formData.contractType === "Fix with Advance" && (
                 <div className="space-y-4 col-span-1 sm:col-span-2 border rounded-lg p-4">
@@ -1370,8 +1437,8 @@ formDataToSend.append('name', formData.name.trim());
                             type="number"
                             placeholder="Amount"
                             min="0"
-                            onChange={handleInputChange("advanceMoneyAmount")}
-                            value={formData.advanceMoneyAmount || ""}
+                            onChange={handleInputChange("fixWithAdvanceMoney")}
+                            value={formData.fixWithAdvanceMoney || ""}
                             className="h-8 text-xs w-28 rounded-l-none border-l-0"
                           />
                         </div>
@@ -1515,7 +1582,7 @@ formDataToSend.append('name', formData.name.trim());
                 </div>
               )}
 
-              {formData.contractType === "Level Based (Hiring)" && (
+              {(formData.contractType === "Level Based (Hiring)" || formData.contractType === "Level Based With Advance") && (
                 <div className="space-y-4 col-span-1 sm:col-span-2 border rounded-lg p-4">
                   <div>
                     <Label className="text-sm sm:text-base mb-2 block">Level Type</Label>
@@ -1555,7 +1622,13 @@ formDataToSend.append('name', formData.name.trim());
                   {selectedLevels.length > 0 && activeLevel && (
                     <div className="space-y-4">
                       <div className="grid grid-cols-1 gap-2">
-                        {selectedLevels.map((level) => (
+                        {selectedLevels.map((level) => {
+                          const fields = levelFieldMap[level];
+                          if (!fields) return null;
+
+                          const { percentage, notes, money, currency } = fields;
+                          
+                          return (
                           <div
                             key={level}
                             className={`border-2 shadow-sm rounded-lg p-2 cursor-pointer transition-colors w-full ${activeLevel === level
@@ -1576,49 +1649,68 @@ formDataToSend.append('name', formData.name.trim());
                                     placeholder="0"
                                     min="0"
                                     max="100"
-                                    onClick={(e: React.MouseEvent<HTMLInputElement>) =>
-                                      e.stopPropagation()
-                                    }
+                                    onClick={(e: React.MouseEvent<HTMLInputElement>) => e.stopPropagation()}
                                     onChange={(e) => {
-                                      const fieldName = level === 'Senior Level' ? 'seniorLevelPercentage' : level === 'Non-Executives' ? 'nonExecutivesPercentage' : `${level.replace(/\s+/g, "").toLowerCase()}Percentage` as keyof ClientForm;
                                       const value = e.target.value ? parseFloat(e.target.value) : 0;
-                                      console.log(`DEBUG Level Based Input: Level='${level}', FieldName='${fieldName}', RawValue='${e.target.value}', ParsedValue=${value}, FinalValueToSet=${isNaN(value) ? 0 : Math.min(100, Math.max(0, value))}`);
                                       setFormData(prev => ({
                                         ...prev,
-                                        [fieldName]: isNaN(value) ? 0 : Math.min(100, Math.max(0, value))
+                                        [percentage]: isNaN(value) ? 0 : Math.min(100, Math.max(0, value))
                                       }));
                                     }}
-                                    value={
-                                      (formData as any)[level === 'Senior Level' ? 'seniorLevelPercentage' : level === 'Non-Executives' ? 'nonExecutivesPercentage' : `${level.replace(/\s+/g, "").toLowerCase()}Percentage`] || ""
-                                    }
+                                    value={(formData as any)[percentage] || ""}
                                     className="h-8 pl-2 pr-6 text-xs"
                                   />
-                                  <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-muted-foreground">
-                                    %
-                                  </span>
+                                  <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-muted-foreground">%</span>
                                 </div>
+
+                                {formData.contractType === "Level Based With Advance" && (
+                                  <div className="flex items-center space-x-0 border rounded-md overflow-hidden w-48">
+                                    <Select
+                                      value={(formData as any)[currency] || "USD"}
+                                      onValueChange={(value) => setFormData((prev) => ({ ...prev, [currency]: value }))}
+                                    >
+                                      <SelectTrigger className="h-8 text-xs w-20 rounded-r-none border-r-0">
+                                        <SelectValue placeholder="Currency" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="USD">USD</SelectItem>
+                                        <SelectItem value="EUR">EUR</SelectItem>
+                                        <SelectItem value="GBP">GBP</SelectItem>
+                                        <SelectItem value="SAR">SAR</SelectItem>
+                                        <SelectItem value="AED">AED</SelectItem>
+                                        <SelectItem value="INR">INR</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                    <Input
+                                      type="number"
+                                      placeholder="Amount"
+                                      min="0"
+                                      onClick={(e: React.MouseEvent<HTMLInputElement>) => e.stopPropagation()}
+                                      onChange={(e) => {
+                                        const value = e.target.value ? parseFloat(e.target.value) : 0;
+                                        setFormData(prev => ({
+                                          ...prev,
+                                          [money]: isNaN(value) ? 0 : value
+                                        }));
+                                      }}
+                                      value={(formData as any)[money] || ""}
+                                      className="h-8 text-xs w-28 rounded-l-none border-l-0"
+                                    />
+                                  </div>
+                                )}
+                                
                                 <Input
                                   type="text"
                                   placeholder="Notes"
-                                  onClick={(e: React.MouseEvent<HTMLInputElement>) =>
-                                    e.stopPropagation()
-                                  }
-                                  onChange={(e) => {
-                                    const fieldName = level === 'Senior Level' ? 'seniorLevelNotes' : level === 'Non-Executives' ? 'nonExecutivesNotes' : `${level.replace(/\s+/g, "").toLowerCase()}Notes` as keyof ClientForm;
-                                    setFormData(prev => ({
-                                      ...prev,
-                                      [fieldName]: e.target.value
-                                    }));
-                                  }}
-                                  value={
-                                    (formData as any)[level === 'Senior Level' ? 'seniorLevelNotes' : level === 'Non-Executives' ? 'nonExecutivesNotes' : `${level.replace(/\s+/g, "").toLowerCase()}Notes`] || ""
-                                  }
+                                  onClick={(e: React.MouseEvent<HTMLInputElement>) => e.stopPropagation()}
+                                  onChange={(e) => setFormData(prev => ({ ...prev, [notes]: e.target.value }))}
+                                  value={(formData as any)[notes] || ""}
                                   className="h-8 text-xs flex-1"
                                 />
                               </div>
                             </div>
                           </div>
-                        ))}
+                        )})}
                       </div>
                       <div className="space-y-2">
                         <Label className="text-sm sm:text-base font-semibold">
@@ -1868,17 +1960,28 @@ formDataToSend.append('name', formData.name.trim());
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">First Name *</Label>
+                    <Input id="firstName" value={newContact.firstName} onChange={(e) => setNewContact({ ...newContact, firstName: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Last Name</Label>
+                    <Input id="lastName" value={newContact.lastName} onChange={(e) => setNewContact({ ...newContact, lastName: e.target.value })} />
+                  </div>
+                </div>
                 <div className="space-y-2">
-                  <Label htmlFor="contactName" className="text-sm sm:text-base">
-                    Name *
-                  </Label>
-                  <Input
-                    id="contactName"
-                    value={newContact.name}
-                    onChange={(e) => setNewContact((prev) => ({ ...prev, name: e.target.value }))}
-                    required
-                    className="w-full"
-                  />
+                  <Label htmlFor="gender">Gender</Label>
+                  <Select onValueChange={(value) => setNewContact({ ...newContact, gender: value })} value={newContact.gender}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Male">Male</SelectItem>
+                      <SelectItem value="Female">Female</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="contactEmail" className="text-sm sm:text-base">
@@ -1959,7 +2062,9 @@ formDataToSend.append('name', formData.name.trim());
                   variant="outline"
                   onClick={() => {
                     setNewContact({
-                      name: "",
+                      firstName: "",
+                      lastName: "",
+                      gender: "",
                       email: "",
                       phone: "",
                       countryCode: "+966",

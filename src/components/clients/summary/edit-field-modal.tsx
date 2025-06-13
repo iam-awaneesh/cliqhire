@@ -9,14 +9,14 @@ import DatePicker from "react-datepicker"
 import "react-datepicker/dist/react-datepicker.css"
 
 interface EditFieldModalProps {
-  open: boolean
-  onClose: () => void
-  fieldName: string
-  currentValue?: string
-  onSave: (value: string) => void
-  isDate?: boolean,
-  isNumber?: boolean
-  
+  open: boolean;
+  onClose: () => void;
+  fieldName: string;
+  currentValue?: string;
+  onSave: (value: string) => void;
+  isDate?: boolean;
+  isNumber?: boolean;
+  options?: { value: string; label: string }[];
 }
 
 export function EditFieldModal({ 
@@ -26,7 +26,8 @@ export function EditFieldModal({
   currentValue = "", 
   isNumber,
   onSave,
-  isDate
+  isDate,
+  options
 }: EditFieldModalProps) {
   const [value, setValue] = useState(currentValue)
   const [selectedDate, setSelectedDate] = useState<Date | null>(
@@ -67,6 +68,19 @@ export function EditFieldModal({
                   placeholderText="Select Year"
                 />
               </div>
+            ) : options ? (
+              <select
+                id="value"
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                className="w-full p-2 border rounded-md"
+              >
+                {options.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             ) : (
               <Input
                 id="value"
