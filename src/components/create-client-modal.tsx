@@ -75,6 +75,7 @@ interface ClientForm {
   fixedPercentageValue?: string | number;
   fixedPercentageAdvanceNotes?: string;
   fixWithAdvanceValue?: string | number;
+  fixWithAdvanceMoney?: string | number; // Added for money value
   advanceMoneyCurrency?: string;
   advanceMoneyAmount?: number;
   fixWithoutAdvanceValue?: string | number;
@@ -114,6 +115,7 @@ interface ClientForm {
   otherMoney?: number;
   otherCurrency?: string;
 }
+
 
 interface CreateClientModalProps {
   open: boolean;
@@ -179,6 +181,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     fixedPercentageValue: "",
     fixedPercentageAdvanceNotes: "",
     fixWithAdvanceValue: "",
+    fixWithAdvanceMoney: "", // Added for money value
     fixWithoutAdvanceValue: "",
     cLevelPercentageNotes: "",
     belowCLevelPercentageNotes: "",
@@ -626,9 +629,8 @@ formDataToSend.append('name', formData.name.trim());
       formDataToSend.append('clientStage', formData.clientStage || "Lead");
       formDataToSend.append('clientTeam', formData.clientTeam || "Enterprise");
       
-      if (formData.salesLead) {
-        formDataToSend.append('salesLead', formData.salesLead);
-      }
+      // Always append salesLead, even if empty, for consistency
+      formDataToSend.append('salesLead', formData.salesLead ?? "");
 
       if (formData.clientPriority) {
         formDataToSend.append('clientPriority', formData.clientPriority.toString());
@@ -655,8 +657,7 @@ formDataToSend.append('name', formData.name.trim());
       if (formData.contractType) {
         formDataToSend.append('contractType', formData.contractType);
       }
-      
-      // Add percentage and notes fields for Level Based (Hiring)
+            // Add percentage and notes fields for Level Based (Hiring)
       if (formData.contractType === "Level Based (Hiring)") {
         if (selectedLevels.includes("Senior Level")) {
           formDataToSend.append('seniorLevelPercentage', (formData.seniorLevelPercentage ?? 0).toString());
@@ -683,7 +684,61 @@ formDataToSend.append('name', formData.name.trim());
           formDataToSend.append('otherNotes', formData.otherNotes);
         }
       }
-      
+
+      // Add percentage, money, and notes fields for Fix with Advance
+      if (formData.contractType === "Fix with Advance") {
+        if (formData.fixWithAdvanceValue !== undefined && formData.fixWithAdvanceValue !== null)
+          formDataToSend.append('fixWithAdvanceValue', formData.fixWithAdvanceValue.toString());
+        if (formData.fixWithAdvanceMoney !== undefined && formData.fixWithAdvanceMoney !== null && formData.fixWithAdvanceMoney !== "")
+          formDataToSend.append('fixWithAdvanceMoney', formData.fixWithAdvanceMoney.toString());
+        if (formData.fixedPercentageAdvanceNotes)
+          formDataToSend.append('fixedPercentageAdvanceNotes', formData.fixedPercentageAdvanceNotes);
+      }
+
+      // Add money, currency, and notes fields for Level Based With Advance
+      if (formData.contractType === "Level Based With Advance") {
+        if (selectedLevels.includes("Senior Level")) {
+          if (formData.seniorLevelPercentage !== undefined)
+            formDataToSend.append('seniorLevelPercentage', (formData.seniorLevelPercentage ?? 0).toString());
+          if (formData.seniorLevelMoney !== undefined && formData.seniorLevelMoney !== null && formData.seniorLevelMoney !== "")
+            formDataToSend.append('seniorLevelMoney', formData.seniorLevelMoney.toString());
+          if (formData.seniorLevelCurrency)
+            formDataToSend.append('seniorLevelCurrency', formData.seniorLevelCurrency);
+          if (formData.seniorLevelNotes)
+            formDataToSend.append('seniorLevelNotes', formData.seniorLevelNotes);
+        }
+        if (selectedLevels.includes("Executives")) {
+          if (formData.executivesPercentage !== undefined)
+            formDataToSend.append('executivesPercentage', (formData.executivesPercentage ?? 0).toString());
+          if (formData.executivesMoney !== undefined && formData.executivesMoney !== null && formData.executivesMoney !== "")
+            formDataToSend.append('executivesMoney', formData.executivesMoney.toString());
+          if (formData.executivesCurrency)
+            formDataToSend.append('executivesCurrency', formData.executivesCurrency);
+          if (formData.executivesNotes)
+            formDataToSend.append('executivesNotes', formData.executivesNotes);
+        }
+        if (selectedLevels.includes("Non-Executives")) {
+          if (formData.nonExecutivesPercentage !== undefined)
+            formDataToSend.append('nonExecutivesPercentage', (formData.nonExecutivesPercentage ?? 0).toString());
+          if (formData.nonExecutivesMoney !== undefined && formData.nonExecutivesMoney !== null && formData.nonExecutivesMoney !== "")
+            formDataToSend.append('nonExecutivesMoney', formData.nonExecutivesMoney.toString());
+          if (formData.nonExecutivesCurrency)
+            formDataToSend.append('nonExecutivesCurrency', formData.nonExecutivesCurrency);
+          if (formData.nonExecutivesNotes)
+            formDataToSend.append('nonExecutivesNotes', formData.nonExecutivesNotes);
+        }
+        if (selectedLevels.includes("Other")) {
+          if (formData.otherPercentage !== undefined)
+            formDataToSend.append('otherPercentage', (formData.otherPercentage ?? 0).toString());
+          if (formData.otherMoney !== undefined && formData.otherMoney !== null && formData.otherMoney !== "")
+            formDataToSend.append('otherMoney', formData.otherMoney.toString());
+          if (formData.otherCurrency)
+            formDataToSend.append('otherCurrency', formData.otherCurrency);
+          if (formData.otherNotes)
+            formDataToSend.append('otherNotes', formData.otherNotes);
+        }
+      }
+
       if (formData.cLevelPercentage) {
         formDataToSend.append('cLevelPercentage', formData.cLevelPercentage.toString());
       }
@@ -695,10 +750,6 @@ formDataToSend.append('name', formData.name.trim());
       // Add all notes fields
       if (formData.fixedPercentageNotes) {
         formDataToSend.append('fixedPercentageNotes', formData.fixedPercentageNotes);
-      }
-      
-      if (formData.fixedPercentageAdvanceNotes) {
-        formDataToSend.append('fixedPercentageAdvanceNotes', formData.fixedPercentageAdvanceNotes);
       }
       
       if (formData.cLevelPercentageNotes) {
@@ -716,10 +767,6 @@ formDataToSend.append('name', formData.name.trim());
       // Add all value fields
       if (formData.fixedPercentageValue) {
         formDataToSend.append('fixedPercentageValue', formData.fixedPercentageValue.toString());
-      }
-      
-      if (formData.fixWithAdvanceValue) {
-        formDataToSend.append('fixWithAdvanceValue', formData.fixWithAdvanceValue.toString());
       }
       
       if (formData.fixWithoutAdvanceValue) {
@@ -1385,8 +1432,8 @@ formDataToSend.append('name', formData.name.trim());
                             type="number"
                             placeholder="Amount"
                             min="0"
-                            onChange={handleInputChange("advanceMoneyAmount")}
-                            value={formData.advanceMoneyAmount || ""}
+                            onChange={handleInputChange("fixWithAdvanceMoney")}
+                            value={formData.fixWithAdvanceMoney || ""}
                             className="h-8 text-xs w-28 rounded-l-none border-l-0"
                           />
                         </div>
