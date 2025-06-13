@@ -116,6 +116,8 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
         contractTypeDetails[contractType] = {
           percentage: client.fixWithAdvanceValue?.toString() || "",
           notes: client.fixedPercentageAdvanceNotes || "",
+          money: client.fixWithAdvanceMoney?.toString() || "",
+          currency: client.fixWithAdvanceCurrency || "USD",
         };
       } else if (contractType === "Fix without Advance") {
         contractTypeDetails[contractType] = {
@@ -545,8 +547,12 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
         updateContractDetails({ contractTypeDetails: newDetails });
 
         if (contractDetails.contractType === "Fix with Advance") {
-          await patchClientData("fixWithAdvanceValue", percentage);
-          await patchClientData("fixedPercentageAdvanceNotes", notes);
+          await patchClientDataBulk({
+            "fixWithAdvanceValue": Number(percentage) || 0,
+            "fixedPercentageAdvanceNotes": notes || "",
+            "fixWithAdvanceMoney": Number(money) || 0,
+            "fixWithAdvanceCurrency": currency || "USD"
+          });
         } else if (contractDetails.contractType === "Fix without Advance") {
           await patchClientData("fixWithoutAdvanceValue", percentage);
           await patchClientData("fixWithoutAdvanceNotes", notes);
@@ -642,7 +648,7 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
           <div className="ml-8 flex items-center space-x-4">
             <label className="w-1/3 text-sm font-medium text-gray-600">{contractDetails.contractType}</label>
             <div className="w-2/3 flex items-center space-x-2">
-              <div className="relative w-1/3">
+              <div className="relative w-1/5">
                 <input
                   type="number"
                   value={contractDetails.contractTypeDetails[contractDetails.contractType]?.percentage || ""}
@@ -669,7 +675,59 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
                 />
                 <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-gray-500">%</span>
               </div>
-              <div className="w-2/3">
+              {contractDetails.contractType === "Fix with Advance" && (
+                <>
+                  <div className="w-1/5">
+                    <select
+                      value={contractDetails.contractTypeDetails[contractDetails.contractType]?.currency || "USD"}
+                      onChange={(e) =>
+                        updateContractDetails({
+                          contractTypeDetails: {
+                            ...contractDetails.contractTypeDetails,
+                            [contractDetails.contractType]: {
+                              ...contractDetails.contractTypeDetails[contractDetails.contractType],
+                              currency: e.target.value,
+                            },
+                          },
+                        })
+                      }
+                      disabled={editingLevel !== "contractType"}
+                      className={`w-full border rounded-md p-2 text-sm ${
+                        editingLevel === "contractType"
+                          ? "focus:ring-2 focus:ring-blue-500 bg-white"
+                          : "bg-gray-50 cursor-not-allowed"
+                      }`}
+                    >
+                      {["USD", "EUR", "GBP", "SAR", "AED", "INR"].map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
+                  <div className="w-1/5">
+                    <input
+                      type="number"
+                      value={contractDetails.contractTypeDetails[contractDetails.contractType]?.money || ""}
+                      onChange={(e) =>
+                        updateContractDetails({
+                          contractTypeDetails: {
+                            ...contractDetails.contractTypeDetails,
+                            [contractDetails.contractType]: {
+                              ...contractDetails.contractTypeDetails[contractDetails.contractType],
+                              money: e.target.value,
+                            },
+                          },
+                        })
+                      }
+                      readOnly={editingLevel !== "contractType"}
+                      className={`w-full border rounded-md p-2 text-sm ${
+                        editingLevel === "contractType"
+                          ? "focus:ring-2 focus:ring-blue-500 bg-white"
+                          : "bg-gray-50 cursor-not-allowed"
+                      }`}
+                      placeholder="Amount"
+                    />
+                  </div>
+                </>
+              )}
+              <div className={contractDetails.contractType === "Fix with Advance" ? "w-2/5" : "w-2/3"}>
                 <input
                   type="text"
                   value={contractDetails.contractTypeDetails[contractDetails.contractType]?.notes || ""}
@@ -958,6 +1016,32 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
                   <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-gray-500">%</span>
                 </div>
               </div>
+              {(editDialog.type === "Fix with Advance" || (editDialog.level && contractDetails.contractType === "Level Based With Advance")) && (
+                <>
+                  <div className="flex space-x-4">
+                    <div className="w-1/2">
+                      <label className="block text-sm font-medium text-gray-600 mb-1">Currency</label>
+                      <select
+                        value={editDialog.currency || "USD"}
+                        onChange={(e) => setEditDialog((prev) => ({ ...prev, currency: e.target.value }))}
+                        className="w-full border rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500"
+                      >
+                        {["USD", "EUR", "GBP", "SAR", "AED", "INR"].map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </div>
+                    <div className="w-1/2">
+                      <label className="block text-sm font-medium text-gray-600 mb-1">Amount</label>
+                      <input
+                        type="number"
+                        value={editDialog.money}
+                        onChange={(e) => setEditDialog((prev) => ({ ...prev, money: e.target.value }))}
+                        className="w-full border rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500"
+                        placeholder="Amount"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1">Notes</label>
                 <textarea

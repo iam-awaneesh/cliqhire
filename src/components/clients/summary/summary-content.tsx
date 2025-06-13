@@ -20,11 +20,6 @@ interface SummaryContentProps {
   clientId: string;
 }
 
-interface ApiResponse {
-  status: string;
-  data: ClientDetails;
-}
-
 interface ClientResponse {
   client?: ClientDetails;
   result?: ClientDetails;
@@ -124,47 +119,37 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
 
         const response: ClientResponse = await getClientById(clientId);
 
-        // Add detailed logging to debug the response structure
-        console.log("Raw response:", response);
-        console.log("Response type:", typeof response);
-        console.log("Response keys:", response ? Object.keys(response) : "No response");
-
         // Handle different possible response structures
         let clientData: ClientDetails;
 
         if (response && typeof response === 'object') {
-          // Check if response has a 'data' property
           if ('data' in response && response.data) {
             clientData = response.data;
-          }
-          // Check if response itself is the client data
-          else if ('name' in response) {
+          } else if ('name' in response) {
             clientData = response as ClientDetails;
-          }
-          // Check if response is wrapped in another structure
-          else if (response.client) {
+          } else if (response.client) {
             clientData = response.client;
-          }
-          // Check for other possible structures
-          else if (response.result) {
+          } else if (response.result) {
             clientData = response.result;
-          }
-          else {
-            console.error("Unexpected response structure:", response);
+          } else {
             throw new Error("Invalid response structure from API");
           }
         } else {
-          console.error("Invalid response:", response);
           throw new Error("No valid response received from API");
         }
 
-        // Validate that we have the required data
-        if (!clientData || typeof clientData !== 'object') {
-          console.error("Client data is not an object:", clientData);
-          throw new Error("Invalid client data structure");
-        }
+        // --- MAPPING PRIMARY CONTACTS ---
+        const mappedContacts = (clientData.primaryContacts || []).map((c: any) => ({
+          firstName: c.firstName || (c.name ? c.name.split(' ')[0] : ''),
+          lastName: c.lastName || (c.name ? c.name.split(' ').slice(1).join(' ') : ''),
+          gender: c.gender || '',
+          email: c.email || '',
+          phone: c.phone || '',
+          countryCode: c.countryCode || '',
+          position: c.position || c.designation || '',
+          linkedin: c.linkedin || '',
+        }));
 
-        // Set the client details with fallback values
         setClientDetails({
           clientPriority: clientData.clientPriority || "1",
           clientSegment: clientData.clientSegment || "A",
@@ -187,7 +172,7 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
           vatCopy: clientData.vatCopy || "",
           phoneNumber: clientData.phoneNumber || "",
           googleMapsLink: clientData.googleMapsLink || "",
-          primaryContacts: clientData.primaryContacts || [],
+          primaryContacts: mappedContacts,
           labelType: clientData.labelType || {
             seniorLevel: clientData.seniorLevel || "",
             executives: clientData.executives || "",
@@ -200,7 +185,6 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
 
         setLoading(false);
       } catch (error) {
-        console.error("Error fetching client data:", error);
         const errorMessage = error instanceof Error ? error.message : "Failed to load client data";
         setError(`${errorMessage}. Please try again.`);
         setLoading(false);
@@ -214,6 +198,7 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
       setLoading(false);
     }
   }, [clientId]);
+
 
   const updateClientDetails = async (fieldName: string, value: string) => {
     try {
