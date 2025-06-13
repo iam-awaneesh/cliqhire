@@ -457,12 +457,12 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
               )}
             </div>
             <DetailRow
-              label="Sales Lead"
+              label="Sales Lead (Internal)"
               value={clientDetails.salesLead}
               onUpdate={handleUpdateField("salesLead")}
             />
             <DetailRow
-              label="Referred By"
+              label="Referred By (External)"
               value={clientDetails.referredBy}
               onUpdate={handleUpdateField("referredBy")}
             />

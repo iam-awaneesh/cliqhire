@@ -700,7 +700,7 @@ formDataToSend.append('name', formData.name.trim());
         if (selectedLevels.includes("Senior Level")) {
           if (formData.seniorLevelPercentage !== undefined)
             formDataToSend.append('seniorLevelPercentage', (formData.seniorLevelPercentage ?? 0).toString());
-          if (formData.seniorLevelMoney !== undefined && formData.seniorLevelMoney !== null && formData.seniorLevelMoney !== "")
+          if (formData.seniorLevelMoney !== undefined && formData.seniorLevelMoney !== null && formData.seniorLevelMoney )
             formDataToSend.append('seniorLevelMoney', formData.seniorLevelMoney.toString());
           if (formData.seniorLevelCurrency)
             formDataToSend.append('seniorLevelCurrency', formData.seniorLevelCurrency);
@@ -710,7 +710,7 @@ formDataToSend.append('name', formData.name.trim());
         if (selectedLevels.includes("Executives")) {
           if (formData.executivesPercentage !== undefined)
             formDataToSend.append('executivesPercentage', (formData.executivesPercentage ?? 0).toString());
-          if (formData.executivesMoney !== undefined && formData.executivesMoney !== null && formData.executivesMoney !== "")
+          if (formData.executivesMoney !== undefined && formData.executivesMoney !== null && formData.executivesMoney)
             formDataToSend.append('executivesMoney', formData.executivesMoney.toString());
           if (formData.executivesCurrency)
             formDataToSend.append('executivesCurrency', formData.executivesCurrency);
@@ -720,7 +720,7 @@ formDataToSend.append('name', formData.name.trim());
         if (selectedLevels.includes("Non-Executives")) {
           if (formData.nonExecutivesPercentage !== undefined)
             formDataToSend.append('nonExecutivesPercentage', (formData.nonExecutivesPercentage ?? 0).toString());
-          if (formData.nonExecutivesMoney !== undefined && formData.nonExecutivesMoney !== null && formData.nonExecutivesMoney !== "")
+          if (formData.nonExecutivesMoney !== undefined && formData.nonExecutivesMoney !== null && formData.nonExecutivesMoney)
             formDataToSend.append('nonExecutivesMoney', formData.nonExecutivesMoney.toString());
           if (formData.nonExecutivesCurrency)
             formDataToSend.append('nonExecutivesCurrency', formData.nonExecutivesCurrency);
@@ -730,7 +730,7 @@ formDataToSend.append('name', formData.name.trim());
         if (selectedLevels.includes("Other")) {
           if (formData.otherPercentage !== undefined)
             formDataToSend.append('otherPercentage', (formData.otherPercentage ?? 0).toString());
-          if (formData.otherMoney !== undefined && formData.otherMoney !== null && formData.otherMoney !== "")
+          if (formData.otherMoney !== undefined && formData.otherMoney !== null && formData.otherMoney)
             formDataToSend.append('otherMoney', formData.otherMoney.toString());
           if (formData.otherCurrency)
             formDataToSend.append('otherCurrency', formData.otherCurrency);
