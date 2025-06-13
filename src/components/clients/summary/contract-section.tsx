@@ -117,7 +117,7 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
           percentage: client.fixWithAdvanceValue?.toString() || "",
           notes: client.fixedPercentageAdvanceNotes || "",
           money: client.fixWithAdvanceMoney?.toString() || "",
-          currency: client.fixWithAdvanceCurrency || "USD",
+          currency: client.fixWithAdvanceCurrency || "SAR",
         };
       } else if (contractType === "Fix without Advance") {
         contractTypeDetails[contractType] = {
@@ -551,7 +551,7 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
             "fixWithAdvanceValue": Number(percentage) || 0,
             "fixedPercentageAdvanceNotes": notes || "",
             "fixWithAdvanceMoney": Number(money) || 0,
-            "fixWithAdvanceCurrency": currency || "USD"
+            "fixWithAdvanceCurrency": currency || "SAR"
           });
         } else if (contractDetails.contractType === "Fix without Advance") {
           await patchClientData("fixWithoutAdvanceValue", percentage);
@@ -679,7 +679,7 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
                 <>
                   <div className="w-1/5">
                     <select
-                      value={contractDetails.contractTypeDetails[contractDetails.contractType]?.currency || "USD"}
+                      value={contractDetails.contractTypeDetails[contractDetails.contractType]?.currency || "SAR"}
                       onChange={(e) =>
                         updateContractDetails({
                           contractTypeDetails: {
@@ -857,7 +857,7 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
                     <>
                       <div className="col-span-2">
                         <select
-                          value={details.currency || "USD"}
+                          value={details.currency || "SAR"}
                           onChange={(e) => updateLevelDetail(level, "currency", e.target.value)}
                           disabled={!isEditing}
                           className={`w-full border rounded-md p-2 text-sm ${isEditing ? "bg-white focus:ring-2 focus:ring-blue-500" : "bg-gray-100"}`}
@@ -1022,7 +1022,7 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
                     <div className="w-1/2">
                       <label className="block text-sm font-medium text-gray-600 mb-1">Currency</label>
                       <select
-                        value={editDialog.currency || "USD"}
+                        value={editDialog.currency || "SAR"}
                         onChange={(e) => setEditDialog((prev) => ({ ...prev, currency: e.target.value }))}
                         className="w-full border rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500"
                       >

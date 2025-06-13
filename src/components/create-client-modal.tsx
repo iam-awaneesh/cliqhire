@@ -195,6 +195,11 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     nonExecutivesNotes: "",
     otherNotes: "",
     salesLead: "",
+    advanceMoneyCurrency: "SAR",
+    seniorLevelCurrency: "SAR",
+    executivesCurrency: "SAR",
+    nonExecutivesCurrency: "SAR",
+    otherCurrency: "SAR",
   });
 
   const [emailInput, setEmailInput] = useState<string>("");
