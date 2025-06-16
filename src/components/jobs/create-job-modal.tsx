@@ -16,7 +16,7 @@ import React from "react"
 import { JobStage } from "@/types/job"
 import { Badge } from "@/components/ui/badge"
 import { X, Upload, FileText } from "lucide-react"
-import { getClientNames } from "@/services/clientService"
+import { getClients } from "@/services/clientService"
 import { cn } from "@/lib/utils"
 
 // Define type for client data
@@ -171,46 +171,51 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
   const fileInputRef = React.useRef<HTMLInputElement | null>(null)
   const [isInputFocused, setIsInputFocused] = useState(false)
 
-const fetchClients = async () => {
-  setIsLoadingClients(true);
-  setClientError(null);
-  try {
-    // Get the client names from the API
-    const clientsFromApi = await getClientNames();
-    console.log('Raw client data from getClientNames:', clientsFromApi);
-
-    // Ensure the response is an array of strings
-    if (Array.isArray(clientsFromApi)) {
-      const clientData: ClientData[] = clientsFromApi
-        .filter((name): name is string => typeof name === 'string' && name.trim() !== '') // Filter out any non-string or empty values
-        .map((name, index) => ({
-          _id: name, // Use name as _id, as expected by backend
-          name,
-          jobCount: 0,
+  const fetchClients = async (searchTerm: string) => {
+    setIsLoadingClients(true);
+    setClientError(null);
+    try {
+      const { clients: clientsFromApi } = await getClients({ search: searchTerm, limit: 50 });
+      
+      if (Array.isArray(clientsFromApi)) {
+        const clientData: ClientData[] = clientsFromApi.map(client => ({
+          _id: client._id,
+          name: client.name,
+          jobCount: 0, // jobCount is not available from this endpoint
         }));
 
-      setClients(clientData);
+        setClients(clientData);
 
-      if (clientData.length === 0) {
-        setClientError('No clients found in the database');
+        if (clientData.length === 0 && searchTerm) {
+          setClientError(`No client found for "${searchTerm}"`);
+        } else if (clientData.length === 0) {
+          setClientError('No clients found in the database');
+        }
+      } else {
+        console.error('Received unexpected data format for clients:', clientsFromApi);
+        setClientError('Failed to load clients due to unexpected data format.');
+        setClients([]);
       }
-    } else {
-      console.error('Received unexpected data format for clients:', clientsFromApi);
-      setClientError('Failed to load clients due to unexpected data format.');
+    } catch (error: any) {
+      console.error('Error fetching clients:', error.message);
+      setClientError(`Failed to load clients: ${error.message}`);
       setClients([]);
+    } finally {
+      setIsLoadingClients(false);
     }
-  } catch (error: any) {
-    console.error('Error fetching client names:', error.message);
-    setClientError(`Failed to load clients: ${error.message}`);
-    setClients([]);
-  } finally {
-    setIsLoadingClients(false);
-  }
-};
+  };
 
   useEffect(() => {
-    fetchClients()
-  }, [])
+    const debounceTimer = setTimeout(() => {
+      if (isInputFocused) {
+        fetchClients(searchClient);
+      } else {
+        setClients([]);
+      }
+    }, 300);
+
+    return () => clearTimeout(debounceTimer);
+  }, [searchClient, isInputFocused]);
 
   useEffect(() => {
     const fetchCountrySuggestions = async () => {
@@ -404,107 +409,56 @@ const fetchClients = async () => {
     return clientName.includes(searchClient.toLowerCase())
   })
 
-  // const handleSubmit = async (e: React.FormEvent) => {
-  //   e.preventDefault()
-  //   try {
-  //     const numberOfPositions = parseInt(formData.numberOfPositions) || 1
-  //     const location = numberOfPositions > 1 ? formData.locations.join(", ") : formData.location
-  //     const jobData = {
-  //       jobTitle: formData.jobTitle,
-  //       department: "General",
-  //       client: formData.client,
-  //       jobPosition: [formData.jobTitle], // Convert to array
-  //       location: location, // Use the calculated location string
-  //       headcount: numberOfPositions,
-  //       stage: formData.stage,
-  //       minimumSalary: parseInt(formData.salaryRange.min) || 0,
-  //       maximumSalary: parseInt(formData.salaryRange.max) || 0,
-  //       salaryCurrency: formData.salaryRange.currency,
-  //       jobType: formData.jobTypes,
-  //       experience: formData.experience,
-  //       jobDescription: formData.jobDescription,
-  //       nationalities: formData.nationalities,
-  //       salaryRange: {
-  //         min: parseInt(formData.salaryRange.min) || 0,
-  //         max: parseInt(formData.salaryRange.max) || 0,
-  //         currency: formData.salaryRange.currency
-  //       },
-  //       gender: formData.gender,
-  //       deadline: formData.deadline ? formData.deadline.toISOString() : "",
-  //       clientDeadline: formData.clientDeadline ? formData.clientDeadline.toISOString() : null,
-  //       internalDeadline: formData.internalDeadline ? formData.internalDeadline.toISOString() : null,
-  //       relationshipManager: formData.relationshipManager,
-  //       reportingTo: formData.reportingTo,
-  //       teamSize: formData.teamSize,
-  //       link: formData.link,
-  //       keySkills: formData.keySkills,
-  //       dateRange: {
-  //         start: formData.dateRange.start,
-  //         end: formData.dateRange.end
-  //       },
-  //       otherBenefits: formData.otherBenefits,
-  //       certifications: formData.certifications
-  //     }
-
-  //     const response = await createJob(jobData)
-  //     console.log("Job created successfully:", response)
-  //     setCurrentTab(0)
-  //     onOpenChange(false)
-  //   } catch (error: any) {
-  //     console.error("Error creating job:", error)
-  //   }
-  // }
-
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault()
-  try {
-    const numberOfPositions = parseInt(formData.numberOfPositions) || 1
-    const location = numberOfPositions > 1 ? formData.locations : [formData.location]
-    const jobData = {
-      jobTitle: formData.jobTitle,
-      department: "General",
-      client: formData.client,
-      jobPosition: [formData.jobTitle], // Convert to array
-      location: location, // Use the array of locations
-      headcount: numberOfPositions,
-      stage: formData.stage,
-      minimumSalary: parseInt(formData.salaryRange.min) || 0,
-      maximumSalary: parseInt(formData.salaryRange.max) || 0,
-      salaryCurrency: formData.salaryRange.currency,
-      jobType: formData.jobTypes,
-      experience: formData.experience,
-      jobDescription: formData.jobDescription,
-      nationalities: formData.nationalities,
-      salaryRange: {
-        min: parseInt(formData.salaryRange.min) || 0,
-        max: parseInt(formData.salaryRange.max) || 0,
-        currency: formData.salaryRange.currency
-      },
-      gender: formData.gender,
-      deadline: formData.deadline ? formData.deadline.toISOString() : "",
-      clientDeadline: formData.clientDeadline ? formData.clientDeadline.toISOString() : null,
-      internalDeadline: formData.internalDeadline ? formData.internalDeadline.toISOString() : null,
-      relationshipManager: formData.relationshipManager,
-      reportingTo: formData.reportingTo,
-      teamSize: formData.teamSize,
-      link: formData.link,
-      keySkills: formData.keySkills,
-      dateRange: {
-        start: formData.dateRange.start,
-        end: formData.dateRange.end
-      },
-      otherBenefits: formData.otherBenefits,
-      certifications: formData.certifications
-    }
+    e.preventDefault()
+    try {
+      const numberOfPositions = parseInt(formData.numberOfPositions) || 1
+      const location = numberOfPositions > 1 ? formData.locations : [formData.location]
+      const jobData = {
+        jobTitle: formData.jobTitle,
+        department: "General",
+        client: formData.client,
+        jobPosition: [formData.jobTitle], // Convert to array
+        location: location, // Use the array of locations
+        headcount: numberOfPositions,
+        stage: formData.stage,
+        minimumSalary: parseInt(formData.salaryRange.min) || 0,
+        maximumSalary: parseInt(formData.salaryRange.max) || 0,
+        salaryCurrency: formData.salaryRange.currency,
+        jobType: formData.jobTypes,
+        experience: formData.experience,
+        jobDescription: formData.jobDescription,
+        nationalities: formData.nationalities,
+        salaryRange: {
+          min: parseInt(formData.salaryRange.min) || 0,
+          max: parseInt(formData.salaryRange.max) || 0,
+          currency: formData.salaryRange.currency
+        },
+        gender: formData.gender,
+        deadline: formData.deadline ? formData.deadline.toISOString() : "",
+        clientDeadline: formData.clientDeadline ? formData.clientDeadline.toISOString() : null,
+        internalDeadline: formData.internalDeadline ? formData.internalDeadline.toISOString() : null,
+        relationshipManager: formData.relationshipManager,
+        reportingTo: formData.reportingTo,
+        teamSize: formData.teamSize,
+        link: formData.link,
+        keySkills: formData.keySkills,
+        dateRange: {
+          start: formData.dateRange.start,
+          end: formData.dateRange.end
+        },
+        otherBenefits: formData.otherBenefits,
+        certifications: formData.certifications
+      }
 
-    const response = await createJob(jobData)
-    console.log("Job created successfully:", response)
-    setCurrentTab(0)
-    onOpenChange(false)
-  } catch (error: any) {
-    console.error("Error creating job:", error)
+      const response = await createJob(jobData)
+      console.log("Job created successfully:", response)
+      setCurrentTab(0)
+      onOpenChange(false)
+    } catch (error: any) {
+      console.error("Error creating job:", error)
+    }
   }
-}
 
   function handleRemoveFile(): void {
     setSelectedFile(null)
