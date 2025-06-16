@@ -11,7 +11,6 @@ export interface PrimaryContact {
   error?: string;
 }
 
-// Interface for Client Response
 export interface ClientResponse {
   _id: string;
   name: string;
@@ -43,7 +42,7 @@ export interface ClientResponse {
   cLevelPercentage?: number;
   belowCLevelPercentage?: number;
   fixedPercentageNotes?: string;
-  fixedPercentageValue?:string;
+  fixedPercentageValue?: string;
   fixedPercentageAdvanceNotes?: string;
   cLevelPercentageNotes?: string;
   belowCLevelPercentageNotes?: string;
@@ -90,6 +89,7 @@ interface ApiResponse<T> {
   message?: string;
   error?: string;
 }
+
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://aems-backend.onrender.com/api";
 

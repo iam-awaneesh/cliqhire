@@ -1,4 +1,8 @@
-import axios from "axios";
+import axios, { AxiosError } from "axios";
+
+// =========================
+// Job Service
+// =========================
 
 interface SalaryRange {
   min: number;
@@ -9,6 +13,11 @@ interface SalaryRange {
 interface WorkVisa {
   workVisa: string;
   visaCountries: string[];
+}
+
+export interface ClientRef {
+  _id: string;
+  name: string;
 }
 
 export interface JobData {
@@ -43,13 +52,8 @@ export interface JobData {
   numberOfPositions?: number;
 }
 
-export interface ClientRef {
-  _id: string;
-  name: string;
-}
-
 export interface Job extends JobData {
-  _id:string;
+  _id: string;
   client: ClientRef;
   createdAt: string;
   updatedAt: string;
@@ -73,21 +77,25 @@ export interface PaginatedJobResponse extends JobResponse {
   pages: number;
 }
 
-const API_URL = "https://aems-backend.onrender.com/api";
+export interface JobCountByClient {
+  _id: string;
+  count: number;
+  clientName?: string;
+}
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://aems-backend.onrender.com/api";
 
 // Utility function to handle API errors consistently
 const handleApiError = (error: any, context: string) => {
   if (error.response) {
     const status = error.response.status;
     const errorMessage = error.response.data?.message || 'Unknown error occurred';
-    
     console.error(`API Error (${context}):`, {
       status,
       message: errorMessage,
       url: error.config.url,
       data: error.response.data
     });
-
     throw new Error(`${context} failed: ${errorMessage} (Status: ${status})`);
   } else if (error.request) {
     console.error(`Network Error (${context}):`, error.request);
@@ -101,12 +109,10 @@ const handleApiError = (error: any, context: string) => {
 // Process job data before sending to API
 const processJobData = (jobData: JobData | Partial<JobData>) => {
   const dataToSend = { ...jobData };
-
   // Ensure client is just the ID string before sending
   if (dataToSend.client && typeof dataToSend.client === 'object' && (dataToSend.client as ClientRef)._id) {
     dataToSend.client = (dataToSend.client as ClientRef)._id;
   }
-
   return {
     ...dataToSend,
     deadlineclient: dataToSend.deadlineclient ? new Date(dataToSend.deadlineclient).toISOString() : null,
@@ -125,12 +131,11 @@ const createJob = async (jobData: JobData): Promise<JobResponse> => {
   try {
     const processedData = processJobData(jobData);
     const response = await axios.post<JobResponse>(`${API_URL}/jobs`, processedData);
-    
     console.log('Job created successfully:', response.data);
     return response.data;
   } catch (error) {
     handleApiError(error, 'job creation');
-    throw error; // This line is actually unreachable because handleApiError throws
+    throw error;
   }
 };
 
@@ -151,21 +156,18 @@ const getJobs = async (
   }
 ): Promise<PaginatedJobResponse> => {
   try {
-    // Process query parameters
     const processedParams = {
       ...params,
       ...(params?.jobType && { jobType: params.jobType.toLowerCase() }),
       ...(params?.gender && { gender: params.gender.toLowerCase() })
     };
-
     const response = await axios.get<PaginatedJobResponse>(`${API_URL}/jobs`, {
       params: processedParams
     });
-
     return response.data;
   } catch (error) {
     handleApiError(error, 'jobs fetching');
-    throw error; // This line is actually unreachable because handleApiError throws
+    throw error;
   }
 };
 
@@ -178,7 +180,7 @@ const getJobById = async (id: string): Promise<JobResponse> => {
       throw new Error('Job not found');
     }
     handleApiError(error, 'job fetching');
-    throw error; // This line is actually unreachable because handleApiError throws
+    throw error;
   }
 };
 
@@ -186,12 +188,11 @@ const updateJobById = async (id: string, jobData: Partial<JobData>): Promise<Job
   try {
     const processedData = processJobData(jobData);
     const response = await axios.put<JobResponse>(`${API_URL}/jobs/${id}`, processedData);
-    
     console.log('Job updated successfully:', response.data);
     return response.data;
   } catch (error) {
     handleApiError(error, 'job update');
-    throw error; // This line is actually unreachable because handleApiError throws
+    throw error;
   }
 };
 
@@ -202,28 +203,28 @@ const deleteJobById = async (id: string): Promise<JobResponse> => {
     return response.data;
   } catch (error) {
     handleApiError(error, 'job deletion');
-    throw error; // This line is actually unreachable because handleApiError throws
+    throw error;
   }
 };
 
-// New function to get job counts by client
-const getJobCountsByClient = async (): Promise<{_id: string, count: number}[]> => {
+// Bulk job count by client
+const getJobCountsByClient = async (): Promise<JobCountByClient[]> => {
   try {
-    const response = await axios.get<{data: {_id: string, count: number}[]}>(
+    const response = await axios.get<{ success: boolean, data: JobCountByClient[] }>(
       `${API_URL}/jobs/clients/count`
     );
     return response.data.data;
   } catch (error) {
     handleApiError(error, 'fetching job counts by client');
-    throw error; // This line is actually unreachable because handleApiError throws
+    throw error;
   }
 };
 
-export { 
-  createJob, 
-  getJobs, 
-  getJobById, 
-  updateJobById, 
+export {
+  createJob,
+  getJobs,
+  getJobById,
+  updateJobById,
   deleteJobById,
-  getJobCountsByClient 
+  getJobCountsByClient
 };
