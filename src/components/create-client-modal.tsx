@@ -93,6 +93,7 @@ interface ClientForm {
   salesLead?: string;
   clientPriority?: number;
   clientSegment?: string;
+  clientSource?: "Cold Call" | "Reference" | "Events" | "Existing Old Client" | "Others";
   // File upload fields
   crCopy?: any;
   vatCopy?: any;
@@ -115,7 +116,6 @@ interface ClientForm {
   otherMoney?: number;
   otherCurrency?: string;
 }
-
 
 interface CreateClientModalProps {
   open: boolean;
@@ -200,6 +200,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     executivesCurrency: "SAR",
     nonExecutivesCurrency: "SAR",
     otherCurrency: "SAR",
+    clientSource: undefined,
   });
 
   const [emailInput, setEmailInput] = useState<string>("");
@@ -860,6 +861,7 @@ formDataToSend.append('name', formData.name.trim());
         salesLead: "",
         clientPriority: 1,
         clientSegment: "",
+        clientSource: undefined,
       });
       setEmailInput("");
       setUploadedFiles({
@@ -914,7 +916,7 @@ formDataToSend.append('name', formData.name.trim());
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-full max-w-[95vw] sm:max-w-[90vw] md:max-w-3xl lg:max-w-4xl xl:max-w-5xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 md:p-8">
         <DialogHeader>
-          <DialogTitle className="text-lg sm:text-xl md:text-2xl">Create Client</DialogTitle>
+          <DialogTitle className="text-lg sm:text-xl">Create Client</DialogTitle>
           <DialogDescription className="text-sm sm:text-base">
             Fill in the client details below. Required fields are marked with an asterisk (*).
           </DialogDescription>
@@ -1031,6 +1033,30 @@ formDataToSend.append('name', formData.name.trim());
                   className="w-full"
                   placeholder="Enter client name"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="clientSource" className="text-sm sm:text-base">
+                  Client Source *
+                </Label>
+                <Select
+                  onValueChange={(value) => setFormData((prev) => ({ ...prev, clientSource: value as "Cold Call" | "Reference" | "Events" | "Existing Old Client" | "Others" | undefined }))}
+                  value={formData.clientSource}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Client Source" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>Client Source</SelectLabel>
+                      <SelectItem value="Cold Call">Cold Call</SelectItem>
+                      <SelectItem value="Reference">Reference</SelectItem>
+                      <SelectItem value="Events">Events</SelectItem>
+                      <SelectItem value="Existing Old Client">Existing Old Client</SelectItem>
+                      <SelectItem value="Others">Others</SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
