@@ -114,6 +114,8 @@ interface ClientForm {
   clientSegment?: string;
   technicalProposal?: any;
   financialProposal?: any;
+  technicalProposalNotes?: string;
+  financialProposalNotes?: string;
 }
 
 interface CreateClientModalProps {
@@ -185,6 +187,8 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     otherCurrency: "SAR",
     clientSource: undefined,
     proposalOptions: [],
+    technicalProposalNotes: "",
+    financialProposalNotes: "",
   });
 
   const [emailInput, setEmailInput] = useState<string>("");
@@ -642,6 +646,18 @@ formDataToSend.append('name', formData.name.trim());
 
       if (formData.clientSegment) {
         formDataToSend.append('clientSegment', formData.clientSegment);
+      }
+
+      if (formData.clientSource) {
+        formDataToSend.append('clientSource', formData.clientSource);
+      }
+
+      if (formData.technicalProposalNotes) {
+        formDataToSend.append('technicalProposalNotes', formData.technicalProposalNotes);
+      }
+
+      if (formData.financialProposalNotes) {
+        formDataToSend.append('financialProposalNotes', formData.financialProposalNotes);
       }
       
       if (formData.contractStartDate) {
@@ -1445,7 +1461,9 @@ formDataToSend.append('name', formData.name.trim());
                           </div>
                           {formData.proposalOptions?.includes(type) && (
                             <>
-                              <Textarea 
+                              <Textarea
+                                value={type === 'Technical Proposal' ? formData.technicalProposalNotes || '' : formData.financialProposalNotes || ''}
+                                onChange={handleInputChange(type === 'Technical Proposal' ? 'technicalProposalNotes' : 'financialProposalNotes')}
                                 placeholder={`Enter ${type} notes...`}
                                 className="min-h-[100px]"
                               />
