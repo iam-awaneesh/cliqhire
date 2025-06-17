@@ -10,19 +10,19 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { ChevronDown } from "lucide-react"
 
-const stageColors = {
-  Lead: "bg-blue-100 text-blue-800",
-  Negotiation: "bg-purple-100 text-purple-800",
-  Engaged: "bg-yellow-100 text-gray-800",
-  Signed: "bg-green-100 text-green-800",
-} as const
-
 const stages: (keyof typeof stageColors)[] = [
   'Lead',
   'Negotiation',
   'Engaged',
   'Signed'
 ]
+
+const stageColors = {
+  Lead: "bg-blue-100 text-blue-800",
+  Negotiation: "bg-purple-100 text-purple-800",
+  Engaged: "bg-yellow-100 text-gray-800",
+  Signed: "bg-green-100 text-green-800",
+} as const
 
 interface ClientStageBadgeProps {
   id?: string
@@ -79,7 +79,7 @@ export function ClientStageBadge({ id, stage, onStageChange }: ClientStageBadgeP
           >
             <Badge 
               variant="secondary" 
-              className={`${stageColors[stageOption]} border-none`}
+              className={`${stageColors[stageOption]} border-none text-black`}
             >
               {stageOption}
             </Badge>

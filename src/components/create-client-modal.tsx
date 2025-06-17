@@ -166,7 +166,7 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     linkedInPage: "",
     countryCode: "+966",
     primaryContacts: [],
-    clientStage: "Lead",
+    clientStage: undefined,
     clientTeam: "Enterprise",
     clientRm: "",
     clientAge: 0,
@@ -632,7 +632,7 @@ formDataToSend.append('name', formData.name.trim());
         }))));
       }
       
-      formDataToSend.append('clientStage', formData.clientStage || "Lead");
+      formDataToSend.append('clientStage', formData.clientStage || "");
       formDataToSend.append('clientTeam', formData.clientTeam || "Enterprise");
       
       // Always append salesLead, even if empty, for consistency
@@ -832,7 +832,7 @@ formDataToSend.append('name', formData.name.trim());
         linkedInPage: "",
         countryCode: "+966",
         primaryContacts: [],
-        clientStage: "Lead",
+        clientStage: undefined,
         clientTeam: "Enterprise",
         clientRm: "",
         clientAge: 0,
@@ -942,6 +942,57 @@ formDataToSend.append('name', formData.name.trim());
         <form onSubmit={handleSubmit}>
           {currentTab === 0 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="clientStage" className="text-sm sm:text-base">
+                  Client Stage *
+                </Label>
+                <Select
+                  value={formData.clientStage}
+                  onValueChange={(value) => setFormData((prev) => ({ ...prev, clientStage: value as "Lead" | "Engaged" | "Negotiation" | "Signed" }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select client stage" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>Client Stage</SelectLabel>
+                      <SelectItem value="Lead">
+                        <div className="group relative inline-block w-full">
+                          <span>Lead</span>
+                          <div className="absolute hidden group-hover:flex z-50 w-64 p-2 text-sm bg-blue-50 border-blue-100 dark:bg-blue-900/30 dark:border-blue-800 rounded-lg shadow-lg left-0 line-clamp-2">
+                            <p className="text-blue-700 dark:text-blue-200 font-sans">Potential customer who has shown initial interest but has not yet been contacted or qualified.</p>
+                          </div>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="Engaged">
+                        <div className="group relative inline-block w-full">
+                          <span>Engaged</span>
+                          <div className="absolute hidden group-hover:flex z-50 w-64 p-2 text-sm bg-purple-50 border-purple-100 dark:bg-purple-900/30 dark:border-purple-800 rounded-lg shadow-lg left-0 line-clamp-2">
+                            <p className="text-purple-700 dark:text-purple-200 font-sans">The lead has responded or interacted. There is active communication from both sides.</p>
+                          </div>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="Negotiation">
+                        <div className="group relative inline-block w-full">
+                          <span>Negotiation</span>
+                          <div className="absolute hidden group-hover:flex z-50 w-64 p-2 text-sm bg-amber-50 border-amber-100 dark:bg-amber-900/30 dark:border-amber-800 rounded-lg shadow-lg left-0 line-clamp-2">
+                            <p className="text-amber-700 dark:text-amber-200 font-sans">Ongoing discussions about terms, pricing, or other deal specifics.</p>
+                          </div>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="Signed">
+                        <div className="group relative inline-block w-full">
+                          <span>Signed</span>
+                          <div className="absolute hidden group-hover:flex z-50 w-64 p-2 text-sm bg-green-50 border-green-100 dark:bg-green-900/30 dark:border-green-800 rounded-lg shadow-lg left-0 line-clamp-2">
+                            <p className="text-green-700 dark:text-green-200 font-sans">The deal is finalized with a formal contract or agreement signed.</p>
+                          </div>
+                        </div>
+                      </SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="salesLead" className="text-sm sm:text-base">
                   Sales Lead (Internal)*
@@ -1222,7 +1273,9 @@ formDataToSend.append('name', formData.name.trim());
               <div className="space-y-2">
                 <div className="bg-white rounded-lg border shadow-sm p-4">
                   <div className="flex items-center justify-between mb-4">
-                    <Label className="text-sm sm:text-base">Primary Contacts *</Label>
+                    <Label className="text-sm sm:text-base">
+                      Primary Contacts *
+                    </Label>
                     <Button
                       variant="outline"
                       size="sm"
