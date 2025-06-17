@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Upload, Plus, Eye, Download } from "lucide-react";
 import DatePicker from "react-datepicker";
@@ -47,6 +47,7 @@ interface ClientForm {
   emails: string[];
   phoneNumber: string;
   website?: string;
+  salesLead?: string;
   industry?: string;
   location?: string;
   address?: string;
@@ -58,10 +59,10 @@ interface ClientForm {
   referredBy?: string;
   linkedInProfile?: string;
   linkedInPage?: string;
-  countryCode?: string;
+  countryCode: string;
   primaryContacts: PrimaryContact[];
   clientStage?: "Lead" | "Engaged" | "Negotiation" | "Signed";
-  clientTeam?: "Enterprise" | "SMB" | "Mid-Market";
+  clientTeam?: string;
   clientRm?: string;
   clientAge?: number;
   contractNumber?: string;
@@ -72,28 +73,11 @@ interface ClientForm {
   cLevelPercentage?: number;
   belowCLevelPercentage?: number;
   fixedPercentageNotes?: string;
-  fixedPercentageValue?: string | number;
   fixedPercentageAdvanceNotes?: string;
-  fixWithAdvanceValue?: string | number;
-  fixWithAdvanceMoney?: string | number; // Added for money value
   advanceMoneyCurrency?: string;
   advanceMoneyAmount?: number;
-  fixWithoutAdvanceValue?: string | number;
   cLevelPercentageNotes?: string;
-  belowCLevelPercentageNotes?: string;
-  fixWithoutAdvanceNotes?: string;
-  seniorLevelPercentage?: number;
-  executivesPercentage?: number;
-  nonExecutivesPercentage?: number;
-  otherPercentage?: number;
-  seniorLevelNotes?: string;
-  executivesNotes?: string;
-  nonExecutivesNotes?: string;
-  otherNotes?: string;
-  salesLead?: string;
-  clientPriority?: number;
-  clientSegment?: string;
-  clientSource?: "Cold Call" | "Reference" | "Events" | "Existing Old Client" | "Others";
+  proposalOptions?: string[];
   // File upload fields
   crCopy?: any;
   vatCopy?: any;
@@ -115,6 +99,21 @@ interface ClientForm {
   nonExecutivesCurrency?: string;
   otherMoney?: number;
   otherCurrency?: string;
+  seniorLevelPercentage?: number;
+  executivesPercentage?: number;
+  nonExecutivesPercentage?: number;
+  otherPercentage?: number;
+  seniorLevelNotes?: string;
+  executivesNotes?: string;
+  nonExecutivesNotes?: string;
+  otherNotes?: string;
+  clientSource?: string;
+  fixWithoutAdvanceNotes?: string;
+  fixWithoutAdvanceValue?: number;
+  clientPriority?: number;
+  clientSegment?: string;
+  technicalProposal?: any;
+  financialProposal?: any;
 }
 
 interface CreateClientModalProps {
@@ -178,29 +177,14 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     cLevelPercentage: 0,
     belowCLevelPercentage: 0,
     fixedPercentageNotes: "",
-    fixedPercentageValue: "",
     fixedPercentageAdvanceNotes: "",
-    fixWithAdvanceValue: "",
-    fixWithAdvanceMoney: "", // Added for money value
-    fixWithoutAdvanceValue: "",
-    cLevelPercentageNotes: "",
-    belowCLevelPercentageNotes: "",
-    fixWithoutAdvanceNotes: "",
-    seniorLevelPercentage: 0,
-    executivesPercentage: 0,
-    nonExecutivesPercentage: 0,
-    otherPercentage: 0,
-    seniorLevelNotes: "",
-    executivesNotes: "",
-    nonExecutivesNotes: "",
-    otherNotes: "",
-    salesLead: "",
     advanceMoneyCurrency: "SAR",
     seniorLevelCurrency: "SAR",
     executivesCurrency: "SAR",
     nonExecutivesCurrency: "SAR",
     otherCurrency: "SAR",
     clientSource: undefined,
+    proposalOptions: [],
   });
 
   const [emailInput, setEmailInput] = useState<string>("");
@@ -245,6 +229,8 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     executives: null,
     nonExecutives: null,
     other: null,
+    technicalProposal: null,
+    financialProposal: null,
   });
 
   type LevelType =
@@ -260,7 +246,9 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     | "fixedPercentageAdvance"
     | "variablePercentageCLevel"
     | "variablePercentageBelowCLevel"
-    | "fixWithoutAdvance";
+    | "fixWithoutAdvance"
+    | "technicalProposal"
+    | "financialProposal";
 
   const handleFileChange = (field: LevelType) => (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -283,12 +271,22 @@ export function CreateClientModal({ open, onOpenChange }: CreateClientModalProps
     }
   };
 
-  const handlePreview = (file: File | null) => {
-    if (file) {
+  const handlePreview = (file: File | string | null) => {
+    if (!file) {
+      setError("No file uploaded to preview.");
+      return;
+    }
+    
+    if (typeof file === 'string') {
+      // If it's a string, it's probably a URL or file path
+      const fileUrl = file.startsWith('http') ? file : `https://aems-backend.onrender.com/${file}`;
+      window.open(fileUrl, "_blank");
+    } else if (file instanceof File) {
+      // If it's a File object
       const fileUrl = URL.createObjectURL(file);
       window.open(fileUrl, "_blank");
     } else {
-      setError("No file uploaded to preview.");
+      setError("Unsupported file type for preview.");
     }
   };
 
@@ -693,10 +691,10 @@ formDataToSend.append('name', formData.name.trim());
 
       // Add percentage, money, and notes fields for Fix with Advance
       if (formData.contractType === "Fix with Advance") {
-        if (formData.fixWithAdvanceValue !== undefined && formData.fixWithAdvanceValue !== null)
-          formDataToSend.append('fixWithAdvanceValue', formData.fixWithAdvanceValue.toString());
-        if (formData.fixWithAdvanceMoney !== undefined && formData.fixWithAdvanceMoney !== null && formData.fixWithAdvanceMoney !== "")
-          formDataToSend.append('fixWithAdvanceMoney', formData.fixWithAdvanceMoney.toString());
+        if (formData.fixWithoutAdvanceValue !== undefined && formData.fixWithoutAdvanceValue !== null)
+          formDataToSend.append('fixWithoutAdvanceValue', formData.fixWithoutAdvanceValue.toString());
+        if (formData.fixWithoutAdvance !== undefined && formData.fixWithoutAdvance !== null && formData.fixWithoutAdvance !== "")
+          formDataToSend.append('fixWithoutAdvance', formData.fixWithoutAdvance.toString());
         if (formData.fixedPercentageAdvanceNotes)
           formDataToSend.append('fixedPercentageAdvanceNotes', formData.fixedPercentageAdvanceNotes);
       }
@@ -762,17 +760,14 @@ formDataToSend.append('name', formData.name.trim());
         formDataToSend.append('cLevelPercentageNotes', formData.cLevelPercentageNotes);
       }
       
-      if (formData.belowCLevelPercentageNotes) {
-        formDataToSend.append('belowCLevelPercentageNotes', formData.belowCLevelPercentageNotes);
-      }
       
       if (formData.fixWithoutAdvanceNotes) {
         formDataToSend.append('fixWithoutAdvanceNotes', formData.fixWithoutAdvanceNotes);
       }
       
       // Add all value fields
-      if (formData.fixedPercentageValue) {
-        formDataToSend.append('fixedPercentageValue', formData.fixedPercentageValue.toString());
+      if (formData.fixedPercentage) {
+        formDataToSend.append('fixedPercentage', formData.fixedPercentage.toString());
       }
       
       if (formData.fixWithoutAdvanceValue) {
@@ -793,7 +788,9 @@ formDataToSend.append('name', formData.name.trim());
         "executives",
         "nonExecutives",
         "other",
-        "profileImage"
+        "profileImage",
+        "technicalProposal",
+        "financialProposal"
       ];
       
       // Append files to FormData if they exist
@@ -848,7 +845,7 @@ formDataToSend.append('name', formData.name.trim());
         advanceMoneyCurrency: "USD",
         advanceMoneyAmount: 0,
         cLevelPercentageNotes: "",
-        belowCLevelPercentageNotes: "",
+        // belowCLevelPercentageNotes: "",
         fixWithoutAdvanceNotes: "",
         seniorLevelPercentage: 0,
         executivesPercentage: 0,
@@ -862,6 +859,7 @@ formDataToSend.append('name', formData.name.trim());
         clientPriority: 1,
         clientSegment: "",
         clientSource: undefined,
+        proposalOptions: [],
       });
       setEmailInput("");
       setUploadedFiles({
@@ -878,14 +876,8 @@ formDataToSend.append('name', formData.name.trim());
         executives: null,
         nonExecutives: null,
         other: null,
-        seniorLevelMoney: null,
-        seniorLevelCurrency: null as File | null,
-        executivesMoney: null,
-        executivesCurrency: null as File | null,
-        nonExecutivesMoney: null,
-        nonExecutivesCurrency: null as File | null,
-        otherMoney: null,
-        otherCurrency: null as File | null,
+        technicalProposal: null,
+        financialProposal: null,
       });
       setNewContact({ firstName: "", lastName: "", gender: "", email: "", phone: "", countryCode: "+966", designation: "", linkedin: "", isPrimary: true });
       setCurrentTab(0);
@@ -910,6 +902,19 @@ formDataToSend.append('name', formData.name.trim());
 
   const handlePrevious = () => {
     setCurrentTab((prev) => Math.max(prev - 1, 0));
+  };
+
+  const technicalProposalInputRef = useRef<HTMLInputElement>(null);
+  const financialProposalInputRef = useRef<HTMLInputElement>(null);
+  const technicalProposalOptionInputRef = useRef<HTMLInputElement>(null);
+  const financialProposalOptionInputRef = useRef<HTMLInputElement>(null);
+
+  const handleTechnicalProposalClick = () => {
+    technicalProposalInputRef.current?.click();
+  };
+
+  const handleFinancialProposalClick = () => {
+    financialProposalInputRef.current?.click();
   };
 
   return (
@@ -1368,7 +1373,11 @@ formDataToSend.append('name', formData.name.trim());
                       />
                       <label
                         htmlFor={`lob-${option}`}
-                        className="text-xs sm:text-sm font-medium leading-none"
+                        className={`text-xs sm:text-sm font-medium leading-none cursor-pointer ${formData.lineOfBusiness?.includes(option)
+                            ? "font-bold text-primary"
+                            : ""
+                          }`}
+                        onClick={() => formData.lineOfBusiness?.includes(option) && setFormData((prev) => ({ ...prev, lineOfBusiness: [option] }))}
                       >
                         {option
                           .split("-")
@@ -1378,6 +1387,122 @@ formDataToSend.append('name', formData.name.trim());
                     </div>
                   ))}
                 </div>
+                {(formData.lineOfBusiness?.includes("HR Consulting") || 
+                  formData.lineOfBusiness?.includes("Mgt Consulting")) && (
+                  <div className="mt-4 space-y-4">
+                    <h4 className="text-sm font-medium">Proposal Options</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {["Technical Proposal", "Financial Proposal"].map((type) => (
+                        <div key={type} className="border rounded-lg p-4 space-y-3">
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center space-x-2">
+                              <Checkbox 
+                                id={`proposal-${type}`}
+                                checked={formData.proposalOptions?.includes(type)}
+                                onCheckedChange={(checked) => {
+                                  setFormData(prev => ({
+                                    ...prev,
+                                    proposalOptions: checked 
+                                      ? [...(prev.proposalOptions || []), type]
+                                      : (prev.proposalOptions || []).filter(opt => opt !== type)
+                                  }));
+                                }}
+                              />
+                              <h5 className="font-medium">{type}</h5>
+                            </div>
+                            <div className="flex space-x-2">
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={() => {
+                                  // Get the file from uploadedFiles based on the type
+                                  const fileField = type.toLowerCase().includes('technical') ? 'technicalProposal' : 
+                                                    type.toLowerCase().includes('financial') ? 'financialProposal' : null;
+                                  const file = fileField ? uploadedFiles[fileField as keyof typeof uploadedFiles] : null;
+                                  handlePreview(file as File | string | null);
+                                }}
+                                disabled={!formData.proposalOptions?.includes(type)}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={() => {
+                                  // Get the file from uploadedFiles based on the type
+                                  const fileField = type.toLowerCase().includes('technical') ? 'technicalProposal' : 
+                                                    type.toLowerCase().includes('financial') ? 'financialProposal' : null;
+                                  const file = fileField ? uploadedFiles[fileField as keyof typeof uploadedFiles] : null;
+                                  if (file) {
+                                    handleDownload(file as File);
+                                  }
+                                }}
+                                disabled={!formData.proposalOptions?.includes(type)}
+                              >
+                                <Download className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                          {formData.proposalOptions?.includes(type) && (
+                            <>
+                              <Textarea 
+                                placeholder={`Enter ${type} notes...`}
+                                className="min-h-[100px]"
+                              />
+                              <div className="flex justify-end">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="gap-2"
+                                  type="button"
+                                  onClick={() => {
+                                    if (type === "Technical Proposal") {
+                                      technicalProposalOptionInputRef.current?.click();
+                                    } else if (type === "Financial Proposal") {
+                                      financialProposalOptionInputRef.current?.click();
+                                    }
+                                  }}
+                                >
+                                  <Upload className="h-4 w-4" />
+                                  Upload File
+                                </Button>
+                                {/* Hidden file input for each proposal type */}
+                                {type === "Technical Proposal" && (
+                                  <input
+                                    ref={technicalProposalOptionInputRef}
+                                    type="file"
+                                    accept=".pdf,.jpg,.jpeg,.png"
+                                    className="hidden"
+                                    onChange={handleFileChange("technicalProposal")}
+                                  />
+                                )}
+                                {type === "Financial Proposal" && (
+                                  <input
+                                    ref={financialProposalOptionInputRef}
+                                    type="file"
+                                    accept=".pdf,.jpg,.jpeg,.png"
+                                    className="hidden"
+                                    onChange={handleFileChange("financialProposal")}
+                                  />
+                                )}
+                              </div>
+                              {type === "Technical Proposal" && uploadedFiles.technicalProposal && (
+                                <p className="text-xs text-muted-foreground truncate">
+                                  Selected file: {uploadedFiles.technicalProposal.name}
+                                </p>
+                              )}
+                              {type === "Financial Proposal" && uploadedFiles.financialProposal && (
+                                <p className="text-xs text-muted-foreground truncate">
+                                  Selected file: {uploadedFiles.financialProposal.name}
+                                </p>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -1487,8 +1612,8 @@ formDataToSend.append('name', formData.name.trim());
                             placeholder="0"
                             min="0"
                             max="100"
-                            onChange={handleInputChange("fixWithAdvanceValue")}
-                            value={formData.fixWithAdvanceValue || ""}
+                            onChange={handleInputChange("fixWithoutAdvanceValue")}
+                            value={formData.fixWithoutAdvanceValue || ""}
                             className="h-8 pl-2 pr-6 text-xs"
                           />
                           <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-muted-foreground">
@@ -1516,8 +1641,8 @@ formDataToSend.append('name', formData.name.trim());
                             type="number"
                             placeholder="Amount"
                             min="0"
-                            onChange={handleInputChange("fixWithAdvanceMoney")}
-                            value={formData.fixWithAdvanceMoney || ""}
+                            onChange={handleInputChange("fixWithAdvanceMoney" )}
+                            value={formData.fixWithAdvanceMoney}
                             className="h-8 text-xs w-28 rounded-l-none border-l-0"
                           />
                         </div>
@@ -1597,9 +1722,7 @@ formDataToSend.append('name', formData.name.trim());
                             value={formData.fixWithoutAdvanceValue || ""}
                             className="h-8 pl-2 pr-6 text-xs"
                           />
-                          <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-muted-foreground">
-                            %
-                          </span>
+                          <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-muted-foreground">%</span>
                         </div>
                         <Input
                           type="text"
@@ -1818,7 +1941,7 @@ formDataToSend.append('name', formData.name.trim());
                             className="h-7 text-xs px-2 gap-1"
                             onClick={() => {
                               const file = uploadedFiles[activeLevel.toLowerCase().replace(/\s+/g, "") as LevelType];
-                              handlePreview(file);
+                              handlePreview(file as File | string | null);
                             }}
                             disabled={!uploadedFiles[activeLevel.toLowerCase().replace(/\s+/g, "") as LevelType]}
                           >
@@ -1831,7 +1954,7 @@ formDataToSend.append('name', formData.name.trim());
                             className="h-7 text-xs px-2 gap-1"
                             onClick={() => {
                               const file = uploadedFiles[activeLevel.toLowerCase().replace(/\s+/g, "") as LevelType];
-                              handleDownload(file);
+                              handleDownload(file as File | string | null);
                             }}
                             disabled={!uploadedFiles[activeLevel.toLowerCase().replace(/\s+/g, "") as LevelType]}
                           >
