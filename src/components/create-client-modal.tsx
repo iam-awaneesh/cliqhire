@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { NestedSelect } from "@/components/ui/nested-select";
 import {
   Dialog,
   DialogContent,
@@ -62,6 +63,7 @@ interface ClientForm {
   countryCode: string;
   primaryContacts: PrimaryContact[];
   clientStage?: "Lead" | "Engaged" | "Negotiation" | "Signed";
+  clientSubStage?: string; // For storing detailed stage information
   clientTeam?: string;
   clientRm?: string;
   clientAge?: number;
@@ -128,6 +130,48 @@ interface LocationSuggestion {
   lat: string;
   lon: string;
 }
+
+const optionsForClient = [
+  {
+    value: "Lead",
+    label: "Lead",
+  },
+  {
+    value: "Engaged",
+    label: "Engaged",
+    children: [
+      {
+        value: "Initial Contact",
+        label: "Initial Contact",
+      },
+      {
+        value: "First Meeting",
+        label: "First Meeting",
+      },
+      {
+        value: "Requirements Gathering",
+        label: "Requirements Gathering",
+      },
+      {
+        value: "Proposal Sent",
+        label: "Proposal Sent",
+      },
+      {
+        value: "Proposal Review",
+        label: "Proposal Review",
+      },
+      {
+        value: "Follow-up",
+        label: "Follow-up",
+      }
+    ]
+  },
+
+  {
+    value: "Signed",
+    label: "Signed",
+  }
+]
 
 // API call to create client
 const createClient = async (data: FormData) => {
@@ -967,51 +1011,24 @@ formDataToSend.append('name', formData.name.trim());
                 <Label htmlFor="clientStage" className="text-sm sm:text-base">
                   Client Stage *
                 </Label>
-                <Select
+                <NestedSelect
+                  options={optionsForClient}
                   value={formData.clientStage}
-                  onValueChange={(value) => setFormData((prev) => ({ ...prev, clientStage: value as "Lead" | "Engaged" | "Negotiation" | "Signed" }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select client stage" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectLabel>Client Stage</SelectLabel>
-                      <SelectItem value="Lead">
-                        <div className="group relative inline-block w-full">
-                          <span>Lead</span>
-                          <div className="absolute hidden group-hover:flex z-50 w-64 p-2 text-sm bg-blue-50 border-blue-100 dark:bg-blue-900/30 dark:border-blue-800 rounded-lg shadow-lg left-0 line-clamp-2">
-                            <p className="text-blue-700 dark:text-blue-200 font-sans">Potential customer who has shown initial interest but has not yet been contacted or qualified.</p>
-                          </div>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="Engaged">
-                        <div className="group relative inline-block w-full">
-                          <span>Engaged</span>
-                          <div className="absolute hidden group-hover:flex z-50 w-64 p-2 text-sm bg-purple-50 border-purple-100 dark:bg-purple-900/30 dark:border-purple-800 rounded-lg shadow-lg left-0 line-clamp-2">
-                            <p className="text-purple-700 dark:text-purple-200 font-sans">The lead has responded or interacted. There is active communication from both sides.</p>
-                          </div>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="Negotiation">
-                        <div className="group relative inline-block w-full">
-                          <span>Negotiation</span>
-                          <div className="absolute hidden group-hover:flex z-50 w-64 p-2 text-sm bg-amber-50 border-amber-100 dark:bg-amber-900/30 dark:border-amber-800 rounded-lg shadow-lg left-0 line-clamp-2">
-                            <p className="text-amber-700 dark:text-amber-200 font-sans">Ongoing discussions about terms, pricing, or other deal specifics.</p>
-                          </div>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="Signed">
-                        <div className="group relative inline-block w-full">
-                          <span>Signed</span>
-                          <div className="absolute hidden group-hover:flex z-50 w-64 p-2 text-sm bg-green-50 border-green-100 dark:bg-green-900/30 dark:border-green-800 rounded-lg shadow-lg left-0 line-clamp-2">
-                            <p className="text-green-700 dark:text-green-200 font-sans">The deal is finalized with a formal contract or agreement signed.</p>
-                          </div>
-                        </div>
-                      </SelectItem>
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
+                  onValueChange={(value) => {
+                    // For nested options like "Engaged_Initial", we want to store the full value
+                    // but still keep our form data type compatible with "Lead" | "Engaged" etc.
+                    const baseStage = value.includes('_') ? value.split('_')[0] : value;
+                    const detailedStage = value; // Store the full value for reference
+                    
+                    setFormData((prev) => ({
+                      ...prev,
+                      clientStage: baseStage as "Lead" | "Engaged" | "Signed",
+                      clientSubStage: detailedStage // Optional: Store the detailed stage in another field
+                    }));
+                  }}
+                  placeholder="Select client stage"
+                  className="w-full"
+                />
               </div>
 
               <div className="space-y-2">
