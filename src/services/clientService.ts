@@ -11,6 +11,17 @@ export interface PrimaryContact {
   error?: string;
 }
 
+export const clientStageStatuses = [
+  "Replied to a message",
+  "Calls",
+  "Attended a meeting",
+  "Profile Sent",
+  "Contract Sent",
+  "Contract Negotiation",
+] as const;
+
+export type ClientStageStatus = (typeof clientStageStatuses)[number];
+
 export interface ClientResponse {
   _id: string;
   name: string;
@@ -31,6 +42,7 @@ export interface ClientResponse {
   countryCode?: string;
   primaryContacts?: PrimaryContact[];
   clientStage?: "Lead" | "Engaged" | "Negotiation" | "Signed";
+  clientStageStatus?: ClientStageStatus;
   clientTeam?: "Enterprise" | "SMB" | "Mid-Market";
   clientRm?: string;
   clientAge?: number;
@@ -69,6 +81,7 @@ export interface ClientResponse {
   nonExecutives?: string | null;
   other?: string | null;
   salesLead?: string;
+  jobCount?: number; // Added optional jobCount property
   createdAt: string;
   updatedAt?: string;
   __v?: number;
