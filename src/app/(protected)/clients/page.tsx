@@ -24,8 +24,9 @@ import {
 import { getJobCountsByClient } from "@/services/jobService";
 import { Plus, RefreshCcw, SlidersHorizontal, MoreVertical } from "lucide-react";
 import { CreateClientModal } from "@/components/create-client-modal";
-import { getClients, updateClientStage, ClientResponse } from "@/services/clientService";
+import { getClients, updateClientStage, ClientResponse, ClientStageStatus } from "@/services/clientService";
 import { ClientStageBadge } from "@/components/client-stage-badge";
+import { ClientStageStatusBadge } from "@/components/client-stage-status-badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -40,6 +41,7 @@ interface Client {
   industry: string;
   location: string;
   stage: "Lead" | "Negotiation" | "Engaged" | "Signed";
+  clientStageStatus: ClientStageStatus;
   owner: string;
   team: string;
   createdAt: string;
@@ -118,6 +120,7 @@ export default function ClientsPage() {
             industry: client.industry || '',
             location: client.location || '',
             stage: client.clientStage || 'Lead',
+            clientStageStatus: client.clientStageStatus || "Replied to a message",
             owner: client.clientRm || '',
             team: client.clientTeam || '',
             createdAt: client.createdAt,
@@ -174,6 +177,7 @@ export default function ClientsPage() {
           industry: client.industry || '',
           location: client.location || '',
           stage: client.clientStage || 'Lead',
+          clientStageStatus: client.clientStageStatus || "Replied to a message",
           owner: client.clientRm || '',
           team: client.clientTeam || '',
           createdAt: client.createdAt,
@@ -540,6 +544,9 @@ export default function ClientsPage() {
                     Client Stage
                   </TableHead>
                   <TableHead className="text-xs uppercase text-muted-foreground font-medium">
+                    Client Stage Status
+                  </TableHead>
+                  <TableHead className="text-xs uppercase text-muted-foreground font-medium">
                     Sales RM
                   </TableHead>
                   <TableHead className="text-xs uppercase text-muted-foreground font-medium">
@@ -591,6 +598,9 @@ export default function ClientsPage() {
                           stage={client.stage}
                           onStageChange={handleStageChange}
                         />
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        <ClientStageStatusBadge status={client.clientStageStatus} />
                       </TableCell>
                       <TableCell className="text-sm">{client.owner}</TableCell>
                       <TableCell className="text-sm">{client.team}</TableCell>
