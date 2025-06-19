@@ -611,6 +611,41 @@ const updateClientStage = async (
   }
 };
 
+// Update client stage status
+const updateClientStageStatus = async (
+  id: string,
+  status: ClientStageStatus
+): Promise<ClientResponse> => {
+  try {
+    // Fetch the full client data to avoid backend issues with partial updates.
+    const currentClient = await getClientById(id);
+
+    const dataToUpdate = {
+      ...currentClient,
+      clientStageStatus: status,
+    };
+
+    // Remove fields that should not be sent in an update payload.
+    const { _id, createdAt, updatedAt, __v, ...updatePayload } = dataToUpdate;
+
+    // Manually remove file URL fields to prevent backend errors.
+    const fileFields = [
+      'profileImage', 'crCopy', 'vatCopy', 'gstTinDocument', 'fixedPercentage', 
+      'fixedPercentageAdvance', 'variablePercentageCLevel', 'variablePercentageBelowCLevel', 
+      'fixWithoutAdvance', 'seniorLevel', 'executives', 'nonExecutives', 'other'
+    ];
+    fileFields.forEach(field => delete (updatePayload as any)[field]);
+
+    // Call the main updateClient function to reuse its logic, including validation.
+    return await updateClient(id, updatePayload);
+
+  } catch (error: any) {
+    console.error("Error updating client stage status:", error);
+    // The error is already handled by `updateClient`, so we just re-throw it.
+    throw error;
+  }
+};
+
 // Delete client
 const deleteClient = async (id: string): Promise<void> => {
   try {
@@ -682,6 +717,7 @@ export {
   getClientById,
   updateClient,
   updateClientStage,
+  updateClientStageStatus,
   deleteClient,
   uploadClientFile,
   addPrimaryContact,

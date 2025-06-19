@@ -24,7 +24,7 @@ import {
 import { getJobCountsByClient } from "@/services/jobService";
 import { Plus, RefreshCcw, SlidersHorizontal, MoreVertical } from "lucide-react";
 import { CreateClientModal } from "@/components/create-client-modal";
-import { getClients, updateClientStage, ClientResponse, ClientStageStatus } from "@/services/clientService";
+import { getClients, updateClientStage, updateClientStageStatus, ClientResponse, ClientStageStatus } from "@/services/clientService";
 import { ClientStageBadge } from "@/components/client-stage-badge";
 import { ClientStageStatusBadge } from "@/components/client-stage-status-badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -82,6 +82,8 @@ export default function ClientsPage() {
   const [initialLoading, setInitialLoading] = useState<boolean>(true);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [pendingChange, setPendingChange] = useState<{ clientId: string; stage: Client["stage"] } | null>(null);
+  const [pendingStatusChange, setPendingStatusChange] = useState<{ clientId: string; status: ClientStageStatus } | null>(null);
+  const [showStatusConfirmDialog, setShowStatusConfirmDialog] = useState(false);
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
   
   // Pagination states
@@ -335,6 +337,12 @@ export default function ClientsPage() {
     setShowConfirmDialog(true);
   };
 
+  const handleStageStatusChange = (clientId: string, newStatus: ClientStageStatus) => {
+    console.log(`Stage status change requested: Client ${clientId} to status ${newStatus}`);
+    setPendingStatusChange({ clientId, status: newStatus });
+    setShowStatusConfirmDialog(true);
+  };
+
   const filteredAndSortedClients = useMemo(() => {
     let result = [...clients];
 
@@ -383,6 +391,38 @@ export default function ClientsPage() {
   }, [sortConfig, filters, clients, currentPage, pageSize]);
 
   const [error, setError] = useState<string | null>(null);
+
+  const handleConfirmStatusChange = async () => {
+    if (!pendingStatusChange) return;
+
+    setIsUpdating(true);
+    setError(null);
+    let isSuccess = false;
+
+    try {
+      console.log('Updating client stage status:', pendingStatusChange.clientId, 'to', pendingStatusChange.status);
+
+      const updatedClient = await updateClientStageStatus(pendingStatusChange.clientId, pendingStatusChange.status);
+
+      setClients(prevClients =>
+        prevClients.map(client =>
+          client.id === pendingStatusChange.clientId
+            ? { ...client, clientStageStatus: updatedClient.clientStageStatus! }
+            : client
+        )
+      );
+      isSuccess = true;
+    } catch (err: any) {
+      console.error('Error updating client stage status:', err);
+      setError(err.message || 'An unexpected error occurred.');
+    } finally {
+      setIsUpdating(false);
+      setShowStatusConfirmDialog(false);
+      if (isSuccess) {
+        setPendingStatusChange(null);
+      }
+    }
+  };
 
   const handleConfirmChange = async () => {
     if (!pendingChange) return;
@@ -472,6 +512,29 @@ export default function ClientsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Confirmation Dialog for Stage Status Change */}
+      <AlertDialog open={showStatusConfirmDialog} onOpenChange={setShowStatusConfirmDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will update the client's stage status.
+              {error && (
+                <div className="text-red-600 mt-4 p-3 bg-red-50 rounded-md">
+                  {error}
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => { setShowStatusConfirmDialog(false); setError(null); }}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmStatusChange} disabled={isUpdating}>
+              {isUpdating ? "Updating..." : "Confirm"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <div className="flex flex-col h-full">
         {/* Header */}
@@ -600,7 +663,11 @@ export default function ClientsPage() {
                         />
                       </TableCell>
                       <TableCell className="text-sm">
-                        <ClientStageStatusBadge status={client.clientStageStatus} />
+                        <ClientStageStatusBadge 
+                          id={client.id}
+                          status={client.clientStageStatus} 
+                          onStatusChange={handleStageStatusChange} 
+                        />
                       </TableCell>
                       <TableCell className="text-sm">{client.owner}</TableCell>
                       <TableCell className="text-sm">{client.team}</TableCell>
