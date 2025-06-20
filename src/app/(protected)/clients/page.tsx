@@ -122,7 +122,7 @@ export default function ClientsPage() {
             industry: client.industry || '',
             location: client.location || '',
             stage: client.clientStage || 'Lead',
-            clientStageStatus: client.clientStageStatus || "Replied to a message",
+            clientStageStatus: client.clientStageStatus || "Calls",
             owner: client.clientRm || '',
             team: client.clientTeam || '',
             createdAt: client.createdAt,
@@ -179,7 +179,7 @@ export default function ClientsPage() {
           industry: client.industry || '',
           location: client.location || '',
           stage: client.clientStage || 'Lead',
-          clientStageStatus: client.clientStageStatus || "Replied to a message",
+          clientStageStatus: client.clientStageStatus || "Calls",
           owner: client.clientRm || '',
           team: client.clientTeam || '',
           createdAt: client.createdAt,
@@ -663,17 +663,19 @@ export default function ClientsPage() {
                         />
                       </TableCell>
                       <TableCell className="text-sm">
-                        <ClientStageStatusBadge 
-                          id={client.id}
-                          status={client.clientStageStatus} 
-                          onStatusChange={handleStageStatusChange} 
-                        />
+                        {client.stage === "Engaged" ? (
+                          <ClientStageStatusBadge
+                            id={client.id}
+                            status={client.clientStageStatus}
+                            onStatusChange={handleStageStatusChange}
+                          />
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-1 rounded bg-muted text-xs font-medium text-muted-foreground">N/A</span>
+                        )}
                       </TableCell>
                       <TableCell className="text-sm">{client.owner}</TableCell>
                       <TableCell className="text-sm">{client.team}</TableCell>
-                      <TableCell className="text-sm">
-                        {client.incorporationDate ? `${getYearDifference(client.incorporationDate)} years` : "0 years"}
-                      </TableCell>
+                      <TableCell className="text-sm">{client.incorporationDate ? `${getYearDifference(client.incorporationDate)} years` : "0 years"}</TableCell>
                       <TableCell className="text-sm">{client.jobCount}</TableCell>
                     </TableRow>
                   ))
