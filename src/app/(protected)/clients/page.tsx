@@ -663,19 +663,18 @@ export default function ClientsPage() {
                         />
                       </TableCell>
                       <TableCell className="text-sm">
-                        {client.stage === "Engaged" ? (
-                          <ClientStageStatusBadge
-                            id={client.id}
-                            status={client.clientStageStatus}
-                            onStatusChange={handleStageStatusChange}
-                          />
-                        ) : (
-                          <span className="inline-flex items-center px-2 py-1 rounded bg-muted text-xs font-medium text-muted-foreground">N/A</span>
-                        )}
+                        <ClientStageStatusBadge 
+                          id={client.id}
+                          status={client.clientStageStatus}
+                          stage={client.stage}
+                          onStatusChange={handleStageStatusChange}
+                        />
                       </TableCell>
                       <TableCell className="text-sm">{client.owner}</TableCell>
                       <TableCell className="text-sm">{client.team}</TableCell>
-                      <TableCell className="text-sm">{client.incorporationDate ? `${getYearDifference(client.incorporationDate)} years` : "0 years"}</TableCell>
+                      <TableCell className="text-sm">
+                        {client.incorporationDate ? `${getYearDifference(client.incorporationDate)} years` : "0 years"}
+                      </TableCell>
                       <TableCell className="text-sm">{client.jobCount}</TableCell>
                     </TableRow>
                   ))

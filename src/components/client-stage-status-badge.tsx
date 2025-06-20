@@ -33,10 +33,19 @@ const stageStatusColors: Record<ClientStageStatus, string> = {
 interface ClientStageStatusBadgeProps {
   id?: string
   status: ClientStageStatus
+  stage: "Lead" | "Negotiation" | "Engaged" | "Signed"
   onStatusChange?: (id: string, newStatus: ClientStageStatus) => void
 }
 
-export function ClientStageStatusBadge({ id, status, onStatusChange }: ClientStageStatusBadgeProps) {
+export function ClientStageStatusBadge({ id, status, stage, onStatusChange }: ClientStageStatusBadgeProps) {
+  if (stage !== "Engaged") {
+    return (
+      <Badge variant="secondary" className="bg-gray-200 text-gray-500 border-none">
+        N/A
+      </Badge>
+    );
+  }
+
   if (!onStatusChange) {
     return (
       <Badge variant="secondary" className={`${stageStatusColors[status]} border-none`}>
