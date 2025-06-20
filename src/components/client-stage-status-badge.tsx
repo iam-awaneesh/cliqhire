@@ -11,22 +11,22 @@ import {
 import { ChevronDown } from "lucide-react"
 
 const stageStatuses = [
-  "Replied to a message",
   "Calls",
-  "Attended a meeting",
   "Profile Sent",
   "Contract Sent",
+  "Attended a meeting",
+  "Replied to a message",
   "Contract Negotiation",
 ] as const
 
 type ClientStageStatus = (typeof stageStatuses)[number]
 
 const stageStatusColors: Record<ClientStageStatus, string> = {
-  "Replied to a message": "bg-blue-100 text-blue-800",
-  Calls: "bg-purple-100 text-purple-800",
-  "Attended a meeting": "bg-yellow-100 text-gray-800",
-  "Profile Sent": "bg-indigo-100 text-indigo-800",
-  "Contract Sent": "bg-pink-100 text-pink-800",
+  "Calls": "bg-blue-100 text-blue-800",
+  "Profile Sent": "bg-purple-100 text-purple-800",
+  "Contract Sent": "bg-yellow-100 text-gray-800",
+  "Attended a meeting": "bg-indigo-100 text-indigo-800",
+  "Replied to a message": "bg-gray-100 text-gray-800",
   "Contract Negotiation": "bg-green-100 text-green-800",
 } as const
 
