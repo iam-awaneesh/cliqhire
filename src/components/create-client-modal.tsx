@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -23,7 +24,7 @@ import {
 } from "@/components/ui/select";
 import { useState, useEffect, useRef } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Upload, Plus, Eye, Download } from "lucide-react";
+import { Upload, Plus, Eye, Download, Info } from "lucide-react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { Textarea } from "@/components/ui/textarea";
@@ -62,7 +63,7 @@ interface ClientForm {
   linkedInPage?: string;
   countryCode: string;
   primaryContacts: PrimaryContact[];
-  clientStage?: "Lead" | "Engaged" | "Negotiation" | "Signed";
+  clientStage?: "Lead" | "Engaged" | "Signed";
   clientSubStage?: string; // For storing detailed stage information
   clientTeam?: string;
   clientRm?: string;
@@ -1008,9 +1009,30 @@ formDataToSend.append('name', formData.name.trim());
           {currentTab === 0 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 py-4">
               <div className="space-y-2">
-                <Label htmlFor="clientStage" className="text-sm sm:text-base">
-                  Client Stage *
-                </Label>
+                <div className="flex items-center mb-1">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button type="button" aria-label="Client Stage Info" className="mr-2 text-blue-500 hover:text-blue-700 focus:outline-none">
+                        <Info className="w-5 h-5" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent align="start" className="max-w-xs text-sm">
+                      <div className="font-semibold mb-2 text-base">Client Stage Definitions</div>
+                      <div className="mb-2">
+                        <span className="font-semibold">1. Lead:</span> Potential customer who has shown initial interest but has not yet been contacted or qualified. First stage where basic information is gathered.
+                      </div>
+                      <div className="mb-2">
+                        <span className="font-semibold">2. Engaged:</span> The lead has responded or interacted. There is active communication and interest from both sides.
+                      </div>
+                      <div>
+                        <span className="font-semibold">3. Signed:</span> The deal is finalized. The customer has agreed to the terms, and a formal contract or agreement has been signed.
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                  <Label htmlFor="clientStage" className="text-sm sm:text-base mb-0">
+                    Client Stage *
+                  </Label>
+                </div>
                 <NestedSelect
                   options={optionsForClient}
                   value={formData.clientStage}
@@ -1989,7 +2011,7 @@ formDataToSend.append('name', formData.name.trim());
                             className="h-7 text-xs px-2 gap-1"
                             onClick={() => {
                               const file = uploadedFiles[activeLevel.toLowerCase().replace(/\s+/g, "") as LevelType];
-                              handleDownload(file as File | string | null);
+                              handleDownload(typeof file === "string" ? null : file);
                             }}
                             disabled={!uploadedFiles[activeLevel.toLowerCase().replace(/\s+/g, "") as LevelType]}
                           >
