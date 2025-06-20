@@ -142,28 +142,28 @@ const optionsForClient = [
     label: "Engaged",
     children: [
       {
-        value: "Initial Contact",
-        label: "Initial Contact",
+        value: "Calls",
+        label: "Calls",
       },
       {
-        value: "First Meeting",
-        label: "First Meeting",
+        value: "Profile Sent",
+        label: "Profile Sent",
       },
       {
-        value: "Requirements Gathering",
-        label: "Requirements Gathering",
+        value: "Contract Sent",
+        label: "Contract Sent",
       },
       {
-        value: "Proposal Sent",
-        label: "Proposal Sent",
+        value: "Attended a meeting",
+        label: "Attended a meeting",
       },
       {
-        value: "Proposal Review",
-        label: "Proposal Review",
+        value: "Replied to a message",
+        label: "Replied to a message",
       },
       {
-        value: "Follow-up",
-        label: "Follow-up",
+        value: "Contract Negotiation",
+        label: "Contract Negotiation",
       }
     ]
   },
@@ -1035,17 +1035,14 @@ formDataToSend.append('name', formData.name.trim());
                 </div>
                 <NestedSelect
                   options={optionsForClient}
-                  value={formData.clientStage}
+                  value={formData.clientSubStage || formData.clientStage}
                   onValueChange={(value) => {
-                    // For nested options like "Engaged_Initial", we want to store the full value
-                    // but still keep our form data type compatible with "Lead" | "Engaged" etc.
                     const baseStage = value.includes('_') ? value.split('_')[0] : value;
-                    const detailedStage = value; // Store the full value for reference
-                    
+                    const detailedStage = value;
                     setFormData((prev) => ({
                       ...prev,
                       clientStage: baseStage as "Lead" | "Engaged" | "Signed",
-                      clientSubStage: detailedStage // Optional: Store the detailed stage in another field
+                      clientSubStage: detailedStage
                     }));
                   }}
                   placeholder="Select client stage"
