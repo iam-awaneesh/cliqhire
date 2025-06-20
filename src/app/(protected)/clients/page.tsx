@@ -31,6 +31,21 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { differenceInYears } from 'date-fns';
+import Dashboardheader from "@/components/dashboard-header";
+import Tableheader from "@/components/table-header";
+
+
+const columsArr = [
+  "Client Name",
+  "Client Industry",
+  "Client Location",
+  "Client Stage",
+  "Client Stage Status",
+  "Sales RM",
+  "Client Team",
+  "Client Age",
+  "Job Count"
+];
 
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://aems-backend.onrender.com/api";
@@ -67,10 +82,8 @@ interface Filters {
 
 export default function ClientsPage() {
   const router = useRouter();
-  const params = useParams();
   const [open, setOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
-  const [viewType, setViewType] = useState<"list" | "board">("list");
   const [sortConfig, setSortConfig] = useState<SortConfig>({ field: "name", order: "asc" });
   const [filters, setFilters] = useState<Filters>({
     name: "",
@@ -538,7 +551,7 @@ export default function ClientsPage() {
 
       <div className="flex flex-col h-full">
         {/* Header */}
-        <div className="border-b">
+        {/* <div className="border-b">
           <div className="flex h-16 items-center px-4">
             <h1 className="text-2xl font-semibold">Clients</h1>
             <div className="ml-auto flex items-center space-x-2">
@@ -551,10 +564,10 @@ export default function ClientsPage() {
               </Button>
             </div>
           </div>
-        </div>
+        </div> */}
 
         {/* Toolbar */}
-        <div className="flex items-center justify-between p-4">
+        {/* <div className="flex items-center justify-between p-4">
           <Button size="sm" onClick={() => setOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Create Client
@@ -586,42 +599,26 @@ export default function ClientsPage() {
               <MoreVertical className="h-4 w-4" />
             </Button>
           </div>
-        </div>
+        </div> */}
+
+        <Dashboardheader
+          setOpen={setOpen}
+          setFilterOpen={setFilterOpen}
+          initialLoading={initialLoading}
+          heading="Clients"
+          buttonText="Create Client"
+        />
 
         {/* Table */}
-        {viewType === "list" && (
+
           <div className="flex-1">
             <Table>
               <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead className="text-xs uppercase text-muted-foreground font-medium">
-                    Client Name
-                  </TableHead>
-                  <TableHead className="text-xs uppercase text-muted-foreground font-medium">
-                    Client Industry
-                  </TableHead>
-                  <TableHead className="text-xs uppercase text-muted-foreground font-medium">
-                    Client Location
-                  </TableHead>
-                  <TableHead className="text-xs uppercase text-muted-foreground font-medium">
-                    Client Stage
-                  </TableHead>
-                  <TableHead className="text-xs uppercase text-muted-foreground font-medium">
-                    Client Stage Status
-                  </TableHead>
-                  <TableHead className="text-xs uppercase text-muted-foreground font-medium">
-                    Sales RM
-                  </TableHead>
-                  <TableHead className="text-xs uppercase text-muted-foreground font-medium">
-                    Client Team
-                  </TableHead>
-                  <TableHead className="text-xs uppercase text-muted-foreground font-medium">
-                    Client Age
-                  </TableHead>
-                  <TableHead className="text-xs uppercase text-muted-foreground font-medium">
-                    Job Count
-                  </TableHead>
-                </TableRow>
+
+                  <Tableheader
+                    tableHeadArr={columsArr}
+                  />
+                
               </TableHeader>
               <TableBody>
                 {initialLoading ? (
@@ -735,7 +732,7 @@ export default function ClientsPage() {
               </div>
             </div>
           </div>
-        )}
+        
 
         <CreateClientModal open={open} onOpenChange={setOpen} />
       </div>
