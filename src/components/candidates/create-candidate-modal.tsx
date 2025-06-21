@@ -4,7 +4,8 @@ import { X, FileText, Upload, Files, Table } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-
+import { useState } from "react"
+import CreateCandidateform from './create-candidate-form'
 interface CreateCandidateModalProps {
   isOpen: boolean
   onClose: () => void
@@ -32,45 +33,48 @@ function OptionCard({ icon, title, onClick }: OptionCardProps) {
 }
 
 export function CreateCandidateModal({ isOpen, onClose }: CreateCandidateModalProps) {
+  const [showForm, setShowForm] = useState(false)
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={() => { setShowForm(false); onClose(); }}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle className="text-2xl">Create Candidate</DialogTitle>
           </div>
         </DialogHeader>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
-          <OptionCard
-            icon={<FileText className="w-8 h-8 text-blue-600" />}
-            title="Complete a Form"
-            onClick={() => console.log("Complete form clicked")}
-          />
-          <OptionCard
-            icon={<Upload className="w-8 h-8 text-blue-600" />}
-            title="Upload a Resume"
-            onClick={() => console.log("Upload resume clicked")}
-          />
-          <OptionCard
-            icon={<Files className="w-8 h-8 text-blue-600" />}
-            title="Upload multiple Resumes"
-            onClick={() => console.log("Upload multiple resumes clicked")}
-          />
-          <OptionCard
-            icon={<Table className="w-8 h-8 text-blue-600" />}
-            title="Import a JSON or CSV file"
-            onClick={() => console.log("Import file clicked")}
-          />
-        </div>
-
-        <div className="text-center text-gray-600 pt-4">
-          Or{" "}
-          <Link href="#" className="text-blue-600 hover:underline">
-            install a chrome extension
-          </Link>
-          {" "}to source candidates from LinkedIn.
-        </div>
+        {showForm ? (
+          <div>
+            <CreateCandidateform />
+            {/* <Button variant="ghost" className="mb-4" onClick={() => setShowForm(false)}>
+              ← Back
+            </Button>
+            <Button variant="ghost" className="w-full" onClick={onClose}>
+              Save Candidate
+            </Button> */}
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+              <OptionCard
+                icon={<FileText className="w-8 h-8 text-blue-600" />}
+                title="Complete a Form"
+                onClick={() => setShowForm(true)}
+              />
+              <OptionCard
+                icon={<Upload className="w-8 h-8 text-blue-600" />}
+                title="Upload a Resume"
+                onClick={() => {/* You can implement resume upload logic here */}}
+              />
+            </div>
+            <div className="text-center text-gray-600 pt-4">
+              Or{" "}
+              <Link href="#" className="text-blue-600 hover:underline">
+                install a chrome extension
+              </Link>
+              {" "}to source candidates from LinkedIn.
+            </div>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   )

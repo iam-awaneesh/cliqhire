@@ -3,10 +3,10 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableHeader } from "@/components/ui/table"
 import { Users, Folder, Search, Route, Router } from 'lucide-react'
-// import { CandidatesEmptyState } from "./empty-states"
+import { CandidatesEmptyState } from "./empty-states"
 import { CreateCandidate } from "@/components/candidates/create-candidate"
 // import Link from 'next/link'
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {CreateFolder} from "@/components/candidates/create-folder"
 import { AdvanceSearch } from "@/components/candidates/AdvSearch"
 import Dashboardheader from "@/components/dashboard-header"
@@ -27,6 +27,22 @@ const columsArr = [
 
 
 export default function CandidatesPage() {
+  // Add candidates state
+  const [candidates, setCandidates] = useState<any[]>([]);
+  const [initialLoading, setInitialLoading] = useState(true);
+
+  // Mock loading candidates (replace with real API call as needed)
+  useEffect(() => {
+    setInitialLoading(true);
+    // Simulate async fetch
+    setTimeout(() => {
+      setCandidates([
+        { name: "John Doe", email: "john@example.com", phone: "1234567890", location: "New York", experience: "5 years", skills: "React, Node.js", resume: "", status: "Active", actions: "" },
+        // Add more mock candidates as needed
+      ]);
+      setInitialLoading(false);
+    }, 1000);
+  }, []);
   // const [selected, setSelected] = useState("candidate");
      const [open, setOpen] = useState(false);
      const [filterOpen, setFilterOpen] = useState(false);
@@ -93,14 +109,13 @@ export default function CandidatesPage() {
       </div> */}
 
       <div className="flex-1">
-                  <Table>
-                    <TableHeader>
-      
-                        <Tableheader
-                          tableHeadArr={columsArr}
-                        />
-                      
-                    </TableHeader>
+        {candidates.length === 0 ? (
+          <CandidatesEmptyState />
+        ) : (
+          <Table>
+            <TableHeader>
+              <Tableheader tableHeadArr={columsArr} />
+            </TableHeader>
                     {/* <TableBody>
                       {initialLoading ? (
                         <TableRow>
@@ -159,7 +174,7 @@ export default function CandidatesPage() {
                       )}
                     </TableBody> */}
                   </Table>
-                  
+                   )}
                   {/* Pagination Controls */}
                   {/* <div className="flex items-center justify-between p-4 border-t">
                     <div className="flex items-center space-x-4">
@@ -176,6 +191,9 @@ export default function CandidatesPage() {
                             setPageSize(newSize);
                             // Reset to page 1 when changing page size
                             setCurrentPage(1);
+                            // Fetch clients with the new page size
+                            fetchClients(1, newSize);
+                          }}
                             // Fetch clients with the new page size
                             fetchClients(1, newSize);
                           }}
@@ -212,6 +230,7 @@ export default function CandidatesPage() {
                       </Button>
                     </div>
                   </div> */}
+        
                 </div>
 
       {/* Content */}
@@ -219,4 +238,5 @@ export default function CandidatesPage() {
     </div>
   )
 }
+
 
