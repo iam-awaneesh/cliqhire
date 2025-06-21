@@ -23,8 +23,23 @@ export default function CreateCandidateform() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Replace this with actual submit logic (API call, etc.)
-    alert(`Submitted: ${JSON.stringify(form, null, 2)}`);
+    // Send form data to a mock endpoint so payload is visible in Network tab
+    fetch('https://httpbin.org/post', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(form),
+    })
+      .then(response => response.json())
+      .then(data => {
+        // Optionally, show a success message or handle response
+        alert('Candidate created! Check the Network tab for payload.');
+      })
+      .catch(error => {
+        alert('Error submitting form');
+        console.error(error);
+      });
   };
 
   return (
@@ -63,20 +78,22 @@ export default function CreateCandidateform() {
               />
             </label>
             <label className="flex flex-col gap-2 font-medium text-gray-700">
-  Phone
-  <PhoneInput
-    country={'in'}
-    value={form.phone}
-    onChange={phone => setForm(prev => ({ ...prev, phone }))}
-    inputProps={{
-      name: 'phone',
-      required: true,
-      autoFocus: false,
-    }}
-    inputClass="form-control"
-    containerClass="react-tel-input"
-  />
-</label>
+              Phone
+              <PhoneInput
+                country={'in'}
+                value={form.phone}
+                onChange={phone => setForm(prev => ({ ...prev, phone }))}
+                inputProps={{
+                  name: 'phone',
+                  required: true,
+                  autoFocus: false,
+                }}
+                inputClass="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/70 bg-gray-50 w-full"
+                containerClass="w-full"
+                buttonClass="!border-none !bg-transparent"
+                dropdownClass="!z-50"
+              />
+            </label>
             <label className="flex flex-col gap-2 font-medium text-gray-700">
               Email
               <input
