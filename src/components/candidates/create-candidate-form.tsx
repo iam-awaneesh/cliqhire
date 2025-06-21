@@ -28,7 +28,7 @@ export default function CreateCandidateform() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-xl mx-auto p-4 flex flex-col gap-6">
+    <form onSubmit={handleSubmit} className="w-full p-4 flex flex-col gap-6">
       {/* Tabs */}
       <div className="flex border-b mb-4">
         <button
