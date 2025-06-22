@@ -80,7 +80,7 @@ export default function CreateCandidateform() {
             <label className="flex flex-col gap-2 font-medium text-gray-700">
               Phone
               <PhoneInput
-                country={'in'}
+                country={'sar'}
                 value={form.phone}
                 onChange={phone => setForm(prev => ({ ...prev, phone }))}
                 inputProps={{
