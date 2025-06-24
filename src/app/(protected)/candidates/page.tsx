@@ -7,6 +7,7 @@ import { CandidatesEmptyState } from "./empty-states"
 import { CreateCandidate } from "@/components/candidates/create-candidate"
 // import Link from 'next/link'
 import { useState, useEffect } from "react"
+import { useRouter } from 'next/navigation'
 import {CreateFolder} from "@/components/candidates/create-folder"
 import { AdvanceSearch } from "@/components/candidates/AdvSearch"
 import Dashboardheader from "@/components/dashboard-header"
@@ -27,6 +28,7 @@ const columsArr = [
 
 
 export default function CandidatesPage() {
+  const router = useRouter();
   // Add candidates state
   const [candidates, setCandidates] = useState<any[]>([]);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -136,7 +138,11 @@ export default function CandidatesPage() {
   </TableRow>
 ) : (
   candidates.map((candidate, idx) => (
-    <TableRow key={candidate.email + idx}>
+    <TableRow
+      key={candidate.email + idx}
+      className="cursor-pointer hover:bg-gray-100"
+      onClick={() => router.push(`/candidates/summary/${encodeURIComponent(candidate.email)}`)}
+    >
       <TableCell className="text-sm font-medium">{candidate.name}</TableCell>
       <TableCell className="text-sm">{candidate.email}</TableCell>
       <TableCell className="text-sm">{candidate.phone}</TableCell>
