@@ -1,7 +1,7 @@
 'use client'
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Table, TableHeader } from "@/components/ui/table"
+import { Table, TableHeader , TableBody , TableCell,TableRow } from "@/components/ui/table"
 import { Users, Folder, Search, Route, Router } from 'lucide-react'
 import { CandidatesEmptyState } from "./empty-states"
 import { CreateCandidate } from "@/components/candidates/create-candidate"
@@ -116,7 +116,7 @@ export default function CandidatesPage() {
             <TableHeader>
               <Tableheader tableHeadArr={columsArr} />
             </TableHeader>
-                    {/* <TableBody>
+                    <TableBody>
                       {initialLoading ? (
                         <TableRow>
                           <TableCell colSpan={8} className="h-[calc(100vh-240px)] text-center">
@@ -149,11 +149,7 @@ export default function CandidatesPage() {
                             <TableCell className="text-sm">{client.industry}</TableCell>
                             <TableCell className="text-sm">{client.location}</TableCell>
                             <TableCell className="text-sm">
-                              <ClientStageBadge
-                                id={client.id}
-                                stage={client.stage}
-                                onStageChange={handleStageChange}
-                              />
+                              
                             </TableCell>
                             <TableCell className="text-sm">
                               <ClientStageStatusBadge 
@@ -172,7 +168,7 @@ export default function CandidatesPage() {
                           </TableRow>
                         ))
                       )}
-                    </TableBody> */}
+                    </TableBody>
                   </Table>
                    )}
                   {/* Pagination Controls */}

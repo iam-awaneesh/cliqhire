@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/table";
 import { getJobCountsByClient } from "@/services/jobService";
 import { Plus, RefreshCcw, SlidersHorizontal, MoreVertical } from "lucide-react";
-import { CreateClientModal } from "@/components/create-client-modal";
+import { CreateClientModal } from "@/components/create-client-modal/create-client-modal";
 import { getClients, updateClientStage, updateClientStageStatus, ClientResponse, ClientStageStatus } from "@/services/clientService";
 import { ClientStageBadge } from "@/components/client-stage-badge";
 import { ClientStageStatusBadge } from "@/components/client-stage-status-badge";
