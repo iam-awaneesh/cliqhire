@@ -62,9 +62,10 @@ export default function CandidatesPage() {
   return (
     <div className="flex flex-col h-full">
        <CreateCandidateModal 
-              isOpen={open} 
-              onClose={() => setOpen(false)} 
-            />
+  isOpen={open} 
+  onClose={() => setOpen(false)} 
+  onCandidateCreated={(candidate) => setCandidates(prev => [candidate, ...prev])}
+/>
       
       {/* Header */}
       
@@ -118,56 +119,36 @@ export default function CandidatesPage() {
             </TableHeader>
                     <TableBody>
                       {initialLoading ? (
-                        <TableRow>
-                          <TableCell colSpan={8} className="h-[calc(100vh-240px)] text-center">
-                            <div className="py-24">
-                              <div className="text-center">Loading clients...</div>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ) : filteredAndSortedClients.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={8} className="h-[calc(100vh-240px)] text-center">
-                            <div className="py-24">
-                              <div className="text-center">No clients found</div>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        filteredAndSortedClients.map((client) => (
-                          <TableRow
-                            key={client.id}
-                            className="hover:bg-muted/50 cursor-pointer"
-                            onClick={(e) => {
-                              if (!(e.target as HTMLElement).closest('.client-stage-badge')) {
-                                router.push(`/clients/${client.id}`);
-                                <>asd</>
-                              }
-                            }}
-                          >
-                            <TableCell className="text-sm font-medium">{client.name}</TableCell>
-                            <TableCell className="text-sm">{client.industry}</TableCell>
-                            <TableCell className="text-sm">{client.location}</TableCell>
-                            <TableCell className="text-sm">
-                              
-                            </TableCell>
-                            <TableCell className="text-sm">
-                              <ClientStageStatusBadge 
-                                id={client.id}
-                                status={client.clientStageStatus}
-                                stage={client.stage}
-                                onStatusChange={handleStageStatusChange}
-                              />
-                            </TableCell>
-                            <TableCell className="text-sm">{client.owner}</TableCell>
-                            <TableCell className="text-sm">{client.team}</TableCell>
-                            <TableCell className="text-sm">
-                              {client.incorporationDate ? `${getYearDifference(client.incorporationDate)} years` : "0 years"}
-                            </TableCell>
-                            <TableCell className="text-sm">{client.jobCount}</TableCell>
-                          </TableRow>
-                        ))
-                      )}
+  <TableRow>
+    <TableCell colSpan={9} className="h-[calc(100vh-240px)] text-center">
+      <div className="py-24">
+        <div className="text-center">Loading candidates...</div>
+      </div>
+    </TableCell>
+  </TableRow>
+) : candidates.length === 0 ? (
+  <TableRow>
+    <TableCell colSpan={9} className="h-[calc(100vh-240px)] text-center">
+      <div className="py-24">
+        <div className="text-center">No candidates found</div>
+      </div>
+    </TableCell>
+  </TableRow>
+) : (
+  candidates.map((candidate, idx) => (
+    <TableRow key={candidate.email + idx}>
+      <TableCell className="text-sm font-medium">{candidate.name}</TableCell>
+      <TableCell className="text-sm">{candidate.email}</TableCell>
+      <TableCell className="text-sm">{candidate.phone}</TableCell>
+      <TableCell className="text-sm">{candidate.location}</TableCell>
+      <TableCell className="text-sm">{candidate.experience}</TableCell>
+      <TableCell className="text-sm">{candidate.skills}</TableCell>
+      <TableCell className="text-sm">{candidate.resume}</TableCell>
+      <TableCell className="text-sm">{candidate.status}</TableCell>
+      <TableCell className="text-sm">{candidate.actions}</TableCell>
+    </TableRow>
+  ))
+)}
                     </TableBody>
                   </Table>
                    )}

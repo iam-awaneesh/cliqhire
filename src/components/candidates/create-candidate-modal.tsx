@@ -32,7 +32,13 @@ function OptionCard({ icon, title, onClick }: OptionCardProps) {
   )
 }
 
-export function CreateCandidateModal({ isOpen, onClose }: CreateCandidateModalProps) {
+interface CreateCandidateModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onCandidateCreated?: (candidate: any) => void;
+}
+
+export function CreateCandidateModal({ isOpen, onClose, onCandidateCreated }: CreateCandidateModalProps) {
   const [showForm, setShowForm] = useState(false)
   return (
     <Dialog open={isOpen} onOpenChange={() => { setShowForm(false); onClose(); }}>
@@ -43,15 +49,15 @@ export function CreateCandidateModal({ isOpen, onClose }: CreateCandidateModalPr
           </div>
         </DialogHeader>
         {showForm ? (
-          <div>
-            <CreateCandidateform />
-            {/* <Button variant="ghost" className="mb-4" onClick={() => setShowForm(false)}>
-              ← Back
-            </Button>
-            <Button variant="ghost" className="w-full" onClick={onClose}>
-              Save Candidate
-            </Button> */}
-          </div>
+  <div>
+    <CreateCandidateform
+      onCandidateCreated={(candidate: any) => {
+        if (onCandidateCreated) onCandidateCreated(candidate);
+        setShowForm(false);
+        onClose();
+      }}
+    />
+  </div>
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
