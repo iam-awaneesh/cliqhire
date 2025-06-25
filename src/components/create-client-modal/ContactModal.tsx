@@ -11,6 +11,9 @@ import {
 } from "@/components/ui/select";
 import { PrimaryContact } from "@/components/create-client-modal/type";
 import { countryCodes, positionOptions } from "./constants";
+import PhoneInput from 'react-phone-input-2';
+import 'react-phone-input-2/lib/style.css';
+import '@/styles/phone-input-override.css';
 
 interface ContactModalProps {
   isOpen: boolean;
@@ -99,28 +102,13 @@ export function ContactModal({
             <Label htmlFor="phone" className="text-right">
               Phone *
             </Label>
-            <div className="col-span-3 flex gap-2">
-              <select
-                value={newContact.countryCode}
-                onChange={(e) =>
-                  setNewContact((prev) => ({ ...prev, countryCode: e.target.value }))
-                }
-                className="border rounded px-2 py-1 w-32"
-              >
-                {countryCodes.map((option) => (
-                  <option key={option.code} value={option.code}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <Input
-                id="phone"
-                type="tel"
-                value={newContact.phone}
-                onChange={(e) =>
-                  setNewContact((prev) => ({ ...prev, phone: e.target.value }))
-                }
-                required
+            <div className="col-span-3">
+              <PhoneInput
+                country={"sa"}
+                value={newContact.phone || "966"}
+                onChange={value => setNewContact(prev => ({ ...prev, phone: value || '' }))}
+                inputClass="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm w-full"
+                inputProps={{ id: 'phone', required: true }}
               />
             </div>
           </div>
