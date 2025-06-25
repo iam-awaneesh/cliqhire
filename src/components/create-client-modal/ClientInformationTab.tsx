@@ -226,12 +226,11 @@ export function ClientInformationTab({
           Client LandLine Number *
         </Label>
         <PhoneInput
-          id="phoneNumber"
           country={"sa"}
           value={formData.phoneNumber || "966"}
-          onChange={(value) => setFormData((prev) => ({ ...prev, phoneNumber: value || '' }))}
-          inputClass="w-full"
-          required
+          onChange={value => setFormData(prev => ({ ...prev, phoneNumber: value || '' }))}
+          inputClass="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+          inputProps={{ id: 'phoneNumber', required: true }}
         />
       </div>
 
