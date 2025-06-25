@@ -1,6 +1,8 @@
 import { NestedSelect } from "@/components/ui/nested-select";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
+import PhoneInput from 'react-phone-input-2';
+import 'react-phone-input-2/lib/style.css';
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -223,28 +225,14 @@ export function ClientInformationTab({
         <Label htmlFor="phoneNumber" className="text-sm sm:text-base">
           Client LandLine Number *
         </Label>
-        <div className="flex flex-col sm:flex-row gap-2">
-          <select
-            className="border rounded px-2 py-1 w-full sm:w-32"
-            value={formData.countryCode}
-            onChange={handleInputChange("countryCode")}
-          >
-            {countryCodes.map((option) => (
-              <option key={option.code} value={option.code}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          <Input
-            id="phoneNumber"
-            type="tel"
-            value={formData.phoneNumber}
-            onChange={handleInputChange("phoneNumber")}
-            placeholder="50 123 4567"
-            required
-            className="w-full"
-          />
-        </div>
+        <PhoneInput
+          id="phoneNumber"
+          country={"sa"}
+          value={formData.phoneNumber || "966"}
+          onChange={(value) => setFormData((prev) => ({ ...prev, phoneNumber: value || '' }))}
+          inputClass="w-full"
+          required
+        />
       </div>
 
       <div className="space-y-2">
