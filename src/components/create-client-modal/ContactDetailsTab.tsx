@@ -39,23 +39,23 @@ export function ContactDetailsTab({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 py-4">
       <div className="space-y-2">
+        <div className="flex items-center justify-between mb-2">
+          <Label className="text-sm sm:text-base">
+            Primary Contacts *
+          </Label>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsContactModalOpen(true)}
+            type="button"
+          >
+            <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+            </svg>
+            Add
+          </Button>
+        </div>
         <div className="bg-white rounded-lg border shadow-sm p-4">
-          <div className="flex items-center justify-between mb-4">
-            <Label className="text-sm sm:text-base">
-              Primary Contacts *
-            </Label>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsContactModalOpen(true)}
-              type="button"
-            >
-              <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-              </svg>
-              Add
-            </Button>
-          </div>
           {formData.primaryContacts.length === 0 ? (
             <div className="text-sm text-muted-foreground text-center py-4">
               No contacts added.

@@ -1,5 +1,6 @@
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { format } from "date-fns";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -14,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Upload, Eye, Download } from "lucide-react";
 import { ClientForm } from "@/components/create-client-modal/type";
 import { levelFieldMap } from "./constants";
+import { useState } from "react";
 
 interface ContractInformationTabProps {
   formData: ClientForm;
@@ -23,7 +25,7 @@ interface ContractInformationTabProps {
   activeLevel: string | null;
   setActiveLevel: React.Dispatch<React.SetStateAction<string | null>>;
   uploadedFiles: { [key: string]: File | null };
-  handleFileChange: (field:any) => (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleFileChange: (field: any) => (e: React.ChangeEvent<HTMLInputElement>) => void;
   handlePreview: (file: File | string | null) => void;
   handleDownload: (file: File | null) => void;
 }
@@ -40,11 +42,11 @@ export function ContractInformationTab({
   handlePreview,
   handleDownload,
 }: ContractInformationTabProps) {
+  const [openStart, setOpenStart] = useState(false);
+  const [openEnd, setOpenEnd] = useState(false);
   const handleLevelChange = (level: string) => {
     setSelectedLevels((prev) =>
-      prev.includes(level)
-        ? prev.filter((l) => l !== level)
-        : [...prev, level]
+      prev.includes(level) ? prev.filter((l) => l !== level) : [...prev, level],
     );
     setActiveLevel(level);
   };
@@ -56,32 +58,51 @@ export function ContractInformationTab({
           Contract Start Date
         </Label>
         <div className="relative">
-          <DatePicker
-            id="contractStartDate"
-            selected={formData.contractStartDate}
-            onChange={(date: Date | null) => {
-              setFormData((prev) => ({
-                ...prev,
-                contractStartDate: date,
-              }));
-            }}
-            dateFormat="MMM d, yyyy"
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            placeholderText="Select start date"
-            showMonthDropdown
-            showYearDropdown
-            dropdownMode="select"
-            scrollableYearDropdown
-            yearDropdownItemNumber={15}
-            minDate={new Date()}
-            maxDate={
-              formData.contractEndDate ||
-              new Date(new Date().setFullYear(new Date().getFullYear() + 10))
-            }
-            showIcon
-            icon="📅"
-            toggleCalendarOnIconClick
-          />
+          <Popover open={openStart} onOpenChange={setOpenStart} modal={false}>
+            <PopoverTrigger asChild>
+              <Input
+                id="contractStartDate"
+                value={
+                  formData.contractStartDate
+                    ? format(formData.contractStartDate, "MMM d, yyyy")
+                    : ""
+                }
+                placeholder="Select start date"
+                readOnly
+                onClick={() => setOpenStart(true)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+              />
+            </PopoverTrigger>
+            <PopoverContent
+              align="start"
+              className="w-auto p-0"
+              onInteractOutside={(e) => {
+                if (!(e.target instanceof HTMLElement && e.currentTarget.contains(e.target))) {
+                  e.preventDefault();
+                }
+              }}
+            >
+              <Calendar
+                mode="single"
+                selected={formData.contractStartDate}
+                onSelect={(date: Date | undefined) => {
+                  setFormData((prev) => ({
+                    ...prev,
+                    contractStartDate: date || null,
+                  }));
+                  // Only close popover if a full date is selected
+                  if (date) setOpenStart(false);
+                }}
+                initialFocus
+                fromDate={new Date()}
+                toDate={
+                  formData.contractEndDate ||
+                  new Date(new Date().setFullYear(new Date().getFullYear() + 10))
+                }
+                showMonthYearPicker
+              />
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 
@@ -90,29 +111,46 @@ export function ContractInformationTab({
           Contract End Date
         </Label>
         <div className="relative">
-          <DatePicker
-            id="contractEndDate"
-            selected={formData.contractEndDate}
-            onChange={(date: Date | null) => {
-              setFormData((prev) => ({
-                ...prev,
-                contractEndDate: date,
-              }));
-            }}
-            dateFormat="MMM d, yyyy"
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            placeholderText="Select end date"
-            showMonthDropdown
-            showYearDropdown
-            dropdownMode="select"
-            scrollableYearDropdown
-            yearDropdownItemNumber={15}
-            minDate={formData.contractStartDate || new Date()}
-            maxDate={new Date(new Date().setFullYear(new Date().getFullYear() + 20))}
-            showIcon
-            icon="📅"
-            toggleCalendarOnIconClick
-          />
+          <Popover open={openEnd} onOpenChange={setOpenEnd} modal={false}>
+            <PopoverTrigger asChild>
+              <Input
+                id="contractEndDate"
+                value={
+                  formData.contractEndDate ? format(formData.contractEndDate, "MMM d, yyyy") : ""
+                }
+                placeholder="Select end date"
+                readOnly
+                onClick={() => setOpenEnd(true)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+              />
+            </PopoverTrigger>
+            <PopoverContent
+              align="start"
+              className="w-auto p-0"
+              onInteractOutside={(e) => {
+                if (!(e.target instanceof HTMLElement && e.currentTarget.contains(e.target))) {
+                  e.preventDefault();
+                }
+              }}
+            >
+              <Calendar
+                mode="single"
+                selected={formData.contractEndDate}
+                onSelect={(date: Date | undefined) => {
+                  setFormData((prev) => ({
+                    ...prev,
+                    contractEndDate: date || null,
+                  }));
+                  // Only close popover if a full date is selected
+                  if (date) setOpenEnd(false);
+                }}
+                initialFocus
+                fromDate={formData.contractStartDate || new Date()}
+                toDate={new Date(new Date().setFullYear(new Date().getFullYear() + 20))}
+                showMonthYearPicker
+              />
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 
@@ -124,7 +162,8 @@ export function ContractInformationTab({
           value={formData.contractType}
           onValueChange={(value) => {
             const isOldLevelBased =
-              formData.contractType === "Level Based (Hiring)" || formData.contractType === "Level Based With Advance";
+              formData.contractType === "Level Based (Hiring)" ||
+              formData.contractType === "Level Based With Advance";
             const isNewLevelBased =
               value === "Level Based (Hiring)" || value === "Level Based With Advance";
             setFormData((prev) => ({ ...prev, contractType: value }));
@@ -175,7 +214,9 @@ export function ContractInformationTab({
                 <div className="flex items-center space-x-0 border rounded-md overflow-hidden w-48">
                   <Select
                     value={formData.advanceMoneyCurrency || "SAR"}
-                    onValueChange={(value) => setFormData((prev) => ({ ...prev, advanceMoneyCurrency: value }))}
+                    onValueChange={(value) =>
+                      setFormData((prev) => ({ ...prev, advanceMoneyCurrency: value }))
+                    }
                   >
                     <SelectTrigger className="h-8 text-xs w-20 rounded-r-none border-r-0">
                       <SelectValue placeholder="Currency" />
@@ -207,7 +248,12 @@ export function ContractInformationTab({
                 <Input
                   type="text"
                   placeholder="Notes"
-                  onChange={(e) => setFormData((prev) => ({ ...prev, fixedPercentageAdvanceNotes: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      fixedPercentageAdvanceNotes: e.target.value,
+                    }))
+                  }
                   value={formData.fixedPercentageAdvanceNotes || ""}
                   className="h-8 text-xs flex-1"
                 />
@@ -216,9 +262,7 @@ export function ContractInformationTab({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-sm sm:text-base font-semibold">
-              Contract Document
-            </Label>
+            <Label className="text-sm sm:text-base font-semibold">Contract Document</Label>
             <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 items-center">
               <div
                 className="border-2 border-dashed rounded-lg p-2 text-center cursor-pointer hover:bg-muted/50 flex-1 w-full"
@@ -280,7 +324,9 @@ export function ContractInformationTab({
                       const value = e.target.value ? parseFloat(e.target.value) : 0;
                       setFormData((prev) => ({
                         ...prev,
-                        fixWithoutAdvanceValue: isNaN(value) ? 0 : Math.min(100, Math.max(0, value)),
+                        fixWithoutAdvanceValue: isNaN(value)
+                          ? 0
+                          : Math.min(100, Math.max(0, value)),
                       }));
                     }}
                     value={formData.fixWithoutAdvanceValue || ""}
@@ -293,7 +339,9 @@ export function ContractInformationTab({
                 <Input
                   type="text"
                   placeholder="Notes"
-                  onChange={(e) => setFormData((prev) => ({ ...prev, fixWithoutAdvanceNotes: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, fixWithoutAdvanceNotes: e.target.value }))
+                  }
                   value={formData.fixWithoutAdvanceNotes || ""}
                   className="h-8 text-xs flex-1"
                 />
@@ -302,9 +350,7 @@ export function ContractInformationTab({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-sm sm:text-base font-semibold">
-              Contract Document
-            </Label>
+            <Label className="text-sm sm:text-base font-semibold">Contract Document</Label>
             <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 items-center">
               <div
                 className="border-2 border-dashed rounded-lg p-2 text-center cursor-pointer hover:bg-muted/50 flex-1 w-full"
@@ -350,12 +396,11 @@ export function ContractInformationTab({
         </div>
       )}
 
-      {(formData.contractType === "Level Based (Hiring)" || formData.contractType === "Level Based With Advance") && (
+      {(formData.contractType === "Level Based (Hiring)" ||
+        formData.contractType === "Level Based With Advance") && (
         <div className="space-y-4 col-span-1 sm:col-span-2 border rounded-lg p-4">
           <div className="space-y-2">
-            <Label className="text-sm sm:text-base font-semibold">
-              Select Levels
-            </Label>
+            <Label className="text-sm sm:text-base font-semibold">Select Levels</Label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {["Senior Level", "Executives", "Non-Executives", "Other"].map((level) => (
                 <div key={level} className="flex items-center space-x-2">
@@ -400,7 +445,9 @@ export function ContractInformationTab({
                               const value = e.target.value ? parseFloat(e.target.value) : 0;
                               setFormData((prev) => ({
                                 ...prev,
-                                [fieldKeys.percentage]: isNaN(value) ? 0 : Math.min(100, Math.max(0, value)),
+                                [fieldKeys.percentage]: isNaN(value)
+                                  ? 0
+                                  : Math.min(100, Math.max(0, value)),
                               }));
                             }}
                             value={formData[fieldKeys.percentage] || ""}
@@ -414,7 +461,9 @@ export function ContractInformationTab({
                           <div className="flex items-center space-x-0 border rounded-md overflow-hidden w-48">
                             <Select
                               value={formData[fieldKeys.currency] || "SAR"}
-                              onValueChange={(value) => setFormData((prev) => ({ ...prev, [fieldKeys.currency]: value }))}
+                              onValueChange={(value) =>
+                                setFormData((prev) => ({ ...prev, [fieldKeys.currency]: value }))
+                              }
                             >
                               <SelectTrigger className="h-8 text-xs w-20 rounded-r-none border-r-0">
                                 <SelectValue placeholder="Currency" />
@@ -447,7 +496,9 @@ export function ContractInformationTab({
                         <Input
                           type="text"
                           placeholder="Notes"
-                          onChange={(e) => setFormData((prev) => ({ ...prev, [fieldKeys.notes]: e.target.value }))}
+                          onChange={(e) =>
+                            setFormData((prev) => ({ ...prev, [fieldKeys.notes]: e.target.value }))
+                          }
                           value={formData[fieldKeys.notes] || ""}
                           className="h-8 text-xs flex-1"
                         />
@@ -458,13 +509,13 @@ export function ContractInformationTab({
               })}
 
               <div className="space-y-2">
-                <Label className="text-sm sm:text-base font-semibold">
-                  Contract Documents
-                </Label>
+                <Label className="text-sm sm:text-base font-semibold">Contract Documents</Label>
                 <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 items-center mb-2">
                   <div
                     className="border-2 border-dashed rounded-lg p-2 text-center cursor-pointer hover:bg-muted/50 flex-1 w-full"
-                    onClick={() => document.getElementById('fileInput-levelBasedContractDocument')?.click()}
+                    onClick={() =>
+                      document.getElementById("fileInput-levelBasedContractDocument")?.click()
+                    }
                   >
                     <Upload className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
                     <p className="text-xs text-muted-foreground">Upload (PDF, JPEG, PNG)</p>
@@ -474,7 +525,7 @@ export function ContractInformationTab({
                     type="file"
                     accept=".pdf,.jpg,.jpeg,.png"
                     className="hidden"
-                    onChange={handleFileChange('levelBasedContractDocument')}
+                    onChange={handleFileChange("levelBasedContractDocument")}
                   />
                   <Button
                     variant="outline"
