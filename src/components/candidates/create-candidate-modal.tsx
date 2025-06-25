@@ -1,20 +1,20 @@
-"use client"
+"use client";
 
-import { X, FileText, Upload, Files, Table } from 'lucide-react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import Link from "next/link"
-import { useState } from "react"
-import CreateCandidateform from './create-candidate-form'
+import { X, FileText, Upload, Files, Table } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { useState } from "react";
+import CreateCandidateform from "./create-candidate-form";
 interface CreateCandidateModalProps {
-  isOpen: boolean
-  onClose: () => void
+  isOpen: boolean;
+  onClose: () => void;
 }
 
 interface OptionCardProps {
-  icon: React.ReactNode
-  title: string
-  onClick: () => void
+  icon: React.ReactNode;
+  title: string;
+  onClick: () => void;
 }
 
 function OptionCard({ icon, title, onClick }: OptionCardProps) {
@@ -29,7 +29,7 @@ function OptionCard({ icon, title, onClick }: OptionCardProps) {
       </div>
       <span className="text-lg font-semibold">{title}</span>
     </Button>
-  )
+  );
 }
 
 interface CreateCandidateModalProps {
@@ -38,10 +38,20 @@ interface CreateCandidateModalProps {
   onCandidateCreated?: (candidate: any) => void;
 }
 
-export function CreateCandidateModal({ isOpen, onClose, onCandidateCreated }: CreateCandidateModalProps) {
-  const [showForm, setShowForm] = useState(false)
+export function CreateCandidateModal({
+  isOpen,
+  onClose,
+  onCandidateCreated,
+}: CreateCandidateModalProps) {
+  const [showForm, setShowForm] = useState(false);
   return (
-    <Dialog open={isOpen} onOpenChange={() => { setShowForm(false); onClose(); }}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={() => {
+        setShowForm(false);
+        onClose();
+      }}
+    >
       <DialogContent className="max-w-3xl">
         <DialogHeader>
           <div className="flex items-center justify-between">
@@ -49,15 +59,15 @@ export function CreateCandidateModal({ isOpen, onClose, onCandidateCreated }: Cr
           </div>
         </DialogHeader>
         {showForm ? (
-  <div>
-    <CreateCandidateform
-      onCandidateCreated={(candidate: any) => {
-        if (onCandidateCreated) onCandidateCreated(candidate);
-        setShowForm(false);
-        onClose();
-      }}
-    />
-  </div>
+          <div>
+            <CreateCandidateform
+              onCandidateCreated={(candidate: any) => {
+                if (onCandidateCreated) onCandidateCreated(candidate);
+                setShowForm(false);
+                onClose();
+              }}
+            />
+          </div>
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
@@ -69,20 +79,21 @@ export function CreateCandidateModal({ isOpen, onClose, onCandidateCreated }: Cr
               <OptionCard
                 icon={<Upload className="w-8 h-8 text-blue-600" />}
                 title="Upload a Resume"
-                onClick={() => {/* You can implement resume upload logic here */}}
+                onClick={() => {
+                  /* You can implement resume upload logic here */
+                }}
               />
             </div>
             <div className="text-center text-gray-600 pt-4">
               Or{" "}
               <Link href="#" className="text-blue-600 hover:underline">
                 install a chrome extension
-              </Link>
-              {" "}to source candidates from LinkedIn.
+              </Link>{" "}
+              to source candidates from LinkedIn.
             </div>
           </>
         )}
       </DialogContent>
     </Dialog>
-  )
+  );
 }
-

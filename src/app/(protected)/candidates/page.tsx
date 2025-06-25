@@ -1,18 +1,18 @@
-'use client'
-import { Button } from "@/components/ui/button"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Table, TableHeader , TableBody , TableCell,TableRow } from "@/components/ui/table"
-import { Users, Folder, Search, Route, Router } from 'lucide-react'
-import { CandidatesEmptyState } from "./empty-states"
-import { CreateCandidate } from "@/components/candidates/create-candidate"
+"use client";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableHeader, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import { Users, Folder, Search, Route, Router } from "lucide-react";
+import { CandidatesEmptyState } from "./empty-states";
+import { CreateCandidate } from "@/components/candidates/create-candidate";
 // import Link from 'next/link'
-import { useState, useEffect } from "react"
-import { useRouter } from 'next/navigation'
-import {CreateFolder} from "@/components/candidates/create-folder"
-import { AdvanceSearch } from "@/components/candidates/AdvSearch"
-import Dashboardheader from "@/components/dashboard-header"
-import Tableheader from "@/components/table-header"
-import { CreateCandidateModal } from "@/components/candidates/create-candidate-modal"
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { CreateFolder } from "@/components/candidates/create-folder";
+import { AdvanceSearch } from "@/components/candidates/AdvSearch";
+import Dashboardheader from "@/components/dashboard-header";
+import Tableheader from "@/components/table-header";
+import { CreateCandidateModal } from "@/components/candidates/create-candidate-modal";
 
 const columsArr = [
   "Candidate Name",
@@ -23,9 +23,8 @@ const columsArr = [
   "Skills",
   "Resume",
   "Status",
-  "Actions"
-]
-
+  "Actions",
+];
 
 export default function CandidatesPage() {
   const router = useRouter();
@@ -39,15 +38,25 @@ export default function CandidatesPage() {
     // Simulate async fetch
     setTimeout(() => {
       setCandidates([
-        { name: "John Doe", email: "john@example.com", phone: "1234567890", location: "New York", experience: "5 years", skills: "React, Node.js", resume: "", status: "Active", actions: "" },
+        {
+          name: "John Doe",
+          email: "john@example.com",
+          phone: "1234567890",
+          location: "New York",
+          experience: "5 years",
+          skills: "React, Node.js",
+          resume: "",
+          status: "Active",
+          actions: "",
+        },
         // Add more mock candidates as needed
       ]);
       setInitialLoading(false);
     }, 1000);
   }, []);
   // const [selected, setSelected] = useState("candidate");
-     const [open, setOpen] = useState(false);
-     const [filterOpen, setFilterOpen] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
   // const showSelectedOption = () => {
   //   switch(selected) {
   //     case 'candidate':
@@ -56,24 +65,23 @@ export default function CandidatesPage() {
   //       return  <CreateFolder />;
   //     case 'advanced':
   //       return  <AdvanceSearch />;
-  
+
   //   }
   // }
 
-
   return (
     <div className="flex flex-col h-full">
-       <CreateCandidateModal 
-  isOpen={open} 
-  onClose={() => setOpen(false)} 
-  onCandidateCreated={(candidate) => setCandidates(prev => [candidate, ...prev])}
-/>
-      
+      <CreateCandidateModal
+        isOpen={open}
+        onClose={() => setOpen(false)}
+        onCandidateCreated={(candidate) => setCandidates((prev) => [candidate, ...prev])}
+      />
+
       {/* Header */}
-      
-     <Dashboardheader
+
+      <Dashboardheader
         setOpen={setOpen}
-        setFilterOpen={()=>{}}
+        setFilterOpen={() => {}}
         initialLoading={false}
         heading="Candidates"
         buttonText="Create Candidate"
@@ -82,7 +90,6 @@ export default function CandidatesPage() {
       {/* <CreateCandidate /> */}
 
       {/* Create Candidate Modal */}
-    
 
       {/* Create Folder Modal */}
       {/* <CreateFolder /> */}
@@ -119,47 +126,49 @@ export default function CandidatesPage() {
             <TableHeader>
               <Tableheader tableHeadArr={columsArr} />
             </TableHeader>
-                    <TableBody>
-                      {initialLoading ? (
-  <TableRow>
-    <TableCell colSpan={9} className="h-[calc(100vh-240px)] text-center">
-      <div className="py-24">
-        <div className="text-center">Loading candidates...</div>
-      </div>
-    </TableCell>
-  </TableRow>
-) : candidates.length === 0 ? (
-  <TableRow>
-    <TableCell colSpan={9} className="h-[calc(100vh-240px)] text-center">
-      <div className="py-24">
-        <div className="text-center">No candidates found</div>
-      </div>
-    </TableCell>
-  </TableRow>
-) : (
-  candidates.map((candidate, idx) => (
-    <TableRow
-      key={candidate.email + idx}
-      className="cursor-pointer hover:bg-gray-100"
-      onClick={() => router.push(`/candidates/summary/${encodeURIComponent(candidate.email)}`)}
-    >
-      <TableCell className="text-sm font-medium">{candidate.name}</TableCell>
-      <TableCell className="text-sm">{candidate.email}</TableCell>
-      <TableCell className="text-sm">{candidate.phone}</TableCell>
-      <TableCell className="text-sm">{candidate.location}</TableCell>
-      <TableCell className="text-sm">{candidate.experience}</TableCell>
-      <TableCell className="text-sm">{candidate.skills}</TableCell>
-      <TableCell className="text-sm">{candidate.resume}</TableCell>
-      <TableCell className="text-sm">{candidate.status}</TableCell>
-      <TableCell className="text-sm">{candidate.actions}</TableCell>
-    </TableRow>
-  ))
-)}
-                    </TableBody>
-                  </Table>
-                   )}
-                  {/* Pagination Controls */}
-                  {/* <div className="flex items-center justify-between p-4 border-t">
+            <TableBody>
+              {initialLoading ? (
+                <TableRow>
+                  <TableCell colSpan={9} className="h-[calc(100vh-240px)] text-center">
+                    <div className="py-24">
+                      <div className="text-center">Loading candidates...</div>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : candidates.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={9} className="h-[calc(100vh-240px)] text-center">
+                    <div className="py-24">
+                      <div className="text-center">No candidates found</div>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                candidates.map((candidate, idx) => (
+                  <TableRow
+                    key={candidate.email + idx}
+                    className="cursor-pointer hover:bg-gray-100"
+                    onClick={() =>
+                      router.push(`/candidates/summary/${encodeURIComponent(candidate.email)}`)
+                    }
+                  >
+                    <TableCell className="text-sm font-medium">{candidate.name}</TableCell>
+                    <TableCell className="text-sm">{candidate.email}</TableCell>
+                    <TableCell className="text-sm">{candidate.phone}</TableCell>
+                    <TableCell className="text-sm">{candidate.location}</TableCell>
+                    <TableCell className="text-sm">{candidate.experience}</TableCell>
+                    <TableCell className="text-sm">{candidate.skills}</TableCell>
+                    <TableCell className="text-sm">{candidate.resume}</TableCell>
+                    <TableCell className="text-sm">{candidate.status}</TableCell>
+                    <TableCell className="text-sm">{candidate.actions}</TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        )}
+        {/* Pagination Controls */}
+        {/* <div className="flex items-center justify-between p-4 border-t">
                     <div className="flex items-center space-x-4">
                       <div className="text-sm text-muted-foreground">
                         Showing {clients.length > 0 ? (currentPage - 1) * pageSize + 1 : 0} to {Math.min(currentPage * pageSize, totalClients)} of {totalClients} clients
@@ -213,13 +222,10 @@ export default function CandidatesPage() {
                       </Button>
                     </div>
                   </div> */}
-        
-                </div>
+      </div>
 
       {/* Content */}
       {/* {showSelectedOption()} */}
     </div>
-  )
+  );
 }
-
-
