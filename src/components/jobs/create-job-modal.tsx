@@ -880,8 +880,8 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
                 </div>
               </div>
 
-              <div className="grid gap-2">
-                <Label htmlFor="gender">Gender</Label>
+              <div className="flex flex-col">
+                <Label htmlFor="gender" className="text-sm font-medium text-gray-700 mb-1">Gender</Label>
                 <Select
                   value={formData.gender}
                   onValueChange={(value) => setFormData(prev => ({ ...prev, gender: value }))}
@@ -897,8 +897,8 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
                 </Select>
               </div>
 
-              <div className="grid gap-2">
-                <Label htmlFor="numberOfPositions">Number of Positions</Label>
+              <div className="flex flex-col">
+                <Label htmlFor="numberOfPositions" className="text-sm font-medium text-gray-700 mb-1">Number of Positions</Label>
                 <Input
                   id="numberOfPositions"
                   type="number"
