@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '../ui/button';
+import { Input } from '../ui/input';
 import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/style.css';
 
@@ -67,14 +68,14 @@ export default function CreateCandidateform() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <label className="flex flex-col gap-2 font-medium text-gray-700">
               Name
-              <input
+              <Input
                 type="text"
                 name="name"
                 value={form.name}
                 onChange={handleChange}
                 required
                 placeholder="Enter candidate name"
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/70 bg-gray-50"
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/70 bg-gray-50 placeholder:font-normal"
               />
             </label>
             <label className="flex flex-col gap-2 font-medium text-gray-700">
@@ -96,26 +97,26 @@ export default function CreateCandidateform() {
             </label>
             <label className="flex flex-col gap-2 font-medium text-gray-700">
               Email
-              <input
+              <Input
                 type="email"
                 name="email"
                 value={form.email}
                 onChange={handleChange}
                 required
                 placeholder="Enter email address"
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/70 bg-gray-50"
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/70 bg-gray-50 placeholder:font-normal"
               />
             </label>
             <label className="flex flex-col gap-2 font-medium text-gray-700">
               Location
-              <input
+              <Input
                 type="text"
                 name="location"
                 value={form.location}
                 onChange={handleChange}
                 required
                 placeholder="Enter location"
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/70 bg-gray-50"
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/70 bg-gray-50 placeholder:font-normal"
               />
             </label>
           </div>
@@ -130,50 +131,50 @@ export default function CreateCandidateform() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <label className="flex flex-col gap-2 font-medium text-gray-700">
               Current Position
-              <input
+              <Input
                 type="text"
                 name="currentPosition"
                 value={form.currentPosition}
                 onChange={handleChange}
                 required
                 placeholder="Enter current position"
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/70 bg-gray-50"
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/70 bg-gray-50 placeholder:font-normal"
               />
             </label>
             <label className="flex flex-col gap-2 font-medium text-gray-700">
               Current Company
-              <input
+              <Input
                 type="text"
                 name="currentCompany"
                 value={form.currentCompany}
                 onChange={handleChange}
                 required
                 placeholder="Enter current company"
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/70 bg-gray-50"
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/70 bg-gray-50 placeholder:font-normal"
               />
             </label>
             <label className="flex flex-col gap-2 font-medium text-gray-700">
               Notice Period
-              <input
+              <Input
                 type="text"
                 name="noticePeriod"
                 value={form.noticePeriod}
                 onChange={handleChange}
                 required
                 placeholder="Enter notice period"
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/70 bg-gray-50"
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/70 bg-gray-50 placeholder:font-normal"
               />
             </label>
             <label className="flex flex-col gap-2 font-medium text-gray-700">
               Current Salary
-              <input
+              <Input
                 type="text"
                 name="currentSalary"
                 value={form.currentSalary}
                 onChange={handleChange}
                 required
                 placeholder="Enter current salary"
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/70 bg-gray-50"
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/70 bg-gray-50 placeholder:font-normal"
               />
             </label>
           </div>
