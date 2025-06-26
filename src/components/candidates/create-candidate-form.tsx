@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
+import { Label } from '../ui/label';
 import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/style.css';
 import '@/styles/phone-input-override.css';
@@ -67,9 +68,9 @@ export default function CreateCandidateform() {
       {activeTab === 'basic' && (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <label className="flex flex-col gap-2 font-medium text-gray-700">
-              Name
-              <Input
+            <div className="flex flex-col gap-2">
+  <Label>Name</Label>
+  <Input
                 type="text"
                 name="name"
                 value={form.name}
@@ -78,10 +79,10 @@ export default function CreateCandidateform() {
                 placeholder="Enter candidate name"
                 className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/70 bg-gray-50 placeholder:font-normal"
               />
-            </label>
-            <label className="flex flex-col gap-2 font-medium text-gray-700">
-              Phone
-              <PhoneInput
+            </div>
+            <div className="flex flex-col gap-2">
+  <Label>Phone</Label>
+  <PhoneInput
                 country={'sa'}
                 value={form.phone}
                 onChange={phone => setForm(prev => ({ ...prev, phone }))}
@@ -97,10 +98,10 @@ export default function CreateCandidateform() {
                 buttonClass="!border-none !bg-transparent"
                 dropdownClass="!z-50"
               />
-            </label>
-            <label className="flex flex-col gap-2 font-medium text-gray-700">
-              Email
-              <Input
+            </div>
+            <div className="flex flex-col gap-2">
+  <Label>Email</Label>
+  <Input
                 type="email"
                 name="email"
                 value={form.email}
@@ -109,10 +110,10 @@ export default function CreateCandidateform() {
                 placeholder="Enter email address"
                 className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/70 bg-gray-50 placeholder:font-normal"
               />
-            </label>
-            <label className="flex flex-col gap-2 font-medium text-gray-700">
-              Location
-              <Input
+            </div>
+            <div className="flex flex-col gap-2">
+  <Label>Location</Label>
+  <Input
                 type="text"
                 name="location"
                 value={form.location}
@@ -121,7 +122,7 @@ export default function CreateCandidateform() {
                 placeholder="Enter location"
                 className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/70 bg-gray-50 placeholder:font-normal"
               />
-            </label>
+            </div>
           </div>
           <div className="flex justify-end mt-4">
             <Button type="button" onClick={() => setActiveTab('job')}>Next</Button>
@@ -132,9 +133,9 @@ export default function CreateCandidateform() {
       {activeTab === 'job' && (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <label className="flex flex-col gap-2 font-medium text-gray-700">
-              Current Position
-              <Input
+            <div className="flex flex-col gap-2">
+  <Label>Current Position</Label>
+  <Input
                 type="text"
                 name="currentPosition"
                 value={form.currentPosition}
@@ -143,10 +144,10 @@ export default function CreateCandidateform() {
                 placeholder="Enter current position"
                 className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/70 bg-gray-50 placeholder:font-normal"
               />
-            </label>
-            <label className="flex flex-col gap-2 font-medium text-gray-700">
-              Current Company
-              <Input
+            </div>
+            <div className="flex flex-col gap-2">
+  <Label>Current Company</Label>
+  <Input
                 type="text"
                 name="currentCompany"
                 value={form.currentCompany}
@@ -155,10 +156,10 @@ export default function CreateCandidateform() {
                 placeholder="Enter current company"
                 className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/70 bg-gray-50 placeholder:font-normal"
               />
-            </label>
-            <label className="flex flex-col gap-2 font-medium text-gray-700">
-              Notice Period
-              <Input
+            </div>
+            <div className="flex flex-col gap-2">
+  <Label>Notice Period</Label>
+  <Input
                 type="text"
                 name="noticePeriod"
                 value={form.noticePeriod}
@@ -167,10 +168,10 @@ export default function CreateCandidateform() {
                 placeholder="Enter notice period"
                 className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/70 bg-gray-50 placeholder:font-normal"
               />
-            </label>
-            <label className="flex flex-col gap-2 font-medium text-gray-700">
-              Current Salary
-              <Input
+            </div>
+            <div className="flex flex-col gap-2">
+  <Label>Current Salary</Label>
+  <Input
                 type="text"
                 name="currentSalary"
                 value={form.currentSalary}
@@ -179,7 +180,7 @@ export default function CreateCandidateform() {
                 placeholder="Enter current salary"
                 className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/70 bg-gray-50 placeholder:font-normal"
               />
-            </label>
+            </div>
           </div>
           <div className="flex justify-between mt-4">
             <Button type="button" variant="secondary" onClick={() => setActiveTab('basic')}>Previous</Button>
