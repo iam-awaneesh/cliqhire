@@ -921,38 +921,42 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
                   placeholder="e.g., 5 years"
                 />
               </div>
-              <span>
-                <div className="inline-block">
-                  <Label htmlFor="educationQualification">Education Qualification *</Label>
-                  <Select required>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Qualification" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {educationQualifications.map((qualification) => (
-                        <SelectItem key={qualification} value={qualification}>
-                          {qualification}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="inline-block ml-3">
-                  <Label htmlFor="specialization">Specialization *</Label>
-                  <Select required>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Specialization" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {specialization.map((specialization) => (
-                        <SelectItem key={specialization} value={specialization}>
-                          {specialization}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </span>
+              
+
+<div className="grid grid-cols-2 gap-4">
+  <div>
+    <Label htmlFor="educationQualification">Education Qualification</Label>
+    <Select>
+      <SelectTrigger>
+        <SelectValue placeholder="Select Qualification" />
+      </SelectTrigger>
+      <SelectContent>
+        {educationQualifications.map((qualification) => (
+          <SelectItem key={qualification} value={qualification}>
+            {qualification}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  </div>
+
+  <div>
+    <Label htmlFor="specialization">Specialization</Label>
+    <Select>
+      <SelectTrigger>
+        <SelectValue placeholder="Select Specialization" />
+      </SelectTrigger>
+      <SelectContent>
+        {specialization.map((spec) => (
+          <SelectItem key={spec} value={spec}>
+            {spec}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  </div>
+</div>
+
 
               <div className="grid gap-2">
                 <Label htmlFor="certifications">Certifications</Label>
@@ -993,8 +997,8 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
                 </div>
               </div>
 
-              <div className="grid gap-2">
-                <Label htmlFor="reportingTo">Reporting To</Label>
+              <div className="flex flex-col">
+                <Label htmlFor="reportingTo" className="text-sm font-medium text-gray-700 mb-1">Reporting To</Label>
                 <Input
                   id="reportingTo"
                   value={formData.reportingTo}
