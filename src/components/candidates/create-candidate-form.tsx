@@ -82,7 +82,7 @@ export default function CreateCandidateform() {
             <label className="flex flex-col gap-2 font-medium text-gray-700">
               Phone
               <PhoneInput
-                country={'sar'}
+                country={'sa'}
                 value={form.phone}
                 onChange={phone => setForm(prev => ({ ...prev, phone }))}
                 inputProps={{
@@ -90,6 +90,8 @@ export default function CreateCandidateform() {
                   required: true,
                   autoFocus: false,
                 }}
+                enableSearch={true}
+                preferredCountries={['sa']}
                 inputClass="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground placeholder:font-normal focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
                 containerClass="w-full"
                 buttonClass="!border-none !bg-transparent"
