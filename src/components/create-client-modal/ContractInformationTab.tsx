@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { Upload, Eye, Download } from "lucide-react";
+import { Upload, Eye, Download, CalendarIcon } from "lucide-react";
 import { ClientForm } from "@/components/create-client-modal/type";
 import { levelFieldMap } from "./constants";
 import { useState } from "react";
@@ -51,55 +51,35 @@ export function ContractInformationTab({
     setActiveLevel(level);
   };
 
+  const handleSelectDate = (date: Date | undefined, type: "start" | "end") => {
+    if (type === "start") {
+      setFormData((prev) => ({ ...prev, contractStartDate: date || null }));
+      setOpenStart(false);
+    } else {
+      setFormData((prev) => ({ ...prev, contractEndDate: date || null }));
+      setOpenEnd(false);
+    }
+  };
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 py-4">
       <div className="space-y-2">
-        <Label htmlFor="contractStartDate" className="text-sm sm:text-base">
-          Contract Start Date
-        </Label>
-        <div className="relative">
-          <Popover open={openStart} onOpenChange={setOpenStart} modal={false}>
+        <Label htmlFor="contractStartDate">Contract Start Date</Label>
+        <div className="grid gap-2">
+          <Popover open={openStart} onOpenChange={setOpenStart} modal>
             <PopoverTrigger asChild>
-              <Input
-                id="contractStartDate"
-                value={
-                  formData.contractStartDate
-                    ? format(formData.contractStartDate, "MMM d, yyyy")
-                    : ""
-                }
-                placeholder="Select start date"
-                readOnly
-                onClick={() => setOpenStart(true)}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
-              />
+              <Button id="date-picker" variant="outline" className="w-full justify-start text-left font-normal">
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {formData.contractStartDate ? format(formData.contractStartDate, "PPP") : "Pick a date"}
+              </Button>
             </PopoverTrigger>
-            <PopoverContent
-              align="start"
-              className="w-auto p-0"
-              onInteractOutside={(e) => {
-                if (!(e.target instanceof HTMLElement && e.currentTarget.contains(e.target))) {
-                  e.preventDefault();
-                }
-              }}
-            >
-              <Calendar
-                mode="single"
-                selected={formData.contractStartDate}
-                onSelect={(date: Date | undefined) => {
-                  setFormData((prev) => ({
-                    ...prev,
-                    contractStartDate: date || null,
-                  }));
-                  // Only close popover if a full date is selected
-                  if (date) setOpenStart(false);
-                }}
-                initialFocus
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar 
+                mode="single" 
+                captionLayout="dropdown" 
+                selected={formData.contractStartDate!} 
+                onSelect={(date) => handleSelectDate(date, "start")}
                 fromDate={new Date()}
-                toDate={
-                  formData.contractEndDate ||
-                  new Date(new Date().setFullYear(new Date().getFullYear() + 10))
-                }
-                showMonthYearPicker
               />
             </PopoverContent>
           </Popover>
@@ -110,44 +90,20 @@ export function ContractInformationTab({
         <Label htmlFor="contractEndDate" className="text-sm sm:text-base">
           Contract End Date
         </Label>
-        <div className="relative">
-          <Popover open={openEnd} onOpenChange={setOpenEnd} modal={false}>
+        <div className="grid gap-2">
+          <Popover open={openEnd} onOpenChange={setOpenEnd} modal={true}>
             <PopoverTrigger asChild>
-              <Input
-                id="contractEndDate"
-                value={
-                  formData.contractEndDate ? format(formData.contractEndDate, "MMM d, yyyy") : ""
-                }
-                placeholder="Select end date"
-                readOnly
-                onClick={() => setOpenEnd(true)}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
-              />
+              <Button id="date-picker" variant="outline" className="w-full justify-start text-left font-normal">
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {formData.contractEndDate ? format(formData.contractEndDate, "PPP") : "Pick a date"}
+              </Button>
             </PopoverTrigger>
-            <PopoverContent
-              align="start"
-              className="w-auto p-0"
-              onInteractOutside={(e) => {
-                if (!(e.target instanceof HTMLElement && e.currentTarget.contains(e.target))) {
-                  e.preventDefault();
-                }
-              }}
-            >
-              <Calendar
-                mode="single"
-                selected={formData.contractEndDate}
-                onSelect={(date: Date | undefined) => {
-                  setFormData((prev) => ({
-                    ...prev,
-                    contractEndDate: date || null,
-                  }));
-                  // Only close popover if a full date is selected
-                  if (date) setOpenEnd(false);
-                }}
-                initialFocus
-                fromDate={formData.contractStartDate || new Date()}
-                toDate={new Date(new Date().setFullYear(new Date().getFullYear() + 20))}
-                showMonthYearPicker
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar 
+                mode="single" 
+                selected={formData.contractEndDate!} 
+                onSelect={(date) => handleSelectDate(date, "end")}
+                fromDate={new Date()}
               />
             </PopoverContent>
           </Popover>

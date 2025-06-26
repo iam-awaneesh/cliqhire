@@ -91,7 +91,7 @@ export function ContactDetailsTab({
         </div>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-4">
         <Label htmlFor="lineOfBusiness" className="text-sm sm:text-base">
           Line of Business *
         </Label>

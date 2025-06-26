@@ -115,7 +115,7 @@ export function ClientInformationTab({
           value={formData.referredBy}
           onChange={handleInputChange("referredBy")}
           className="w-full"
-          placeholder="person who referred"
+          placeholder="Enter the name of the person who referred"
         />
       </div>
 

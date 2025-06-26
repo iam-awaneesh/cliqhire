@@ -457,7 +457,7 @@ export function CreateClientModal({ open, onOpenChange }: { open: boolean; onOpe
       
       
       formDataToSend.append('clientTeam', formData.clientTeam || "Enterprise");
-      if(clientSubStages.includes(formData.clientStage)) {
+      if(clientSubStages.includes(formData.clientStage!)) {
         formDataToSend.append('clientStage', "Engaged");
         formDataToSend.append('clientStageStatus', formData.clientStage || "");
       }else {
