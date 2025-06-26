@@ -3,6 +3,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/style.css';
+import '@/styles/phone-input-override.css';
 
 export default function CreateCandidateform() {
   const [activeTab, setActiveTab] = useState<'basic' | 'job'>('basic');
@@ -89,7 +90,7 @@ export default function CreateCandidateform() {
                   required: true,
                   autoFocus: false,
                 }}
-                inputClass="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/70 bg-gray-50 w-full"
+                inputClass="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground placeholder:font-normal focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
                 containerClass="w-full"
                 buttonClass="!border-none !bg-transparent"
                 dropdownClass="!z-50"
