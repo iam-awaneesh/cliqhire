@@ -1,4 +1,8 @@
 import React, { useState } from 'react';
+import EntityHeader from '@/components/common/entity-header';
+import { Button } from '@/components/ui/button';
+import { RefreshCcw, Filter, Globe, MessageSquare } from 'lucide-react';
+import { TAB_ICONS } from './tab-icons';
 
 interface CandidateSummaryProps {
   email: string;
@@ -28,16 +32,34 @@ const CandidateSummary: React.FC<CandidateSummaryProps> = ({ email }) => {
 
   return (
     <div className="p-8 bg-gray-50 min-h-[300px]">
-      {/* Top section: avatar, name, tags */}
-      <div className="flex items-center mb-2">
-        <div className="w-14 h-14 rounded-full bg-blue-700 text-white flex items-center justify-center text-3xl font-semibold mr-5">
-          {initial}
-        </div>
-        <div className="flex flex-col">
-          <span className="text-2xl font-semibold">{candidate.name}</span>
-          <a href="#" className="text-blue-700 text-sm underline mt-1 w-fit">+ Tags</a>
-        </div>
-      </div>
+      {/* Shared header UI */}
+      <EntityHeader
+        title={candidate.name}
+        subtitle={candidate.email}
+        // Example: location and status can be added if available
+        // location={candidate.location}
+        // status={candidate.status}
+        actions={
+          <div className="flex gap-6 items-center">
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline">
+                <Globe className="w-4 h-4 mr-1" /> Website
+              </Button>
+              <Button size="sm" variant="outline">
+                <MessageSquare className="w-4 h-4 mr-1" /> WhatsApp
+              </Button>
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline">
+                <Filter className="w-4 h-4 mr-1" /> Filters
+              </Button>
+              <Button size="sm" variant="outline">
+                <RefreshCcw className="w-4 h-4 mr-1" /> Refresh
+              </Button>
+            </div>
+          </div>
+        }
+      />
 
       {/* Tab bar */}
       <div className="border-b border-gray-200 mt-4">
@@ -46,10 +68,12 @@ const CandidateSummary: React.FC<CandidateSummaryProps> = ({ email }) => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors duration-150 whitespace-nowrap focus:outline-none
-                ${activeTab === tab ? 'border-blue-700 text-blue-700 bg-white' : 'border-transparent text-gray-600 hover:text-blue-700 hover:border-blue-300'}`}
+              className={`flex items-center gap-1 px-4 py-2 text-sm font-medium border-b-2 transition-colors duration-150 whitespace-nowrap focus:outline-none
+                ${activeTab === tab ? 'border-black text-black bg-white' : 'border-transparent text-gray-600 hover:text-black hover:border-black'}`}
+
               type="button"
             >
+              {TAB_ICONS[tab]}
               {tab}
             </button>
           ))}
