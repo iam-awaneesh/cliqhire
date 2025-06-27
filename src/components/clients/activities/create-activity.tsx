@@ -63,14 +63,12 @@ export function CreateActivityModal() {
     
     try {
       const response = await axios.post('https://aems-backend.onrender.com/api/activities', formData);
-      console.log('Activity created successfully:', response.data);
     } catch (error: any) {
       console.error('Error creating activity:', error.response.data);
     }
   };
 
   const handleInputChange = (key: string) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    console.log('input changed')
     setFormData((prev) => ({
       ...prev,
       [key]: event.target.value,
@@ -124,7 +122,6 @@ export function CreateActivityModal() {
   const duration = calculateDuration();
 
   const handleDateSelect = (newDate: Date | undefined) => {
-    console.log('date selected')
     setDate(newDate);
     if (newDate) {
       setFormData((prev) => ({

@@ -84,7 +84,6 @@ export function ClientForm() {
   const onSubmit = async (data: ClientFormData) => {
     setIsSubmitting(true);
     try {
-      console.log('Form data:', data);
       await new Promise(resolve => setTimeout(resolve, 1000));
       toast.success('Client information saved successfully!');
       form.reset();

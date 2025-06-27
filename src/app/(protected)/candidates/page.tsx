@@ -1,4 +1,5 @@
 "use client";
+import { fetchCandidatesFromAPI, Candidate } from "@/data/candidatesData";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableHeader, TableBody, TableCell, TableRow } from "@/components/ui/table";
@@ -29,30 +30,15 @@ const columsArr = [
 export default function CandidatesPage() {
   const router = useRouter();
   // Add candidates state
-  const [candidates, setCandidates] = useState<any[]>([]);
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [initialLoading, setInitialLoading] = useState(true);
 
-  // Mock loading candidates (replace with real API call as needed)
   useEffect(() => {
     setInitialLoading(true);
-    // Simulate async fetch
-    setTimeout(() => {
-      setCandidates([
-        {
-          name: "John Doe",
-          email: "john@example.com",
-          phone: "1234567890",
-          location: "New York",
-          experience: "5 years",
-          skills: "React, Node.js",
-          resume: "",
-          status: "Active",
-          actions: "",
-        },
-        // Add more mock candidates as needed
-      ]);
+    fetchCandidatesFromAPI().then(data => {
+      setCandidates(data);
       setInitialLoading(false);
-    }, 1000);
+    });
   }, []);
   // const [selected, setSelected] = useState("candidate");
   const [open, setOpen] = useState(false);
@@ -149,7 +135,7 @@ export default function CandidatesPage() {
                     key={candidate.email + idx}
                     className="cursor-pointer hover:bg-gray-100"
                     onClick={() =>
-                      router.push(`/candidates/summary/${encodeURIComponent(candidate.email)}`)
+                      router.push(`/candidates/${encodeURIComponent(candidate.email)}`)
                     }
                   >
                     <TableCell className="text-sm font-medium">{candidate.name}</TableCell>

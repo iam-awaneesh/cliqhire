@@ -335,15 +335,14 @@ const sendClientRequest = async (
     // First validate and sanitize the data
     const validatedData = validateAndSanitizeClientData(rawData);
     
-    console.log('Validated data before sending:', {
-      name: validatedData.name,
-      hasFiles: hasFileUploads(validatedData),
-      keys: Object.keys(validatedData)
-    });
+    // console.log('Validated data before sending:', {
+    //   name: validatedData.name,
+    //   hasFiles: hasFileUploads(validatedData),
+    //   keys: Object.keys(validatedData)
+    // });
     
     if (hasFileUploads(validatedData)) {
       const formData = prepareFormData(validatedData);
-      console.log('Sending FormData with files');
       
       return await axios({
         method,
@@ -359,13 +358,11 @@ const sendClientRequest = async (
       // Test JSON serialization before sending
       try {
         const testSerialization = JSON.stringify(jsonData);
-        console.log('JSON serialization test passed, data size:', testSerialization.length);
       } catch (serializationError) {
         console.error('JSON serialization failed:', serializationError);
         throw new Error('Data contains non-serializable content');
       }
       
-      console.log('Sending JSON data with keys:', Object.keys(jsonData));
       
       return await axios({
         method,
@@ -442,7 +439,6 @@ const createClient = async (rawData: FormData | Omit<ClientResponse, "_id" | "cr
 }): Promise<ClientResponse> => {
   try {
     if (rawData instanceof FormData) {
-      console.log('Creating client with FormData');
       // When sending FormData, do not set Content-Type header
       // The browser will automatically set it with the correct boundary
       const response = await axios.post<ApiResponse<ClientResponse>>(
@@ -454,7 +450,6 @@ const createClient = async (rawData: FormData | Omit<ClientResponse, "_id" | "cr
       );
       return response.data.data;
     } else {
-      console.log('Creating client with data:', { name: rawData.name, stage: rawData.clientStage });
       const response = await sendClientRequest(`${API_URL}/clients`, 'post', rawData);
       return response.data.data;
     }
@@ -480,7 +475,6 @@ const getClients = async (queryParams: {
     });
     
     // Log the response for debugging
-    console.log('API Response in service:', response.data);
     
     // Handle different response formats
     if (response.data.success && Array.isArray(response.data.data)) {

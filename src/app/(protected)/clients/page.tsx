@@ -109,7 +109,6 @@ export default function ClientsPage() {
     setInitialLoading(true);
     try {
       // Fetch all clients from the API (no pagination in the API call)
-      console.log('Fetching all clients from API');
       
       // First try with the service function
       try {
@@ -119,15 +118,12 @@ export default function ClientsPage() {
           ...(filters.industry && { industry: filters.industry })
         });
         
-        console.log('API Response from service:', response);
         
         if (response && response.clients && Array.isArray(response.clients)) {
           // Extract data from response
           const apiClients: ClientResponse[] = response.clients;
           const total = apiClients.length;
-          
-          console.log(`Fetched ${total} clients from API`);
-          
+                    
           // Map API clients to our format
           const mappedClients = apiClients.map((client: ClientResponse) => ({
             id: client._id,
@@ -165,7 +161,6 @@ export default function ClientsPage() {
       }
       
       // Fallback: Direct API call
-      console.log('Falling back to direct API call');
       const directResponse = await axios.get(`${API_URL}/clients`, {
         params: {
           // Don't pass page/limit to get all clients
@@ -174,7 +169,6 @@ export default function ClientsPage() {
         }
       });
       
-      console.log('Direct API Response:', directResponse.data);
       
       // Process the direct API response
       if (directResponse.data && directResponse.data.success) {
@@ -182,9 +176,7 @@ export default function ClientsPage() {
           directResponse.data.data : 
           (directResponse.data.data && Array.isArray(directResponse.data.data.clients) ? 
             directResponse.data.data.clients : []);
-        
-        console.log(`Fetched ${apiClients.length} clients directly from API`);
-        
+                
         // Map API clients to our format
         const mappedClients = apiClients.map((client: ClientResponse) => ({
           id: client._id,
@@ -235,13 +227,11 @@ export default function ClientsPage() {
           const paginatedClients = storedClients.slice(startIndex, endIndex);
           
           setClients(paginatedClients);
-          console.log(`Fallback: Showing clients ${startIndex + 1} to ${endIndex} of ${total} from localStorage`);
         } else {
           // No clients in localStorage either
           setClients([]);
           setTotalClients(0);
           setTotalPages(1);
-          console.log('No clients available in localStorage');
         }
       } catch (fallbackError) {
         console.error('Error with fallback clients:', fallbackError);
@@ -345,13 +335,11 @@ export default function ClientsPage() {
   };
 
   const handleStageChange = (clientId: string, newStage: Client["stage"]) => {
-    console.log(`Stage change requested: Client ${clientId} to stage ${newStage}`);
     setPendingChange({ clientId, stage: newStage });
     setShowConfirmDialog(true);
   };
 
   const handleStageStatusChange = (clientId: string, newStatus: ClientStageStatus) => {
-    console.log(`Stage status change requested: Client ${clientId} to status ${newStatus}`);
     setPendingStatusChange({ clientId, status: newStatus });
     setShowStatusConfirmDialog(true);
   };
@@ -413,7 +401,6 @@ export default function ClientsPage() {
     let isSuccess = false;
 
     try {
-      console.log('Updating client stage status:', pendingStatusChange.clientId, 'to', pendingStatusChange.status);
 
       const updatedClient = await updateClientStageStatus(pendingStatusChange.clientId, pendingStatusChange.status);
 
@@ -445,7 +432,6 @@ export default function ClientsPage() {
     let isSuccess = false;
 
     try {
-      console.log('Updating client stage:', pendingChange.clientId, 'to', pendingChange.stage);
 
       const updatedClient = await updateClientStage(pendingChange.clientId, pendingChange.stage);
 
@@ -457,7 +443,6 @@ export default function ClientsPage() {
         )
       );
 
-      console.log('Stage update successful for client:', pendingChange.clientId);
 
       isSuccess = true;
       setShowConfirmDialog(false);

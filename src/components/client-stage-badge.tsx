@@ -44,7 +44,6 @@ export function ClientStageBadge({ id, stage, onStageChange }: ClientStageBadgeP
   const handleClick = (id: string | undefined, option: keyof typeof stageColors) => {
     return (event: React.MouseEvent) => {
       event.stopPropagation()
-      console.log('Stage changing to:', option)
       if (id && onStageChange) {
         onStageChange(id, option)
       } else {

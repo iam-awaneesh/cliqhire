@@ -131,7 +131,6 @@ const createJob = async (jobData: JobData): Promise<JobResponse> => {
   try {
     const processedData = processJobData(jobData);
     const response = await axios.post<JobResponse>(`${API_URL}/jobs`, processedData);
-    console.log('Job created successfully:', response.data);
     return response.data;
   } catch (error) {
     handleApiError(error, 'job creation');
@@ -188,7 +187,6 @@ const updateJobById = async (id: string, jobData: Partial<JobData>): Promise<Job
   try {
     const processedData = processJobData(jobData);
     const response = await axios.put<JobResponse>(`${API_URL}/jobs/${id}`, processedData);
-    console.log('Job updated successfully:', response.data);
     return response.data;
   } catch (error) {
     handleApiError(error, 'job update');
@@ -199,7 +197,6 @@ const updateJobById = async (id: string, jobData: Partial<JobData>): Promise<Job
 const deleteJobById = async (id: string): Promise<JobResponse> => {
   try {
     const response = await axios.delete<JobResponse>(`${API_URL}/jobs/${id}`);
-    console.log('Job deleted successfully:', response.data);
     return response.data;
   } catch (error) {
     handleApiError(error, 'job deletion');

@@ -632,13 +632,10 @@ export function CreateClientModal({ open, onOpenChange }: { open: boolean; onOpe
         }
       }
       
-      console.log("FormData created with the following fields:");
       for (const pair of formDataToSend.entries()) {
-        console.log(pair[0], pair[1]);
       }
       
       const result = await createClient(formDataToSend);
-      console.log("Client created successfully:", result);
 
       setFormData({
         name: "",

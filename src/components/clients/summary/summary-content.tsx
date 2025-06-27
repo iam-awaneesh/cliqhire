@@ -302,7 +302,7 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
       const fileUrl = fileName.startsWith("https") ? fileName : `https://aems-backend.onrender.com/${fileName}`;
       window.open(fileUrl, "_blank");
     } else {
-      console.log("No file to preview");
+      console.error("No file to preview");
     }
   };
 
@@ -326,7 +326,7 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
         window.open(fileUrl, '_blank');
       }
     } else {
-      console.log('No file to download');
+      console.error('No file to download');
     }
   };
 

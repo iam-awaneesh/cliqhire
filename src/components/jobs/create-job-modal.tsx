@@ -452,7 +452,6 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
       }
 
       const response = await createJob(jobData)
-      console.log("Job created successfully:", response)
       setCurrentTab(0)
       onOpenChange(false)
     } catch (error: any) {

@@ -28,15 +28,12 @@ interface NotesListProps {
 
 export function NotesList({ notes }: NotesListProps) {
   const handleEdit = (noteId: string) => {
-    console.log('Edit note:', noteId)
   }
 
   const handleDelete = (noteId: string) => {
-    console.log('Delete note:', noteId)
   }
 
   const handleShare = (noteId: string) => {
-    console.log('Share note:', noteId)
   }
 
   return (
