@@ -536,55 +536,6 @@ export default function ClientsPage() {
 
       <div className="flex flex-col h-full">
         {/* Header */}
-        {/* <div className="border-b">
-          <div className="flex h-16 items-center px-4">
-            <h1 className="text-2xl font-semibold">Clients</h1>
-            <div className="ml-auto flex items-center space-x-2">
-              <Button
-                variant={viewType === "list" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setViewType("list")}
-              >
-                LIST
-              </Button>
-            </div>
-          </div>
-        </div> */}
-
-        {/* Toolbar */}
-        {/* <div className="flex items-center justify-between p-4">
-          <Button size="sm" onClick={() => setOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Client
-          </Button>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => setFilterOpen(true)}>
-              <SlidersHorizontal className="h-4 w-4 mr-2" />
-              Filters
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => fetchClients(currentPage, pageSize)}
-              disabled={initialLoading}
-            >
-              {initialLoading ? (
-                <>
-                  <RefreshCcw className="h-4 w-4 mr-2 animate-spin" />
-                  Loading...
-                </>
-              ) : (
-                <>
-                  <RefreshCcw className="h-4 w-4 mr-2" />
-                  Refresh
-                </>
-              )}
-            </Button>
-            <Button variant="ghost" size="sm">
-              <MoreVertical className="h-4 w-4" />
-            </Button>
-          </div>
-        </div> */}
 
         <Dashboardheader
           setOpen={setOpen}
