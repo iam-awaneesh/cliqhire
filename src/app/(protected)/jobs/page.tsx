@@ -309,9 +309,9 @@ export default function JobsPage() {
               <TableBody>
                 {jobs.map((job: Job) => (
                   <TableRow 
-                    key={job._id} 
+                    key={job.id} 
                     className="hover:bg-muted/50 cursor-pointer"
-                    onClick={() => router.push(`/jobs/${job._id}`)}
+                    onClick={() => router.push(`/jobs/${job.id}`)}
                   >
                     <TableCell className="text-sm font-medium">{job.positionName}</TableCell>
                     <TableCell className="text-sm">{job.department}</TableCell>
