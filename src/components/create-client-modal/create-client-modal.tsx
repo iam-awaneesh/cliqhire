@@ -731,135 +731,138 @@ export function CreateClientModal({ open, onOpenChange }: { open: boolean; onOpe
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full max-w-[95vw] sm:max-w-[90vw] md:max-w-3xl lg:max-w-4xl xl:max-w-5xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 md:p-8">
-        <DialogHeader>
-          <DialogTitle className="text-lg sm:text-xl">Create Client</DialogTitle>
-          <DialogDescription className="text-sm sm:text-base">
-            Fill in the client details below. Required fields are marked with an asterisk (*).
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="flex flex-wrap border-b mb-4">
-          {["Client General Info", "Client Contact Info", "Contract Information", "Documents"].map((tab, index) => (
-            <button
-              key={tab}
-              className={`flex-1 px-2 py-2 text-center text-xs sm:text-sm md:text-base ${currentTab === index ? "border-b-2 border-blue-500 text-blue-500" : "text-gray-500"}`}
-              onClick={() => setCurrentTab(index)}
-            >
-              {tab}
-            </button>
-          ))}
+      <DialogContent className="w-full max-w-[95vw] sm:max-w-[90vw] md:max-w-3xl lg:max-w-4xl xl:max-w-5xl max-h-[90vh] p-4 sm:p-6 md:p-8 flex flex-col">
+        <div className="sticky top-0 z-20 bg-white pb-2">
+          <DialogHeader>
+            <DialogTitle className="text-lg sm:text-xl">Create Client</DialogTitle>
+            <DialogDescription className="text-sm sm:text-base">
+              Fill in the client details below. Required fields are marked with an asterisk (*).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-wrap border-b mt-1">
+            {["Client General Info", "Client Contact Info", "Contract Information", "Documents"].map((tab, index) => (
+              <button
+                key={tab}
+                className={`flex-1 px-2 py-2 text-center text-xs sm:text-sm md:text-base ${currentTab === index ? "border-b-2 border-blue-500 text-blue-500" : "text-gray-500"}`}
+                onClick={() => setCurrentTab(index)}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {error && (
-          <div className="bg-red-50 text-red-500 p-3 rounded-md mb-4 text-sm">{error}</div>
-        )}
-
-        <form onSubmit={handleSubmit}>
-          {currentTab === 0 && (
-            <ClientInformationTab
-              formData={formData}
-              setFormData={setFormData}
-              emailInput={emailInput}
-              handleInputChange={handleInputChange}
-              handleUrlBlur={handleUrlBlur}
-              handleEmailBlur={handleEmailBlur}
-              locationSuggestions={locationSuggestions}
-              showLocationSuggestions={showLocationSuggestions}
-              handleLocationSelect={handleLocationSelect}
-            />
-          )}
-          {currentTab === 1 && (
-            <ContactDetailsTab
-              formData={formData}
-              setFormData={setFormData}
-              setIsContactModalOpen={setIsContactModalOpen}
-              handleInputChange={handleInputChange}
-              uploadedFiles={uploadedFiles}
-              handleFileChange={handleFileChange}
-              handlePreview={handlePreview}
-              handleDownload={handleDownload}
-              technicalProposalOptionInputRef={technicalProposalOptionInputRef}
-              financialProposalOptionInputRef={financialProposalOptionInputRef}
-            />
-          )}
-          {currentTab === 2 && (
-            <ContractInformationTab
-              formData={formData}
-              setFormData={setFormData}
-              selectedLevels={selectedLevels}
-              setSelectedLevels={setSelectedLevels}
-              activeLevel={activeLevel}
-              setActiveLevel={setActiveLevel}
-              uploadedFiles={uploadedFiles}
-              handleFileChange={handleFileChange}
-              handlePreview={handlePreview}
-              handleDownload={handleDownload}
-              handleInputChange={handleInputChange}
-              technicalProposalOptionInputRef={technicalProposalOptionInputRef}
-              financialProposalOptionInputRef={financialProposalOptionInputRef}
-            />
-          )}
-          {currentTab === 3 && (
-            <DocumentsTab
-              uploadedFiles={uploadedFiles}
-              handleFileChange={handleFileChange}
-              handlePreview={handlePreview}
-              handleDownload={handleDownload}
-            />
-          )}
-
-          <DialogFooter>
-            <div className="flex flex-col sm:flex-row justify-between w-full gap-2">
-              <div>
-                {currentTab > 0 && (
-                  <Button
-                    variant="outline"
-                    type="button"
-                    onClick={handlePrevious}
-                    disabled={loading}
-                    className="w-full sm:w-auto"
-                  >
-                    Previous
-                  </Button>
-                )}
-              </div>
-              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-                {currentTab < 3 && (
-                  <Button
-                    variant="outline"
-                    type="button"
-                    onClick={() => onOpenChange(false)}
-                    disabled={loading}
-                    className="w-full sm:w-auto"
-                  >
-                    Cancel
-                  </Button>
-                )}
-                {currentTab < 3 ? (
-                  <Button type="button" onClick={handleNext} disabled={loading} className="w-full sm:w-auto">
-                    Next
-                  </Button>
-                ) : (
-                  <>
-                    <Button
-                      variant="outline"
-                      type="button"
-                      onClick={() => onOpenChange(false)}
-                      disabled={loading}
-                      className="w-full sm:w-auto"
-                    >
-                      Cancel
-                    </Button>
-                    <Button type="submit" disabled={loading} className="w-full sm:w-auto">
-                      {loading ? "Creating..." : "Create Client"}
-                    </Button>
-                  </>
-                )}
-              </div>
-            </div>
-          </DialogFooter>
-        </form>
+        <div className="w-full h-[400px] -mt-4 overflow-y-auto">
+          <div className="pr-2">
+            <form onSubmit={handleSubmit}>
+              {error && (
+                <div className="bg-red-50 text-red-500 p-3 rounded-md mb-4 text-sm">{error}</div>
+              )}
+              {currentTab === 0 && (
+                <ClientInformationTab
+                  formData={formData}
+                  setFormData={setFormData}
+                  emailInput={emailInput}
+                  handleInputChange={handleInputChange}
+                  handleUrlBlur={handleUrlBlur}
+                  handleEmailBlur={handleEmailBlur}
+                  locationSuggestions={locationSuggestions}
+                  showLocationSuggestions={showLocationSuggestions}
+                  handleLocationSelect={handleLocationSelect}
+                />
+              )}
+              {currentTab === 1 && (
+                <ContactDetailsTab
+                  formData={formData}
+                  setFormData={setFormData}
+                  setIsContactModalOpen={setIsContactModalOpen}
+                  handleInputChange={handleInputChange}
+                  uploadedFiles={uploadedFiles}
+                  handleFileChange={handleFileChange}
+                  handlePreview={handlePreview}
+                  handleDownload={handleDownload}
+                  technicalProposalOptionInputRef={technicalProposalOptionInputRef}
+                  financialProposalOptionInputRef={financialProposalOptionInputRef}
+                />
+              )}
+              {currentTab === 2 && (
+                <ContractInformationTab
+                  formData={formData}
+                  setFormData={setFormData}
+                  selectedLevels={selectedLevels}
+                  setSelectedLevels={setSelectedLevels}
+                  activeLevel={activeLevel}
+                  setActiveLevel={setActiveLevel}
+                  uploadedFiles={uploadedFiles}
+                  handleFileChange={handleFileChange}
+                  handlePreview={handlePreview}
+                  handleDownload={handleDownload}
+                  handleInputChange={handleInputChange}
+                  technicalProposalOptionInputRef={technicalProposalOptionInputRef}
+                  financialProposalOptionInputRef={financialProposalOptionInputRef}
+                />
+              )}
+              {currentTab === 3 && (
+                <DocumentsTab
+                  uploadedFiles={uploadedFiles}
+                  handleFileChange={handleFileChange}
+                  handlePreview={handlePreview}
+                  handleDownload={handleDownload}
+                />
+              )}
+              <DialogFooter>
+                <div className="flex flex-col sm:flex-row justify-between w-full gap-2">
+                  <div>
+                    {currentTab > 0 && (
+                      <Button
+                        variant="outline"
+                        type="button"
+                        onClick={handlePrevious}
+                        disabled={loading}
+                        className="w-full sm:w-auto"
+                      >
+                        Previous
+                      </Button>
+                    )}
+                  </div>
+                  <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                    {currentTab < 3 && (
+                      <Button
+                        variant="outline"
+                        type="button"
+                        onClick={() => onOpenChange(false)}
+                        disabled={loading}
+                        className="w-full sm:w-auto"
+                      >
+                        Cancel
+                      </Button>
+                    )}
+                    {currentTab < 3 ? (
+                      <Button type="button" onClick={handleNext} disabled={loading} className="w-full sm:w-auto">
+                        Next
+                      </Button>
+                    ) : (
+                      <>
+                        <Button
+                          variant="outline"
+                          type="button"
+                          onClick={() => onOpenChange(false)}
+                          disabled={loading}
+                          className="w-full sm:w-auto"
+                        >
+                          Cancel
+                        </Button>
+                        <Button type="submit" disabled={loading} className="w-full sm:w-auto">
+                          {loading ? "Creating..." : "Create Client"}
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </DialogFooter>
+            </form>
+          </div>
+        </div>
 
         {isContactModalOpen && (
           <ContactModal

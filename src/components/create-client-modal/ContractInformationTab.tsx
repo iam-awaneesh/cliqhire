@@ -71,7 +71,7 @@ export function ContractInformationTab({
   };
 
   return (
-    <div className="space-y-6 py-4">
+    <div className="space-y-6 pt-4 pb-2">
       {/* Line of Business in its own row */}
       <div className="space-y-1">
         <Label htmlFor="lineOfBusiness">

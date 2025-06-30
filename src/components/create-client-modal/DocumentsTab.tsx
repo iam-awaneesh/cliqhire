@@ -23,7 +23,7 @@ export function DocumentsTab({
   ];
 
   return (
-    <div className="grid grid-cols-1 gap-4 py-4">
+    <div className="grid grid-cols-1 gap-4 pt-4 pb-2">
       {documentFields.map(({ key, label }) => (
         <div key={key} className="space-y-2">
           <Label>{label}</Label>

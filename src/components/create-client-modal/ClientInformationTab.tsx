@@ -45,7 +45,7 @@ export function ClientInformationTab({
   handleLocationSelect,
 }: ClientInformationTabProps) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 py-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 pt-4 pb-2">
       <div className="space-y-1">
         <div className="flex items-center mb-1">
           <Popover>
