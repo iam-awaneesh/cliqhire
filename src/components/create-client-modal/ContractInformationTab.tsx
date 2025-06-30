@@ -64,6 +64,55 @@ export function ContractInformationTab({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 py-4">
       <div className="space-y-2">
+        <Label htmlFor="lineOfBusiness" className="text-sm sm:text-base">
+          Line of Business *
+        </Label>
+        <div className="space-y-2 border rounded-md p-2">
+          {[
+            "Recruitment",
+            "HR Consulting",
+            "Mgt Consulting",
+            "Outsourcing",
+            "HR Managed Services",
+            "IT & Technology",
+          ].map((option) => (
+            <div key={option} className="flex items-center space-x-2">
+              <Checkbox
+                id={`lob-${option}`}
+                checked={formData.lineOfBusiness?.includes(option)}
+                onCheckedChange={(checked) => {
+                  setFormData((prev) => {
+                    const current = Array.isArray(prev.lineOfBusiness) 
+                      ? prev.lineOfBusiness 
+                      : prev.lineOfBusiness ? [prev.lineOfBusiness] : [];
+                    return {
+                      ...prev,
+                      lineOfBusiness: checked
+                        ? [...current, option]
+                        : current.filter((item: string) => item !== option),
+                    };
+                  });
+                }}
+              />
+              <label
+                htmlFor={`lob-${option}`}
+                className={`text-xs sm:text-sm font-medium leading-none cursor-pointer ${formData.lineOfBusiness?.includes(option)
+                    ? "font-bold text-primary"
+                    : ""
+                  }`}
+                onClick={() => formData.lineOfBusiness?.includes(option) && setFormData((prev) => ({ ...prev, lineOfBusiness: [option] }))}
+              >
+                {option
+                  .split("-")
+                  .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                  .join(" ")}
+              </label>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-2">
         <Label htmlFor="contractStartDate">Contract Start Date</Label>
         <div className="grid gap-2">
           <Popover open={openStart} onOpenChange={setOpenStart} modal>

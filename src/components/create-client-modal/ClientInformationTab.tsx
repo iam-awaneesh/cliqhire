@@ -88,7 +88,7 @@ export function ClientInformationTab({
 
       <div className="space-y-2">
         <Label htmlFor="salesLead" className="text-sm sm:text-base">
-          Sales Lead (Internal)*
+          Sales Lead (Internal) *
         </Label>
         <Select
           value={formData.salesLead || ""}
@@ -166,20 +166,6 @@ export function ClientInformationTab({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="name" className="text-sm sm:text-base">
-          Client Name *
-        </Label>
-        <Input
-          id="name"
-          value={formData.name}
-          onChange={handleInputChange("name")}
-          required
-          className="w-full"
-          placeholder="Enter client name"
-        />
-      </div>
-
-      <div className="space-y-2">
         <Label htmlFor="clientSource" className="text-sm sm:text-base">
           Client Source *
         </Label>
@@ -201,82 +187,6 @@ export function ClientInformationTab({
             </SelectGroup>
           </SelectContent>
         </Select>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="emails" className="text-sm sm:text-base">
-          Client Email(s)
-        </Label>
-        <Input
-          id="emails"
-          type="text"
-          value={emailInput}
-          onChange={handleInputChange("emails")}
-          onBlur={handleEmailBlur}
-          placeholder="email1@example.com,email2@example.com"
-          autoComplete="off"
-          className="w-full"
-        />
-        <p className="text-xs sm:text-sm text-muted-foreground">
-          Enter multiple emails separated by commas
-        </p>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="phoneNumber" className="text-sm sm:text-base">
-          Client LandLine Number *
-        </Label>
-        <PhoneInput
-          country={"sa"}
-          value={formData.phoneNumber || "966"}
-          onChange={value => setFormData(prev => ({ ...prev, phoneNumber: value || '' }))}
-          inputClass="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm w-full"
-          inputProps={{ id: 'phoneNumber', required: true }}
-          enableSearch={true}
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="address" className="text-sm sm:text-base">
-          Client Address *
-        </Label>
-        <Input
-          id="address"
-          value={formData.address}
-          onChange={handleInputChange("address")}
-          placeholder="Enter detailed address"
-          required
-          className="w-full"
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="website" className="text-sm sm:text-base">
-          Client Website
-        </Label>
-        <Input
-          id="website"
-          type="url"
-          value={formData.website}
-          onChange={handleInputChange("website")}
-          onBlur={handleUrlBlur("website")}
-          placeholder="https://www.example.com"
-          className="w-full"
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="linkedInProfile" className="text-sm sm:text-base">
-          Client LinkedIn Profile
-        </Label>
-        <Input
-          id="linkedInProfile"
-          value={formData.linkedInProfile}
-          onChange={handleInputChange("linkedInProfile")}
-          onBlur={handleUrlBlur("linkedInProfile")}
-          placeholder="https://www.linkedin.com/in/..."
-          className="w-full"
-        />
       </div>
 
       <div className="space-y-2">
@@ -305,7 +215,64 @@ export function ClientInformationTab({
         </Select>
       </div>
 
-      <div className="space-y-2">
+      {/* <div className="space-y-2">
+        <Label htmlFor="phoneNumber" className="text-sm sm:text-base">
+          Client LandLine Number *
+        </Label>
+        <PhoneInput
+          country={"sa"}
+          value={formData.phoneNumber || "966"}
+          onChange={value => setFormData(prev => ({ ...prev, phoneNumber: value || '' }))}
+          inputClass="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm w-full"
+          inputProps={{ id: 'phoneNumber', required: true }}
+          enableSearch={true}
+        />
+      </div> */}
+
+      {/* <div className="space-y-2">
+        <Label htmlFor="address" className="text-sm sm:text-base">
+          Client Address *
+        </Label>
+        <Input
+          id="address"
+          value={formData.address}
+          onChange={handleInputChange("address")}
+          placeholder="Enter detailed address"
+          required
+          className="w-full"
+        />
+      </div> */}
+
+      {/* <div className="space-y-2">
+        <Label htmlFor="website" className="text-sm sm:text-base">
+          Client Website
+        </Label>
+        <Input
+          id="website"
+          type="url"
+          value={formData.website}
+          onChange={handleInputChange("website")}
+          onBlur={handleUrlBlur("website")}
+          placeholder="https://www.example.com"
+          className="w-full"
+        />
+      </div> */}
+
+      {/* <div className="space-y-2">
+        <Label htmlFor="linkedInProfile" className="text-sm sm:text-base">
+          Client LinkedIn Profile
+        </Label>
+        <Input
+          id="linkedInProfile"
+          value={formData.linkedInProfile}
+          onChange={handleInputChange("linkedInProfile")}
+          onBlur={handleUrlBlur("linkedInProfile")}
+          placeholder="https://www.linkedin.com/in/..."
+          className="w-full"
+        />
+      </div> */}
+
+      {/* <div className="space-y-2">
         <Label htmlFor="googleMapsLink" className="text-sm sm:text-base">
           Google Maps Link
         </Label>
@@ -330,9 +297,9 @@ export function ClientInformationTab({
             ))}
           </div>
         )}
-      </div>
+      </div> */}
 
-      <div className="space-y-2">
+      {/* <div className="space-y-2">
         <Label htmlFor="countryOfBusiness" className="text-sm sm:text-base">
           Country of Business
         </Label>
@@ -343,7 +310,7 @@ export function ClientInformationTab({
           placeholder="Enter country of business"
           className="w-full"
         />
-      </div>
+      </div> */}
     </div>
   );
 }
