@@ -26,7 +26,7 @@ export function DocumentsTab({
     <div className="grid grid-cols-1 gap-4 py-4">
       {documentFields.map(({ key, label }) => (
         <div key={key} className="space-y-2">
-          <Label className="text-sm sm:text-base font-semibold">{label}</Label>
+          <Label>{label}</Label>
           <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 items-center">
             <div
               className="border-2 border-dashed rounded-lg p-2 text-center cursor-pointer hover:bg-muted/50 flex-1 w-full"

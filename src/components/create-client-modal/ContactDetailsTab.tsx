@@ -6,13 +6,15 @@ import { Upload, Eye, Download } from "lucide-react";
 import { ClientForm } from "@/components/create-client-modal/type";
 import { countryCodes } from "./constants";
 import { Input } from "@/components/ui/input";
-import PhoneInput from 'react-phone-input-2';
+import PhoneInput from "react-phone-input-2";
 
 interface ContactDetailsTabProps {
   formData: ClientForm;
   setFormData: React.Dispatch<React.SetStateAction<ClientForm>>;
   setIsContactModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  handleInputChange: (field: keyof ClientForm) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
+  handleInputChange: (
+    field: keyof ClientForm,
+  ) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
   uploadedFiles: { [key: string]: File | null };
   handleFileChange: (field: any) => (e: React.ChangeEvent<HTMLInputElement>) => void;
   handlePreview: (file: File | string | null) => void;
@@ -41,10 +43,8 @@ export function ContactDetailsTab({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 py-4">
       {/* Client Name */}
-      <div className="space-y-2">
-        <Label htmlFor="name" className="text-sm sm:text-base">
-          Client Name *
-        </Label>
+      <div className="space-y-1">
+        <Label htmlFor="name">Client Name *</Label>
         <Input
           id="name"
           value={formData.name}
@@ -56,44 +56,35 @@ export function ContactDetailsTab({
       </div>
 
       {/* Client Email(s) */}
-      <div className="space-y-2">
-        <Label htmlFor="emails" className="text-sm sm:text-base">
-          Client Email(s)
-        </Label>
+      <div className="space-y-1">
+        <Label htmlFor="emails">Client Email(s)</Label>
         <Input
           id="emails"
           type="text"
           value={formData.emails?.join(",")}
           onChange={handleInputChange("emails")}
-          placeholder="email1@example.com,email2@example.com"
+          placeholder="Enter client email(s) separated by commas"
           autoComplete="off"
           className="w-full"
         />
-        <p className="text-xs sm:text-sm text-muted-foreground">
-          Enter multiple emails separated by commas
-        </p>
       </div>
 
       {/* Client Landline Number */}
-      <div className="space-y-2">
-        <Label htmlFor="phoneNumber" className="text-sm sm:text-base">
-          Client Landline Number *
-        </Label>
+      <div className="space-y-1">
+        <Label htmlFor="phoneNumber">Client Landline Number *</Label>
         <PhoneInput
           country={"sa"}
           value={formData.phoneNumber || "966"}
-          onChange={value => setFormData(prev => ({ ...prev, phoneNumber: value || '' }))}
+          onChange={(value) => setFormData((prev) => ({ ...prev, phoneNumber: value || "" }))}
           inputClass="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm w-full"
-          inputProps={{ id: 'phoneNumber', required: true }}
+          inputProps={{ id: "phoneNumber", required: true }}
           enableSearch={true}
         />
       </div>
 
       {/* Client Address */}
-      <div className="space-y-2">
-        <Label htmlFor="address" className="text-sm sm:text-base">
-          Client Address *
-        </Label>
+      <div className="space-y-1">
+        <Label htmlFor="address">Client Address *</Label>
         <Input
           id="address"
           value={formData.address}
@@ -105,10 +96,8 @@ export function ContactDetailsTab({
       </div>
 
       {/* Client Website */}
-      <div className="space-y-2">
-        <Label htmlFor="website" className="text-sm sm:text-base">
-          Client Website
-        </Label>
+      <div className="space-y-1">
+        <Label htmlFor="website">Client Website</Label>
         <Input
           id="website"
           type="url"
@@ -120,10 +109,8 @@ export function ContactDetailsTab({
       </div>
 
       {/* Client LinkedIn Profile */}
-      <div className="space-y-2">
-        <Label htmlFor="linkedInProfile" className="text-sm sm:text-base">
-          Client LinkedIn Profile
-        </Label>
+      <div className="space-y-1">
+        <Label htmlFor="linkedInProfile">Client LinkedIn Profile</Label>
         <Input
           id="linkedInProfile"
           value={formData.linkedInProfile}
@@ -134,10 +121,8 @@ export function ContactDetailsTab({
       </div>
 
       {/* Google Maps Link */}
-      <div className="space-y-2">
-        <Label htmlFor="googleMapsLink" className="text-sm sm:text-base">
-          Google Maps Link
-        </Label>
+      <div className="space-y-1">
+        <Label htmlFor="googleMapsLink">Google Maps Link</Label>
         <Input
           id="googleMapsLink"
           value={formData.googleMapsLink}
@@ -148,10 +133,8 @@ export function ContactDetailsTab({
       </div>
 
       {/* Country of Business */}
-      <div className="space-y-2">
-        <Label htmlFor="countryOfBusiness" className="text-sm sm:text-base">
-          Country of Business
-        </Label>
+      <div className="space-y-1">
+        <Label htmlFor="countryOfBusiness">Country of Business</Label>
         <Input
           id="countryOfBusiness"
           value={formData.countryOfBusiness}
@@ -163,9 +146,7 @@ export function ContactDetailsTab({
 
       <div className="space-y-2">
         <div className="flex items-center justify-between mb-2">
-          <Label className="text-sm sm:text-base">
-            Primary Contacts *
-          </Label>
+          <Label>Primary Contacts *</Label>
           <Button
             variant="outline"
             size="sm"
@@ -173,16 +154,19 @@ export function ContactDetailsTab({
             type="button"
           >
             <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M12 4v16m8-8H4"
+              />
             </svg>
             Add
           </Button>
         </div>
         <div className="bg-white rounded-lg border shadow-sm p-4">
           {formData.primaryContacts.length === 0 ? (
-            <div className="text-sm text-muted-foreground text-center py-4">
-              No contacts added.
-            </div>
+            <div className="text-sm text-muted-foreground text-center py-4">No contacts added.</div>
           ) : (
             <div className="space-y-3">
               {formData.primaryContacts.map((contact, index) => (
@@ -191,17 +175,14 @@ export function ContactDetailsTab({
                     <div className="font-medium">
                       {contact.firstName} {contact.lastName}
                     </div>
-                    <div className="text-sm text-gray-500">
-                      {contact.gender}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {contact.designation}
-                    </div>
+                    <div className="text-sm text-gray-500">{contact.gender}</div>
+                    <div className="text-sm text-gray-500">{contact.designation}</div>
                     <div className="text-xs sm:text-sm text-muted-foreground">
                       {contact.email || "No email"}
                     </div>
                     <div className="text-xs sm:text-sm text-muted-foreground">
-                      {getCountryCodeLabel(contact.countryCode || "+966")} {contact.phone || "No phone"}
+                      {getCountryCodeLabel(contact.countryCode || "+966")}{" "}
+                      {contact.phone || "No phone"}
                     </div>
                     <div className="text-xs sm:text-sm text-muted-foreground">
                       {contact.linkedin || "No LinkedIn"}
