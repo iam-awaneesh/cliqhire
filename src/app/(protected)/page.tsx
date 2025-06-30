@@ -2,9 +2,9 @@
 import { Button } from "@/components/ui/button"
 import { Users, Building2, Briefcase, HelpCircle, FileText, UserPlus, CheckCircle, Clock, Calendar, Check } from 'lucide-react'
 import { useRouter } from "next/navigation"
-import { CreateCandidateButton } from "@/components/ui/candidates/create-candidate-button"
+import { CreateCandidateButton } from "@/components/candidates/create-candidate-button"
 import { useState } from "react"
-import { CreateClientModal } from "@/components/create-client-modal"
+import { CreateClientModal } from "@/components/create-client-modal/create-client-modal"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { CreateJobModal } from "@/components/jobs/create-job-modal";
 

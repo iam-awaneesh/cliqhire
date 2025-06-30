@@ -4,7 +4,6 @@ import { getJobs } from "@/services/jobService";
 const getSampleJobs = async (): Promise<Job[]> => {
   try {
     const response = await getJobs();
-    console.log('API Response:', response);
     
     // Extract jobs array from response
     const jobs = response && response.jobs ? response.jobs : [];

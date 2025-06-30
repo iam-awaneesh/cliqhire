@@ -31,13 +31,11 @@ export function AttachmentsContent({ clientId }: AttachmentsContentProps) {
     setIsDragging(false)
     const files = Array.from(e.dataTransfer.files)
     // Handle file upload logic here
-    console.log('Dropped files:', files)
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
     // Handle file upload logic here
-    console.log('Selected files:', files)
   }
 
   return (

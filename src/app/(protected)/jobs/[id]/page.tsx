@@ -29,8 +29,8 @@ export default function JobPage({ params }: PageProps) {
         if (!Array.isArray(jobs)) {
           throw new Error('Invalid jobs data received')
         }
-        
-        const job = jobs.find(j => j._id === id)
+
+        const job = jobs.filter(j => j._id === id.toString())
         if (!job) {
           notFound()
           return
