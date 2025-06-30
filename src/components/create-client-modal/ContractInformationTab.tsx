@@ -71,9 +71,9 @@ export function ContractInformationTab({
   };
 
   return (
-    <div className="space-y-3 py-4">
+    <div className="space-y-6 py-4">
       {/* Line of Business in its own row */}
-      <div className="space-y-2">
+      <div className="space-y-4">
         <Label htmlFor="lineOfBusiness" className="text-sm sm:text-base">
           Line of Business *
         </Label>
@@ -126,11 +126,11 @@ export function ContractInformationTab({
         </div>
         {(formData.lineOfBusiness?.includes("HR Consulting") ||
           formData.lineOfBusiness?.includes("Mgt Consulting")) && (
-          <div className="mt-4 space-y-2">
+          <div className="mt-4 space-y-4">
             <h4 className="text-sm font-medium">Proposal Options</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {["Technical Proposal", "Financial Proposal"].map((type) => (
-                <div key={type} className="border rounded-lg p-4 space-y-2">
+                <div key={type} className="border rounded-lg p-4 space-y-3">
                   <div className="flex justify-between items-center">
                     <div className="flex items-center space-x-2">
                       <Checkbox
@@ -264,9 +264,9 @@ export function ContractInformationTab({
       {/* Grouped row for contract fields */}
       <div className="flex flex-col sm:flex-row gap-4">
         {/* Contract Start Date */}
-        <div className="flex-1 space-y-1">
+        <div className="flex-1 space-y-2">
           <Label htmlFor="contractStartDate">Contract Start Date</Label>
-          <div className="grid gap-1">
+          <div className="grid gap-2">
             <Popover open={openStart} onOpenChange={setOpenStart} modal>
               <PopoverTrigger asChild>
                 <Button
@@ -294,8 +294,8 @@ export function ContractInformationTab({
         </div>
 
         {/* Contract End Date */}
-        <div className="flex-1 space-y-1">
-          <Label htmlFor="contractEndDate">
+        <div className="flex-1 space-y-2">
+          <Label htmlFor="contractEndDate" className="text-sm sm:text-base">
             Contract End Date
           </Label>
           <div className="grid gap-2">
@@ -325,8 +325,8 @@ export function ContractInformationTab({
         </div>
 
         {/* Contract Type */}
-        <div className="flex-1 space-y-1">
-          <Label htmlFor="contractType" >
+        <div className="flex-1 space-y-2">
+          <Label htmlFor="contractType" className="text-sm sm:text-base">
             Contract Type
           </Label>
           <Select
@@ -450,26 +450,28 @@ export function ContractInformationTab({
                 className="hidden"
                 onChange={handleFileChange("fixedPercentageAdvance")}
               />
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 text-xs px-2 gap-1"
-                onClick={() => handlePreview(uploadedFiles.fixedPercentageAdvance)}
-                disabled={!uploadedFiles.fixedPercentageAdvance}
-              >
-                <Eye className="h-3 w-3" />
-                Preview
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 text-xs px-2 gap-1"
-                onClick={() => handleDownload(uploadedFiles.fixedPercentageAdvance)}
-                disabled={!uploadedFiles.fixedPercentageAdvance}
-              >
-                <Download className="h-3 w-3" />
-                Download
-              </Button>
+              <div className="flex flex-col gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs px-2 gap-1"
+                  onClick={() => handlePreview(uploadedFiles.fixedPercentageAdvance)}
+                  disabled={!uploadedFiles.fixedPercentageAdvance}
+                >
+                  <Eye className="h-3 w-3" />
+                  Preview
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs  gap-0.5"
+                  onClick={() => handleDownload(uploadedFiles.fixedPercentageAdvance)}
+                  disabled={!uploadedFiles.fixedPercentageAdvance}
+                >
+                  <Download className="h-3 w-3" />
+                  Download
+                </Button>
+              </div>
             </div>
             {uploadedFiles.fixedPercentageAdvance && (
               <p className="text-xs text-muted-foreground truncate">
@@ -538,26 +540,28 @@ export function ContractInformationTab({
                 className="hidden"
                 onChange={handleFileChange("fixWithoutAdvance")}
               />
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 text-xs px-2 gap-1"
-                onClick={() => handlePreview(uploadedFiles.fixWithoutAdvance)}
-                disabled={!uploadedFiles.fixWithoutAdvance}
-              >
-                <Eye className="h-3 w-3" />
-                Preview
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 text-xs px-2 gap-1"
-                onClick={() => handleDownload(uploadedFiles.fixWithoutAdvance)}
-                disabled={!uploadedFiles.fixWithoutAdvance}
-              >
-                <Download className="h-3 w-3" />
-                Download
-              </Button>
+              <div className="flex flex-col gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs px-2 gap-1"
+                  onClick={() => handlePreview(uploadedFiles.fixWithoutAdvance)}
+                  disabled={!uploadedFiles.fixWithoutAdvance}
+                >
+                  <Eye className="h-3 w-3" />
+                  Preview
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs px-2 gap-1"
+                  onClick={() => handleDownload(uploadedFiles.fixWithoutAdvance)}
+                  disabled={!uploadedFiles.fixWithoutAdvance}
+                >
+                  <Download className="h-3 w-3" />
+                  Download
+                </Button>
+              </div>
             </div>
             {uploadedFiles.fixWithoutAdvance && (
               <p className="text-xs text-muted-foreground truncate">
@@ -699,26 +703,28 @@ export function ContractInformationTab({
                     className="hidden"
                     onChange={handleFileChange("levelBasedContractDocument")}
                   />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7 text-xs px-2 gap-1"
-                    onClick={() => handlePreview(uploadedFiles.levelBasedContractDocument)}
-                    disabled={!uploadedFiles.levelBasedContractDocument}
-                  >
-                    <Eye className="h-3 w-3" />
-                    Preview
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7 text-xs px-2 gap-1"
-                    onClick={() => handleDownload(uploadedFiles.levelBasedContractDocument)}
-                    disabled={!uploadedFiles.levelBasedContractDocument}
-                  >
-                    <Download className="h-3 w-3" />
-                    Download
-                  </Button>
+                  <div className="flex flex-col gap-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-xs px-2 gap-1"
+                      onClick={() => handlePreview(uploadedFiles.levelBasedContractDocument)}
+                      disabled={!uploadedFiles.levelBasedContractDocument}
+                    >
+                      <Eye className="h-3 w-3" />
+                      Preview
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-xs px-2 gap-1"
+                      onClick={() => handleDownload(uploadedFiles.levelBasedContractDocument)}
+                      disabled={!uploadedFiles.levelBasedContractDocument}
+                    >
+                      <Download className="h-3 w-3" />
+                      Download
+                    </Button>
+                  </div>
                   {uploadedFiles.levelBasedContractDocument && (
                     <p className="text-xs text-muted-foreground truncate w-full sm:w-auto">
                       Selected file: {uploadedFiles.levelBasedContractDocument.name}
