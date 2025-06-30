@@ -740,7 +740,7 @@ export function CreateClientModal({ open, onOpenChange }: { open: boolean; onOpe
         </DialogHeader>
 
         <div className="flex flex-wrap border-b mb-4">
-          {["Client Information", "Contact Details", "Contract Information", "Documents"].map((tab, index) => (
+          {["Client General Info", "Client Contact Info", "Contract Information", "Documents"].map((tab, index) => (
             <button
               key={tab}
               className={`flex-1 px-2 py-2 text-center text-xs sm:text-sm md:text-base ${currentTab === index ? "border-b-2 border-blue-500 text-blue-500" : "text-gray-500"}`}
