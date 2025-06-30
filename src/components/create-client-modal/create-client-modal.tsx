@@ -795,6 +795,9 @@ export function CreateClientModal({ open, onOpenChange }: { open: boolean; onOpe
               handleFileChange={handleFileChange}
               handlePreview={handlePreview}
               handleDownload={handleDownload}
+              handleInputChange={handleInputChange}
+              technicalProposalOptionInputRef={technicalProposalOptionInputRef}
+              financialProposalOptionInputRef={financialProposalOptionInputRef}
             />
           )}
           {currentTab === 3 && (

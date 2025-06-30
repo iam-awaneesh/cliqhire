@@ -407,7 +407,7 @@ export default function ClientsPage() {
       setClients(prevClients =>
         prevClients.map(client =>
           client.id === pendingStatusChange.clientId
-            ? { ...client, clientStageStatus: updatedClient.clientStageStatus! }
+            ? { ...client, clientStageStatus: updatedClient?.clientStageStatus! }
             : client
         )
       );
