@@ -63,7 +63,8 @@ export function ContractInformationTab({
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 py-4">
-      <div className="space-y-2">
+      
+       <div className="space-y-4">
         <Label htmlFor="lineOfBusiness" className="text-sm sm:text-base">
           Line of Business *
         </Label>
@@ -110,7 +111,123 @@ export function ContractInformationTab({
             </div>
           ))}
         </div>
+        {(formData.lineOfBusiness?.includes("HR Consulting") || 
+          formData.lineOfBusiness?.includes("Mgt Consulting")) && (
+          <div className="mt-4 space-y-4">
+            <h4 className="text-sm font-medium">Proposal Options</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {["Technical Proposal", "Financial Proposal"].map((type) => (
+                <div key={type} className="border rounded-lg p-4 space-y-3">
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id={`proposal-${type}`}
+                        checked={formData.proposalOptions?.includes(type)}
+                        onCheckedChange={(checked) => {
+                          setFormData(prev => ({
+                            ...prev,
+                            proposalOptions: checked 
+                              ? [...(prev.proposalOptions || []), type]
+                              : (prev.proposalOptions || []).filter(opt => opt !== type)
+                          }));
+                        }}
+                      />
+                      <h5 className="font-medium">{type}</h5>
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => {
+                          const fileField = type.toLowerCase().includes('technical') ? 'technicalProposal' : 
+                                            type.toLowerCase().includes('financial') ? 'financialProposal' : null;
+                          const file = fileField ? uploadedFiles[fileField as keyof typeof uploadedFiles] : null;
+                          handlePreview(file as File | string | null);
+                        }}
+                        disabled={!formData.proposalOptions?.includes(type)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => {
+                          const fileField = type.toLowerCase().includes('technical') ? 'technicalProposal' : 
+                                            type.toLowerCase().includes('financial') ? 'financialProposal' : null;
+                          const file = fileField ? uploadedFiles[fileField as keyof typeof uploadedFiles] : null;
+                          if (file) {
+                            handleDownload(file as File);
+                          }
+                        }}
+                        disabled={!formData.proposalOptions?.includes(type)}
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  {formData.proposalOptions?.includes(type) && (
+                    <>
+                      <Textarea
+                        value={type === 'Technical Proposal' ? formData.technicalProposalNotes || '' : formData.financialProposalNotes || ''}
+                        onChange={handleInputChange(type === 'Technical Proposal' ? 'technicalProposalNotes' : 'financialProposalNotes')}
+                        placeholder={`Enter ${type} notes...`}
+                        className="min-h-[100px]"
+                      />
+                      <div className="flex justify-end">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="gap-2"
+                          type="button"
+                          onClick={() => {
+                            if (type === "Technical Proposal") {
+                              technicalProposalOptionInputRef.current?.click();
+                            } else if (type === "Financial Proposal") {
+                              financialProposalOptionInputRef.current?.click();
+                            }
+                          }}
+                        >
+                          <Upload className="h-4 w-4" />
+                          Upload File
+                        </Button>
+                        {type === "Technical Proposal" && (
+                          <input
+                            ref={technicalProposalOptionInputRef}
+                            type="file"
+                            accept=".pdf,.jpg,.jpeg,.png"
+                            className="hidden"
+                            onChange={handleFileChange("technicalProposal")}
+                          />
+                        )}
+                        {type === "Financial Proposal" && (
+                          <input
+                            ref={financialProposalOptionInputRef}
+                            type="file"
+                            accept=".pdf,.jpg,.jpeg,.png"
+                            className="hidden"
+                            onChange={handleFileChange("financialProposal")}
+                          />
+                        )}
+                      </div>
+                      {type === "Technical Proposal" && uploadedFiles.technicalProposal && (
+                        <p className="text-xs text-muted-foreground truncate">
+                          Selected file: {uploadedFiles.technicalProposal.name}
+                        </p>
+                      )}
+                      {type === "Financial Proposal" && uploadedFiles.financialProposal && (
+                        <p className="text-xs text-muted-foreground truncate">
+                          Selected file: {uploadedFiles.financialProposal.name}
+                        </p>
+                      )}
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
+
 
       <div className="space-y-2">
         <Label htmlFor="contractStartDate">Contract Start Date</Label>
