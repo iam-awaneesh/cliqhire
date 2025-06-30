@@ -62,9 +62,9 @@ export function ContractInformationTab({
   };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 py-4">
-      
-       <div className="space-y-4">
+    <div className="space-y-6 py-4">
+      {/* Line of Business in its own row */}
+      <div className="space-y-4">
         <Label htmlFor="lineOfBusiness" className="text-sm sm:text-base">
           Line of Business *
         </Label>
@@ -228,83 +228,88 @@ export function ContractInformationTab({
         )}
       </div>
 
-
-      <div className="space-y-2">
-        <Label htmlFor="contractStartDate">Contract Start Date</Label>
-        <div className="grid gap-2">
-          <Popover open={openStart} onOpenChange={setOpenStart} modal>
-            <PopoverTrigger asChild>
-              <Button id="date-picker" variant="outline" className="w-full justify-start text-left font-normal">
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {formData.contractStartDate ? format(formData.contractStartDate, "PPP") : "Pick a date"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar 
-                mode="single" 
-                captionLayout="dropdown" 
-                selected={formData.contractStartDate!} 
-                onSelect={(date) => handleSelectDate(date, "start")}
-                fromDate={new Date()}
-              />
-            </PopoverContent>
-          </Popover>
+      {/* Grouped row for contract fields */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        {/* Contract Start Date */}
+        <div className="flex-1 space-y-2">
+          <Label htmlFor="contractStartDate">Contract Start Date</Label>
+          <div className="grid gap-2">
+            <Popover open={openStart} onOpenChange={setOpenStart} modal>
+              <PopoverTrigger asChild>
+                <Button id="date-picker" variant="outline" className="w-full justify-start text-left font-normal">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {formData.contractStartDate ? format(formData.contractStartDate, "PPP") : "Pick a date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar 
+                  mode="single" 
+                  captionLayout="dropdown" 
+                  selected={formData.contractStartDate!} 
+                  onSelect={(date) => handleSelectDate(date, "start")}
+                  fromDate={new Date()}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
         </div>
-      </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="contractEndDate" className="text-sm sm:text-base">
-          Contract End Date
-        </Label>
-        <div className="grid gap-2">
-          <Popover open={openEnd} onOpenChange={setOpenEnd} modal={true}>
-            <PopoverTrigger asChild>
-              <Button id="date-picker" variant="outline" className="w-full justify-start text-left font-normal">
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {formData.contractEndDate ? format(formData.contractEndDate, "PPP") : "Pick a date"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar 
-                mode="single" 
-                selected={formData.contractEndDate!} 
-                onSelect={(date) => handleSelectDate(date, "end")}
-                fromDate={new Date()}
-              />
-            </PopoverContent>
-          </Popover>
+        {/* Contract End Date */}
+        <div className="flex-1 space-y-2">
+          <Label htmlFor="contractEndDate" className="text-sm sm:text-base">
+            Contract End Date
+          </Label>
+          <div className="grid gap-2">
+            <Popover open={openEnd} onOpenChange={setOpenEnd} modal={true}>
+              <PopoverTrigger asChild>
+                <Button id="date-picker" variant="outline" className="w-full justify-start text-left font-normal">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {formData.contractEndDate ? format(formData.contractEndDate, "PPP") : "Pick a date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar 
+                  mode="single" 
+                  selected={formData.contractEndDate!} 
+                  onSelect={(date) => handleSelectDate(date, "end")}
+                  fromDate={new Date()}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
         </div>
-      </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="contractType" className="text-sm sm:text-base">
-          Contract Type
-        </Label>
-        <Select
-          value={formData.contractType}
-          onValueChange={(value) => {
-            const isOldLevelBased =
-              formData.contractType === "Level Based (Hiring)" ||
-              formData.contractType === "Level Based With Advance";
-            const isNewLevelBased =
-              value === "Level Based (Hiring)" || value === "Level Based With Advance";
-            setFormData((prev) => ({ ...prev, contractType: value }));
-            if (isOldLevelBased !== isNewLevelBased) {
-              setSelectedLevels([]);
-              setActiveLevel(null);
-            }
-          }}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select contract type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Fix with Advance">Fix with Advance</SelectItem>
-            <SelectItem value="Fix without Advance">Fix without Advance</SelectItem>
-            <SelectItem value="Level Based (Hiring)">Level Based (Hiring)</SelectItem>
-            <SelectItem value="Level Based With Advance">Level Based With Advance</SelectItem>
-          </SelectContent>
-        </Select>
+        {/* Contract Type */}
+        <div className="flex-1 space-y-2">
+          <Label htmlFor="contractType" className="text-sm sm:text-base">
+            Contract Type
+          </Label>
+          <Select
+            value={formData.contractType}
+            onValueChange={(value) => {
+              const isOldLevelBased =
+                formData.contractType === "Level Based (Hiring)" ||
+                formData.contractType === "Level Based With Advance";
+              const isNewLevelBased =
+                value === "Level Based (Hiring)" || value === "Level Based With Advance";
+              setFormData((prev) => ({ ...prev, contractType: value }));
+              if (isOldLevelBased !== isNewLevelBased) {
+                setSelectedLevels([]);
+                setActiveLevel(null);
+              }
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select contract type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Fix with Advance">Fix with Advance</SelectItem>
+              <SelectItem value="Fix without Advance">Fix without Advance</SelectItem>
+              <SelectItem value="Level Based (Hiring)">Level Based (Hiring)</SelectItem>
+              <SelectItem value="Level Based With Advance">Level Based With Advance</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {formData.contractType === "Fix with Advance" && (
