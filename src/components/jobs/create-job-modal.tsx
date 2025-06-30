@@ -128,6 +128,7 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
   const [isLoadingClients, setIsLoadingClients] = useState(false)
   const [clientError, setClientError] = useState<string | null>(null)
   const [searchClient, setSearchClient] = useState("")
+  const [showClientDropdown, setShowClientDropdown] = useState(false)
   const [currentTab, setCurrentTab] = useState(0)
   const [selectedLocations, setSelectedLocations] = useState<string[]>([])
   const [locationInput, setLocationInput] = useState("")
@@ -204,18 +205,6 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
       setIsLoadingClients(false);
     }
   };
-
-  useEffect(() => {
-    const debounceTimer = setTimeout(() => {
-      if (isInputFocused) {
-        fetchClients(searchClient);
-      } else {
-        setClients([]);
-      }
-    }, 300);
-
-    return () => clearTimeout(debounceTimer);
-  }, [searchClient, isInputFocused]);
 
   useEffect(() => {
     const fetchCountrySuggestions = async () => {
@@ -401,14 +390,6 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
     }))
   }
 
-  const filteredClients = clients.filter((client) => {
-    // Safely access client.name, default to empty string if invalid
-    const clientName = typeof client === 'object' && client.name && typeof client.name === 'string' 
-      ? client.name.toLowerCase() 
-      : ''
-    return clientName.includes(searchClient.toLowerCase())
-  })
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
@@ -519,53 +500,95 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
               <div className="grid gap-2">
                 <Label htmlFor="client">Client* </Label>
                 <div className="flex flex-col gap-2">
-                  <Input
-                    type="search"
-                    placeholder="Search clients..."
-                    value={searchClient}
-                    onChange={(e) => {
-                      setSearchClient(e.target.value);
-                      setFormData(prev => ({ ...prev, client: '' }));
-                    }}
-                    onFocus={() => setIsInputFocused(true)}
-                    onBlur={() => setTimeout(() => setIsInputFocused(false), 200)}
-                    className="w-full"
-                    required
-                  />
-
-                  {isInputFocused && (
-                    <div className="max-h-[150px] overflow-y-auto border rounded-md text-sm bg-white z-50">
-                      {clientError ? (
-                        <div className="px-4 py-2 text-gray-500 flex items-center justify-between">
-                          <span>{clientError}</span>
-                          <Button
-                            variant="link"
-                            size="sm"
-                            onClick={fetchClients}
-                            className="text-blue-500"
-                          >
-                            Retry
-                          </Button>
-                        </div>
-                      ) : filteredClients.length === 0 && !isLoadingClients ? (
-                        <div className="px-4 py-2 text-gray-500">No clients available</div>
-                      ) : (
-                        filteredClients.map((client) => (
-                          <div
-                            key={client._id}
-                            className={`px-4 py-2 hover:bg-gray-100 cursor-pointer ${formData.client === client._id ? 'bg-gray-100' : ''}`}
-                            onMouseDown={() => {
-                              setFormData(prev => ({ ...prev, client: client._id }));
-                              setSearchClient(client.name || '');
-                              setIsInputFocused(false);
-                            }}
-                          >
-                            {client.name || 'Unknown Client'}
+                  <div className="relative">
+                    <Input
+                      placeholder="Search"
+                      value={searchClient}
+                      onChange={(e) => {
+                        setSearchClient(e.target.value);
+                      }}
+                      onFocus={() => {
+                        setShowClientDropdown(true);
+                        if (!clients.length) {
+                          fetchClients('');
+                        }
+                      }}
+                      onBlur={() => {
+                        // Delay hiding dropdown to allow clicking on items
+                        setTimeout(() => setShowClientDropdown(false), 200);
+                      }}
+                      required
+                    />
+                    {formData.client && (
+                      <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      </div>
+                    )}
+                    {showClientDropdown && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
+                        {clientError ? (
+                          <div className="px-4 py-2 text-gray-500 flex items-center justify-between">
+                            <span>{clientError}</span>
+                            <Button
+                              variant="link"
+                              size="sm"
+                              onClick={() => fetchClients('')}
+                              className="text-blue-500"
+                            >
+                              Retry
+                            </Button>
                           </div>
-                        ))
-                      )}
-                    </div>
-                  )}
+                        ) : clients.length === 0 && !isLoadingClients ? (
+                          <div className="px-4 py-2 text-gray-500">No clients available</div>
+                        ) : (
+                          <>
+                            {(() => {
+                              const filteredClients = clients.filter(client => {
+                                // If search term is empty, show all clients
+                                if (!searchClient.trim()) {
+                                  return true;
+                                }
+                                // Otherwise, filter by name
+                                return client.name && 
+                                  client.name.toLowerCase().includes(searchClient.toLowerCase().trim());
+                              });
+                              
+                              if (filteredClients.length === 0 && searchClient.trim()) {
+                                return (
+                                  <div className="px-4 py-2 text-gray-500">
+                                    No clients found matching "{searchClient}"
+                                  </div>
+                                );
+                              }
+                              
+                              return filteredClients.map((client) => (
+                                <div
+                                  key={client._id}
+                                  className={`px-4 py-2 hover:bg-gray-100 cursor-pointer ${
+                                    formData.client === client._id ? 'bg-blue-100' : ''
+                                  }`}
+                                  onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    console.log('Selecting client:', client.name, client._id);
+                                    setFormData(prev => {
+                                      const newData = { ...prev, client: client._id };
+                                      console.log('Updated form data:', newData);
+                                      return newData;
+                                    });
+                                    setSearchClient(client.name || '');
+                                    setShowClientDropdown(false);
+                                  }}
+                                >
+                                  {client.name || 'Unknown Client'}
+                                </div>
+                              ));
+                            })()}
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -801,6 +824,7 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
 
               <div className="grid gap-2">
                 <Label htmlFor="nationality">Nationalities</Label>
+
                 <div className="space-y-2">
                   <div className="flex flex-wrap gap-2 min-h-[2.5rem] p-2 border rounded-md">
                     {selectedNationalities.map((nationality) => (
@@ -904,6 +928,7 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
                   min="1"
                   value={formData.numberOfPositions}
                   onChange={(e) => setFormData(prev => ({ ...prev, numberOfPositions: e.target.value }))}
+                  placeholder="Number of jobs Positions"
                 />
               </div>
             </div>
@@ -1002,6 +1027,7 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
                   id="reportingTo"
                   value={formData.reportingTo}
                   onChange={(e) => setFormData(prev => ({ ...prev, reportingTo: e.target.value }))}
+                  placeholder="Enter reporting manager's name"
                 />
               </div>
 
@@ -1035,6 +1061,7 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
                   min="0"
                   value={formData.teamSize}
                   onChange={(e) => setFormData(prev => ({ ...prev, teamSize: e.target.value }))}
+                  placeholder="Number of team Under Job Position"
                 />
               </div>
 
