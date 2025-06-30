@@ -73,8 +73,8 @@ export function ContractInformationTab({
   return (
     <div className="space-y-6 py-4">
       {/* Line of Business in its own row */}
-      <div className="space-y-4">
-        <Label htmlFor="lineOfBusiness" className="text-sm sm:text-base">
+      <div className="space-y-1">
+        <Label htmlFor="lineOfBusiness">
           Line of Business *
         </Label>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 border rounded-md p-2">
@@ -294,8 +294,8 @@ export function ContractInformationTab({
         </div>
 
         {/* Contract End Date */}
-        <div className="flex-1 space-y-2">
-          <Label htmlFor="contractEndDate" className="text-sm sm:text-base">
+        <div className="flex-1 space-y-1">
+          <Label htmlFor="contractEndDate" >
             Contract End Date
           </Label>
           <div className="grid gap-2">
@@ -325,8 +325,8 @@ export function ContractInformationTab({
         </div>
 
         {/* Contract Type */}
-        <div className="flex-1 space-y-2">
-          <Label htmlFor="contractType" className="text-sm sm:text-base">
+        <div className="flex-1 space-y-1">
+          <Label htmlFor="contractType">
             Contract Type
           </Label>
           <Select

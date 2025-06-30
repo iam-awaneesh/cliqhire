@@ -41,110 +41,112 @@ export function ContactDetailsTab({
   };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 py-4">
-      {/* Client Name */}
-      <div className="space-y-1">
-        <Label htmlFor="name">Client Name *</Label>
-        <Input
-          id="name"
-          value={formData.name}
-          onChange={handleInputChange("name")}
-          required
-          className="w-full"
-          placeholder="Enter client name"
-        />
-      </div>
+    <>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 py-4">
+        {/* Client Name */}
+        <div className="space-y-1">
+          <Label htmlFor="name">Client Name *</Label>
+          <Input
+            id="name"
+            value={formData.name}
+            onChange={handleInputChange("name")}
+            required
+            className="w-full"
+            placeholder="Enter client name"
+          />
+        </div>
 
-      {/* Client Email(s) */}
-      <div className="space-y-1">
-        <Label htmlFor="emails">Client Email(s)</Label>
-        <Input
-          id="emails"
-          type="text"
-          value={formData.emails?.join(",")}
-          onChange={handleInputChange("emails")}
-          placeholder="Enter client email(s) separated by commas"
-          autoComplete="off"
-          className="w-full"
-        />
-      </div>
+        {/* Client Email(s) */}
+        <div className="space-y-1">
+          <Label htmlFor="emails">Client Email(s)</Label>
+          <Input
+            id="emails"
+            type="text"
+            value={formData.emails?.join(",")}
+            onChange={handleInputChange("emails")}
+            placeholder="Enter client email(s) separated by commas"
+            autoComplete="off"
+            className="w-full"
+          />
+        </div>
 
-      {/* Client Landline Number */}
-      <div className="space-y-1">
-        <Label htmlFor="phoneNumber">Client Landline Number *</Label>
-        <PhoneInput
-          country={"sa"}
-          value={formData.phoneNumber || "966"}
-          onChange={(value) => setFormData((prev) => ({ ...prev, phoneNumber: value || "" }))}
-          inputClass="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm w-full"
-          inputProps={{ id: "phoneNumber", required: true }}
-          enableSearch={true}
-        />
-      </div>
+        {/* Client Landline Number */}
+        <div className="space-y-1">
+          <Label htmlFor="phoneNumber">Client Landline Number *</Label>
+          <PhoneInput
+            country={"sa"}
+            value={formData.phoneNumber || "966"}
+            onChange={(value) => setFormData((prev) => ({ ...prev, phoneNumber: value || "" }))}
+            inputClass="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm w-full"
+            inputProps={{ id: "phoneNumber", required: true }}
+            enableSearch={true}
+          />
+        </div>
 
-      {/* Client Address */}
-      <div className="space-y-1">
-        <Label htmlFor="address">Client Address *</Label>
-        <Input
-          id="address"
-          value={formData.address}
-          onChange={handleInputChange("address")}
-          placeholder="Enter detailed address"
-          required
-          className="w-full"
-        />
-      </div>
+        {/* Client Address */}
+        <div className="space-y-1">
+          <Label htmlFor="address">Client Address *</Label>
+          <Input
+            id="address"
+            value={formData.address}
+            onChange={handleInputChange("address")}
+            placeholder="Enter detailed address"
+            required
+            className="w-full"
+          />
+        </div>
 
-      {/* Client Website */}
-      <div className="space-y-1">
-        <Label htmlFor="website">Client Website</Label>
-        <Input
-          id="website"
-          type="url"
-          value={formData.website}
-          onChange={handleInputChange("website")}
-          placeholder="https://www.example.com"
-          className="w-full"
-        />
-      </div>
+        {/* Client Website */}
+        <div className="space-y-1">
+          <Label htmlFor="website">Client Website</Label>
+          <Input
+            id="website"
+            type="url"
+            value={formData.website}
+            onChange={handleInputChange("website")}
+            placeholder="https://www.example.com"
+            className="w-full"
+          />
+        </div>
 
-      {/* Client LinkedIn Profile */}
-      <div className="space-y-1">
-        <Label htmlFor="linkedInProfile">Client LinkedIn Profile</Label>
-        <Input
-          id="linkedInProfile"
-          value={formData.linkedInProfile}
-          onChange={handleInputChange("linkedInProfile")}
-          placeholder="https://www.linkedin.com/in/..."
-          className="w-full"
-        />
-      </div>
+        {/* Client LinkedIn Profile */}
+        <div className="space-y-1">
+          <Label htmlFor="linkedInProfile">Client LinkedIn Profile</Label>
+          <Input
+            id="linkedInProfile"
+            value={formData.linkedInProfile}
+            onChange={handleInputChange("linkedInProfile")}
+            placeholder="https://www.linkedin.com/in/..."
+            className="w-full"
+          />
+        </div>
 
-      {/* Google Maps Link */}
-      <div className="space-y-1">
-        <Label htmlFor="googleMapsLink">Google Maps Link</Label>
-        <Input
-          id="googleMapsLink"
-          value={formData.googleMapsLink}
-          onChange={handleInputChange("googleMapsLink")}
-          placeholder="https://maps.google.com/..."
-          className="w-full"
-        />
-      </div>
+        {/* Google Maps Link */}
+        <div className="space-y-1">
+          <Label htmlFor="googleMapsLink">Google Maps Link</Label>
+          <Input
+            id="googleMapsLink"
+            value={formData.googleMapsLink}
+            onChange={handleInputChange("googleMapsLink")}
+            placeholder="https://maps.google.com/..."
+            className="w-full"
+          />
+        </div>
 
-      {/* Country of Business */}
-      <div className="space-y-1">
-        <Label htmlFor="countryOfBusiness">Country of Business</Label>
-        <Input
-          id="countryOfBusiness"
-          value={formData.countryOfBusiness}
-          onChange={handleInputChange("countryOfBusiness")}
-          placeholder="Enter country of business"
-          className="w-full"
-        />
+        {/* Country of Business */}
+        <div className="space-y-1">
+          <Label htmlFor="countryOfBusiness">Country of Business</Label>
+          <Input
+            id="countryOfBusiness"
+            value={formData.countryOfBusiness}
+            onChange={handleInputChange("countryOfBusiness")}
+            placeholder="Enter country of business"
+            className="w-full"
+          />
+        </div>
       </div>
-
-      <div className="space-y-2">
+      {/* Primary Contacts full row */}
+      <div className="space-y-1 mb-6">
         <div className="flex items-center justify-between mb-2">
           <Label>Primary Contacts *</Label>
           <Button
@@ -194,6 +196,6 @@ export function ContactDetailsTab({
           )}
         </div>
       </div>
-    </div>
+    </>
   );
 }
