@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Upload, Eye, Download, CalendarIcon } from "lucide-react";
 import { ClientForm } from "@/components/create-client-modal/type";
 import { levelFieldMap } from "./constants";
+import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
 
 interface ContractInformationTabProps {
@@ -28,6 +29,9 @@ interface ContractInformationTabProps {
   handleFileChange: (field: any) => (e: React.ChangeEvent<HTMLInputElement>) => void;
   handlePreview: (file: File | string | null) => void;
   handleDownload: (file: File | null) => void;
+  handleInputChange: (field: keyof ClientForm) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
+  technicalProposalOptionInputRef: React.RefObject<HTMLInputElement>;
+  financialProposalOptionInputRef: React.RefObject<HTMLInputElement>;
 }
 
 export function ContractInformationTab({
@@ -41,6 +45,9 @@ export function ContractInformationTab({
   handleFileChange,
   handlePreview,
   handleDownload,
+  technicalProposalOptionInputRef,
+  financialProposalOptionInputRef,
+  handleInputChange,
 }: ContractInformationTabProps) {
   const [openStart, setOpenStart] = useState(false);
   const [openEnd, setOpenEnd] = useState(false);
@@ -169,7 +176,7 @@ export function ContractInformationTab({
                     <>
                       <Textarea
                         value={type === 'Technical Proposal' ? formData.technicalProposalNotes || '' : formData.financialProposalNotes || ''}
-                        onChange={handleInputChange(type === 'Technical Proposal' ? 'technicalProposalNotes' : 'financialProposalNotes')}
+                        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleInputChange(type === 'Technical Proposal' ? 'technicalProposalNotes' : 'financialProposalNotes')(e)}
                         placeholder={`Enter ${type} notes...`}
                         className="min-h-[100px]"
                       />
