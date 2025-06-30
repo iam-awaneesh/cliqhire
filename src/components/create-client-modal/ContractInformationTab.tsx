@@ -68,7 +68,7 @@ export function ContractInformationTab({
         <Label htmlFor="lineOfBusiness" className="text-sm sm:text-base">
           Line of Business *
         </Label>
-        <div className="space-y-2 border rounded-md p-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 border rounded-md p-2">
           {[
             "Recruitment",
             "HR Consulting",
