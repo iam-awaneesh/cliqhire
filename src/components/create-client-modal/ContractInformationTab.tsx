@@ -389,11 +389,11 @@ export function ContractInformationTab({
         {["Level Based (Hiring)", "Level Based With Advance"].includes(formData.contractType || "") && (
           <div className="w-full">
             <div className="space-y-4 col-span-1 sm:col-span-2 border rounded-lg p-4">
-              <div className="space-y-2">
-                <Label className="text-sm sm:text-base font-semibold">Select Levels</Label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div className="space-y-1">
+                <Label>Select Levels</Label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1">
                   {["Senior Level", "Executives", "Non-Executives", "Other"].map((level) => (
-                    <div key={level} className="flex items-center space-x-2">
+                    <div key={level} className="flex items-center space-x-1">
                       <Checkbox
                         id={`level-${level}`}
                         checked={selectedLevels.includes(level)}
@@ -410,7 +410,7 @@ export function ContractInformationTab({
                 </div>
               </div>
               {selectedLevels.length > 0 && (
-                <div className="space-y-4">
+                <div className="space-y-2">
                   {selectedLevels.map((level) => {
                     const fieldKeys = levelFieldMap[level];
                     return (
@@ -555,131 +555,137 @@ export function ContractInformationTab({
 
   const renderConsultingFields = () => (
     <div className="flex flex-col gap-4 mt-4">
-      {/* Contract Start Date */}
-      <div className="flex-1 space-y-2">
-        <Label htmlFor="contractStartDate">Contract Start Date</Label>
-        <div className="grid gap-2">
-          <Popover open={openStart} onOpenChange={setOpenStart} modal>
-            <PopoverTrigger asChild>
-              <Button
-                id="date-picker"
-                variant="outline"
-                className="w-full justify-start text-left font-normal"
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {formData.contractStartDate
-                  ? format(formData.contractStartDate, "PPP")
-                  : "Pick a date"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                captionLayout="dropdown"
-                selected={formData.contractStartDate!}
-                onSelect={(date) => {
-                  setFormData((prev) => ({ ...prev, contractStartDate: date || null }));
-                  setOpenStart(false);
-                }}
-                fromDate={new Date()}
-              />
-            </PopoverContent>
-          </Popover>
+      {/* Dates in one row */}
+      <div className="flex flex-row gap-4">
+        {/* Contract Start Date */}
+        <div className="flex-1 space-y-1">
+          <Label htmlFor="contractStartDate">Contract Start Date</Label>
+          <div className="grid gap-2">
+            <Popover open={openStart} onOpenChange={setOpenStart} modal>
+              <PopoverTrigger asChild>
+                <Button
+                  id="date-picker"
+                  variant="outline"
+                  className="w-full justify-start text-left font-normal"
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {formData.contractStartDate
+                    ? format(formData.contractStartDate, "PPP")
+                    : "Pick a date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  captionLayout="dropdown"
+                  selected={formData.contractStartDate!}
+                  onSelect={(date) => {
+                    setFormData((prev) => ({ ...prev, contractStartDate: date || null }));
+                    setOpenStart(false);
+                  }}
+                  fromDate={new Date()}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
+        {/* Contract End Date */}
+        <div className="flex-1 space-y-1">
+          <Label htmlFor="contractEndDate">Contract End Date</Label>
+          <div className="grid gap-2">
+            <Popover open={openEnd} onOpenChange={setOpenEnd} modal={true}>
+              <PopoverTrigger asChild>
+                <Button
+                  id="date-picker"
+                  variant="outline"
+                  className="w-full justify-start text-left font-normal"
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {formData.contractEndDate
+                    ? format(formData.contractEndDate, "PPP")
+                    : "Pick a date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={formData.contractEndDate!}
+                  onSelect={(date) => {
+                    setFormData((prev) => ({ ...prev, contractEndDate: date || null }));
+                    setOpenEnd(false);
+                  }}
+                  fromDate={new Date()}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
         </div>
       </div>
-      {/* Contract End Date */}
-      <div className="flex-1 space-y-1">
-        <Label htmlFor="contractEndDate">Contract End Date</Label>
-        <div className="grid gap-2">
-          <Popover open={openEnd} onOpenChange={setOpenEnd} modal={true}>
-            <PopoverTrigger asChild>
-              <Button
-                id="date-picker"
-                variant="outline"
-                className="w-full justify-start text-left font-normal"
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {formData.contractEndDate
-                  ? format(formData.contractEndDate, "PPP")
-                  : "Pick a date"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={formData.contractEndDate!}
-                onSelect={(date) => {
-                  setFormData((prev) => ({ ...prev, contractEndDate: date || null }));
-                  setOpenEnd(false);
-                }}
-                fromDate={new Date()}
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
-      </div>
-      {/* Technical Proposal */}
-      <div className="flex-1 space-y-2">
-        <Label>Technical Proposal</Label>
-        <Textarea
-          value={formData.technicalProposalNotes || ""}
-          onChange={handleInputChange("technicalProposalNotes")}
-          placeholder="Enter Technical Proposal notes..."
-          className="min-h-[60px]"
-        />
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            type="button"
-            onClick={() => technicalProposalOptionInputRef.current?.click()}
-          >
-            <Upload className="h-4 w-4" /> Upload File
-          </Button>
-          <input
-            ref={technicalProposalOptionInputRef}
-            type="file"
-            accept=".pdf,.jpg,.jpeg,.png"
-            className="hidden"
-            onChange={handleFileChange("technicalProposal")}
+      {/* Proposals in one row */}
+      <div className="flex flex-row gap-4">
+        {/* Technical Proposal */}
+        <div className="flex-1 space-y-1">
+          <Label>Technical Proposal</Label>
+          <Textarea
+            value={formData.technicalProposalNotes || ""}
+            onChange={handleInputChange("technicalProposalNotes")}
+            placeholder="Enter Technical Proposal notes..."
+            className="min-h-[60px]"
           />
-          {uploadedFiles.technicalProposal && (
-            <span className="text-xs text-muted-foreground truncate">
-              {uploadedFiles.technicalProposal.name}
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              type="button"
+              onClick={() => technicalProposalOptionInputRef.current?.click()}
+            >
+              <Upload className="h-4 w-4" /> Upload File
+            </Button>
+            <input
+              ref={technicalProposalOptionInputRef}
+              type="file"
+              accept=".pdf,.jpg,.jpeg,.png"
+              className="hidden"
+              onChange={handleFileChange("technicalProposal")}
+            />
+            {uploadedFiles.technicalProposal && (
+              <span className="text-xs text-muted-foreground truncate">
+                {uploadedFiles.technicalProposal.name}
+              </span>
+            )}
+          </div>
         </div>
-      </div>
-      {/* Financial Proposal */}
-      <div className="flex-1 space-y-2">
-        <Label>Financial Proposal</Label>
-        <Textarea
-          value={formData.financialProposalNotes || ""}
-          onChange={handleInputChange("financialProposalNotes")}
-          placeholder="Enter Financial Proposal notes..."
-          className="min-h-[60px]"
-        />
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            type="button"
-            onClick={() => financialProposalOptionInputRef.current?.click()}
-          >
-            <Upload className="h-4 w-4" /> Upload File
-          </Button>
-          <input
-            ref={financialProposalOptionInputRef}
-            type="file"
-            accept=".pdf,.jpg,.jpeg,.png"
-            className="hidden"
-            onChange={handleFileChange("financialProposal")}
+        {/* Financial Proposal */}
+        <div className="flex-1 space-y-1">
+          <Label>Financial Proposal</Label>
+          <Textarea
+            value={formData.financialProposalNotes || ""}
+            onChange={handleInputChange("financialProposalNotes")}
+            placeholder="Enter Financial Proposal notes..."
+            className="min-h-[60px]"
           />
-          {uploadedFiles.financialProposal && (
-            <span className="text-xs text-muted-foreground truncate">
-              {uploadedFiles.financialProposal.name}
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              type="button"
+              onClick={() => financialProposalOptionInputRef.current?.click()}
+            >
+              <Upload className="h-4 w-4" /> Upload File
+            </Button>
+            <input
+              ref={financialProposalOptionInputRef}
+              type="file"
+              accept=".pdf,.jpg,.jpeg,.png"
+              className="hidden"
+              onChange={handleFileChange("financialProposal")}
+            />
+            {uploadedFiles.financialProposal && (
+              <span className="text-xs text-muted-foreground truncate">
+                {uploadedFiles.financialProposal.name}
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </div>
