@@ -84,6 +84,16 @@ export interface ClientForm {
   financialProposal?: any;
   technicalProposalNotes?: string;
   financialProposalNotes?: string;
+  // Outsourcing contract form fields
+  outsourcingContractStartDate?: Date | null;
+  outsourcingContractEndDate?: Date | null;
+  outsourcingContractType?: string;
+  outsourcingServiceCategory?: string;
+  outsourcingNumResources?: string;
+  outsourcingDurationPerResource?: string;
+  outsourcingSlaTerms?: string;
+  outsourcingTotalCost?: string;
+  outsourcingContractDocument?: any;
 }
 
 export interface CreateClientModalProps {
