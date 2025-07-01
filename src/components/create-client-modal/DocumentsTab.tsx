@@ -4,7 +4,7 @@ import { Upload, Eye, Download } from "lucide-react";
 
 interface DocumentsTabProps {
   uploadedFiles: { [key: string]: File | null };
-  handleFileChange: (field:any) => (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleFileChange: (field: any) => (e: React.ChangeEvent<HTMLInputElement>) => void;
   handlePreview: (file: File | string | null) => void;
   handleDownload: (file: File | null) => void;
 }
@@ -23,11 +23,11 @@ export function DocumentsTab({
   ];
 
   return (
-    <div className="grid grid-cols-1 gap-4 py-4">
+    <div className="grid grid-cols-1 gap-4 pt-4 pb-2">
       {documentFields.map(({ key, label }) => (
         <div key={key} className="space-y-2">
-          <Label className="text-sm sm:text-base font-semibold">{label}</Label>
-          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 items-center">
+          <Label>{label}</Label>
+          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 items-stretch">
             <div
               className="border-2 border-dashed rounded-lg p-2 text-center cursor-pointer hover:bg-muted/50 flex-1 w-full"
               onClick={() => document.getElementById(`${key}Input`)?.click()}
@@ -42,26 +42,28 @@ export function DocumentsTab({
               className="hidden"
               onChange={handleFileChange(key as keyof typeof uploadedFiles)}
             />
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 text-xs px-2 gap-1"
-              onClick={() => handlePreview(uploadedFiles[key])}
-              disabled={!uploadedFiles[key]}
-            >
-              <Eye className="h-3 w-3" />
-              Preview
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 text-xs px-2 gap-1"
-              onClick={() => handleDownload(uploadedFiles[key])}
-              disabled={!uploadedFiles[key]}
-            >
-              <Download className="h-3 w-3" />
-              Download
-            </Button>
+            <div className="flex flex-col space-y-2 ">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs px-2 gap-1"
+                onClick={() => handlePreview(uploadedFiles[key])}
+                disabled={!uploadedFiles[key]}
+              >
+                <Eye className="h-3 w-3" />
+                Preview
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs gap-1"
+                onClick={() => handleDownload(uploadedFiles[key])}
+                disabled={!uploadedFiles[key]}
+              >
+                <Download className="h-3 w-3" />
+                Download
+              </Button>
+            </div>
           </div>
           {uploadedFiles[key] && (
             <p className="text-xs text-muted-foreground truncate">

@@ -36,11 +36,11 @@ import Tableheader from "@/components/table-header";
 
 
 const columsArr = [
-  "Client Name",
-  "Client Industry",
-  "Client Location",
-  "Client Stage",
-  "Client Stage Status",
+  "Name",
+  "Industry",
+  "Location",
+  "Stage",
+  "Stage Status",
   "Sales RM",
   "Client Team",
   "Client Age",
@@ -407,7 +407,7 @@ export default function ClientsPage() {
       setClients(prevClients =>
         prevClients.map(client =>
           client.id === pendingStatusChange.clientId
-            ? { ...client, clientStageStatus: updatedClient.clientStageStatus! }
+            ? { ...client, clientStageStatus: updatedClient?.clientStageStatus! }
             : client
         )
       );

@@ -5,12 +5,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Upload, Eye, Download } from "lucide-react";
 import { ClientForm } from "@/components/create-client-modal/type";
 import { countryCodes } from "./constants";
+import { Input } from "@/components/ui/input";
+import PhoneInput from "react-phone-input-2";
 
 interface ContactDetailsTabProps {
   formData: ClientForm;
   setFormData: React.Dispatch<React.SetStateAction<ClientForm>>;
   setIsContactModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  handleInputChange: (field: keyof ClientForm) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
+  handleInputChange: (
+    field: keyof ClientForm,
+  ) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
   uploadedFiles: { [key: string]: File | null };
   handleFileChange: (field: any) => (e: React.ChangeEvent<HTMLInputElement>) => void;
   handlePreview: (file: File | string | null) => void;
@@ -37,12 +41,114 @@ export function ContactDetailsTab({
   };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 py-4">
-      <div className="space-y-2">
+    <>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 pt-4 pb-2">
+        {/* Client Name */}
+        <div className="space-y-1">
+          <Label htmlFor="name">Client Name *</Label>
+          <Input
+            id="name"
+            value={formData.name}
+            onChange={handleInputChange("name")}
+            required
+            className="w-full"
+            placeholder="Enter client name"
+          />
+        </div>
+
+        {/* Client Email(s) */}
+        <div className="space-y-1">
+          <Label htmlFor="emails">Client Email(s)</Label>
+          <Input
+            id="emails"
+            type="text"
+            value={formData.emails?.join(",")}
+            onChange={handleInputChange("emails")}
+            placeholder="Enter client email(s) separated by commas"
+            autoComplete="off"
+            className="w-full"
+          />
+        </div>
+
+        {/* Client Landline Number */}
+        <div className="space-y-1">
+          <Label htmlFor="phoneNumber">Client Landline Number *</Label>
+          <PhoneInput
+            country={"sa"}
+            value={formData.phoneNumber || "966"}
+            onChange={(value) => setFormData((prev) => ({ ...prev, phoneNumber: value || "" }))}
+            inputClass="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm w-full"
+            inputProps={{ id: "phoneNumber", required: true }}
+            enableSearch={true}
+          />
+        </div>
+
+        {/* Client Address */}
+        <div className="space-y-1">
+          <Label htmlFor="address">Client Address *</Label>
+          <Input
+            id="address"
+            value={formData.address}
+            onChange={handleInputChange("address")}
+            placeholder="Enter detailed address"
+            required
+            className="w-full"
+          />
+        </div>
+
+        {/* Client Website */}
+        <div className="space-y-1">
+          <Label htmlFor="website">Client Website</Label>
+          <Input
+            id="website"
+            type="url"
+            value={formData.website}
+            onChange={handleInputChange("website")}
+            placeholder="https://www.example.com"
+            className="w-full"
+          />
+        </div>
+
+        {/* Client LinkedIn Profile */}
+        <div className="space-y-1">
+          <Label htmlFor="linkedInProfile">Client LinkedIn Profile</Label>
+          <Input
+            id="linkedInProfile"
+            value={formData.linkedInProfile}
+            onChange={handleInputChange("linkedInProfile")}
+            placeholder="https://www.linkedin.com/in/..."
+            className="w-full"
+          />
+        </div>
+
+        {/* Google Maps Link */}
+        <div className="space-y-1">
+          <Label htmlFor="googleMapsLink">Google Maps Link</Label>
+          <Input
+            id="googleMapsLink"
+            value={formData.googleMapsLink}
+            onChange={handleInputChange("googleMapsLink")}
+            placeholder="https://maps.google.com/..."
+            className="w-full"
+          />
+        </div>
+
+        {/* Country of Business */}
+        <div className="space-y-1">
+          <Label htmlFor="countryOfBusiness">Country of Business</Label>
+          <Input
+            id="countryOfBusiness"
+            value={formData.countryOfBusiness}
+            onChange={handleInputChange("countryOfBusiness")}
+            placeholder="Enter country of business"
+            className="w-full"
+          />
+        </div>
+      </div>
+      {/* Primary Contacts full row */}
+      <div className="space-y-1 mb-6">
         <div className="flex items-center justify-between mb-2">
-          <Label className="text-sm sm:text-base">
-            Primary Contacts *
-          </Label>
+          <Label>Primary Contacts *</Label>
           <Button
             variant="outline"
             size="sm"
@@ -50,16 +156,19 @@ export function ContactDetailsTab({
             type="button"
           >
             <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M12 4v16m8-8H4"
+              />
             </svg>
             Add
           </Button>
         </div>
         <div className="bg-white rounded-lg border shadow-sm p-4">
           {formData.primaryContacts.length === 0 ? (
-            <div className="text-sm text-muted-foreground text-center py-4">
-              No contacts added.
-            </div>
+            <div className="text-sm text-muted-foreground text-center py-4">No contacts added.</div>
           ) : (
             <div className="space-y-3">
               {formData.primaryContacts.map((contact, index) => (
@@ -68,17 +177,14 @@ export function ContactDetailsTab({
                     <div className="font-medium">
                       {contact.firstName} {contact.lastName}
                     </div>
-                    <div className="text-sm text-gray-500">
-                      {contact.gender}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {contact.designation}
-                    </div>
+                    <div className="text-sm text-gray-500">{contact.gender}</div>
+                    <div className="text-sm text-gray-500">{contact.designation}</div>
                     <div className="text-xs sm:text-sm text-muted-foreground">
                       {contact.email || "No email"}
                     </div>
                     <div className="text-xs sm:text-sm text-muted-foreground">
-                      {getCountryCodeLabel(contact.countryCode || "+966")} {contact.phone || "No phone"}
+                      {getCountryCodeLabel(contact.countryCode || "+966")}{" "}
+                      {contact.phone || "No phone"}
                     </div>
                     <div className="text-xs sm:text-sm text-muted-foreground">
                       {contact.linkedin || "No LinkedIn"}
@@ -90,170 +196,6 @@ export function ContactDetailsTab({
           )}
         </div>
       </div>
-
-      <div className="space-y-4">
-        <Label htmlFor="lineOfBusiness" className="text-sm sm:text-base">
-          Line of Business *
-        </Label>
-        <div className="space-y-2 border rounded-md p-2">
-          {[
-            "Recruitment",
-            "HR Consulting",
-            "Mgt Consulting",
-            "Outsourcing",
-            "HR Managed Services",
-            "IT & Technology",
-          ].map((option) => (
-            <div key={option} className="flex items-center space-x-2">
-              <Checkbox
-                id={`lob-${option}`}
-                checked={formData.lineOfBusiness?.includes(option)}
-                onCheckedChange={(checked) => {
-                  setFormData((prev) => {
-                    const current = Array.isArray(prev.lineOfBusiness) 
-                      ? prev.lineOfBusiness 
-                      : prev.lineOfBusiness ? [prev.lineOfBusiness] : [];
-                    return {
-                      ...prev,
-                      lineOfBusiness: checked
-                        ? [...current, option]
-                        : current.filter((item: string) => item !== option),
-                    };
-                  });
-                }}
-              />
-              <label
-                htmlFor={`lob-${option}`}
-                className={`text-xs sm:text-sm font-medium leading-none cursor-pointer ${formData.lineOfBusiness?.includes(option)
-                    ? "font-bold text-primary"
-                    : ""
-                  }`}
-                onClick={() => formData.lineOfBusiness?.includes(option) && setFormData((prev) => ({ ...prev, lineOfBusiness: [option] }))}
-              >
-                {option
-                  .split("-")
-                  .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                  .join(" ")}
-              </label>
-            </div>
-          ))}
-        </div>
-        {(formData.lineOfBusiness?.includes("HR Consulting") || 
-          formData.lineOfBusiness?.includes("Mgt Consulting")) && (
-          <div className="mt-4 space-y-4">
-            <h4 className="text-sm font-medium">Proposal Options</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {["Technical Proposal", "Financial Proposal"].map((type) => (
-                <div key={type} className="border rounded-lg p-4 space-y-3">
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id={`proposal-${type}`}
-                        checked={formData.proposalOptions?.includes(type)}
-                        onCheckedChange={(checked) => {
-                          setFormData(prev => ({
-                            ...prev,
-                            proposalOptions: checked 
-                              ? [...(prev.proposalOptions || []), type]
-                              : (prev.proposalOptions || []).filter(opt => opt !== type)
-                          }));
-                        }}
-                      />
-                      <h5 className="font-medium">{type}</h5>
-                    </div>
-                    <div className="flex space-x-2">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => {
-                          const fileField = type.toLowerCase().includes('technical') ? 'technicalProposal' : 
-                                            type.toLowerCase().includes('financial') ? 'financialProposal' : null;
-                          const file = fileField ? uploadedFiles[fileField as keyof typeof uploadedFiles] : null;
-                          handlePreview(file as File | string | null);
-                        }}
-                        disabled={!formData.proposalOptions?.includes(type)}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => {
-                          const fileField = type.toLowerCase().includes('technical') ? 'technicalProposal' : 
-                                            type.toLowerCase().includes('financial') ? 'financialProposal' : null;
-                          const file = fileField ? uploadedFiles[fileField as keyof typeof uploadedFiles] : null;
-                          if (file) {
-                            handleDownload(file as File);
-                          }
-                        }}
-                        disabled={!formData.proposalOptions?.includes(type)}
-                      >
-                        <Download className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  {formData.proposalOptions?.includes(type) && (
-                    <>
-                      <Textarea
-                        value={type === 'Technical Proposal' ? formData.technicalProposalNotes || '' : formData.financialProposalNotes || ''}
-                        onChange={handleInputChange(type === 'Technical Proposal' ? 'technicalProposalNotes' : 'financialProposalNotes')}
-                        placeholder={`Enter ${type} notes...`}
-                        className="min-h-[100px]"
-                      />
-                      <div className="flex justify-end">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="gap-2"
-                          type="button"
-                          onClick={() => {
-                            if (type === "Technical Proposal") {
-                              technicalProposalOptionInputRef.current?.click();
-                            } else if (type === "Financial Proposal") {
-                              financialProposalOptionInputRef.current?.click();
-                            }
-                          }}
-                        >
-                          <Upload className="h-4 w-4" />
-                          Upload File
-                        </Button>
-                        {type === "Technical Proposal" && (
-                          <input
-                            ref={technicalProposalOptionInputRef}
-                            type="file"
-                            accept=".pdf,.jpg,.jpeg,.png"
-                            className="hidden"
-                            onChange={handleFileChange("technicalProposal")}
-                          />
-                        )}
-                        {type === "Financial Proposal" && (
-                          <input
-                            ref={financialProposalOptionInputRef}
-                            type="file"
-                            accept=".pdf,.jpg,.jpeg,.png"
-                            className="hidden"
-                            onChange={handleFileChange("financialProposal")}
-                          />
-                        )}
-                      </div>
-                      {type === "Technical Proposal" && uploadedFiles.technicalProposal && (
-                        <p className="text-xs text-muted-foreground truncate">
-                          Selected file: {uploadedFiles.technicalProposal.name}
-                        </p>
-                      )}
-                      {type === "Financial Proposal" && uploadedFiles.financialProposal && (
-                        <p className="text-xs text-muted-foreground truncate">
-                          Selected file: {uploadedFiles.financialProposal.name}
-                        </p>
-                      )}
-                    </>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
+    </>
   );
 }

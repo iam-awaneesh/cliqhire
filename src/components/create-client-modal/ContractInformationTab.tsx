@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Upload, Eye, Download, CalendarIcon } from "lucide-react";
 import { ClientForm } from "@/components/create-client-modal/type";
 import { levelFieldMap } from "./constants";
+import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
 
 interface ContractInformationTabProps {
@@ -28,6 +29,11 @@ interface ContractInformationTabProps {
   handleFileChange: (field: any) => (e: React.ChangeEvent<HTMLInputElement>) => void;
   handlePreview: (file: File | string | null) => void;
   handleDownload: (file: File | null) => void;
+  handleInputChange: (
+    field: keyof ClientForm,
+  ) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
+  technicalProposalOptionInputRef: React.RefObject<HTMLInputElement>;
+  financialProposalOptionInputRef: React.RefObject<HTMLInputElement>;
 }
 
 export function ContractInformationTab({
@@ -41,6 +47,9 @@ export function ContractInformationTab({
   handleFileChange,
   handlePreview,
   handleDownload,
+  technicalProposalOptionInputRef,
+  financialProposalOptionInputRef,
+  handleInputChange,
 }: ContractInformationTabProps) {
   const [openStart, setOpenStart] = useState(false);
   const [openEnd, setOpenEnd] = useState(false);
@@ -62,83 +71,290 @@ export function ContractInformationTab({
   };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 py-4">
-      <div className="space-y-2">
-        <Label htmlFor="contractStartDate">Contract Start Date</Label>
-        <div className="grid gap-2">
-          <Popover open={openStart} onOpenChange={setOpenStart} modal>
-            <PopoverTrigger asChild>
-              <Button id="date-picker" variant="outline" className="w-full justify-start text-left font-normal">
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {formData.contractStartDate ? format(formData.contractStartDate, "PPP") : "Pick a date"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar 
-                mode="single" 
-                captionLayout="dropdown" 
-                selected={formData.contractStartDate!} 
-                onSelect={(date) => handleSelectDate(date, "start")}
-                fromDate={new Date()}
+    <div className="space-y-6 pt-4 pb-2">
+      {/* Line of Business in its own row */}
+      <div className="space-y-1">
+        <Label htmlFor="lineOfBusiness">
+          Line of Business *
+        </Label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 border rounded-md p-2">
+          {[
+            "Recruitment",
+            "HR Consulting",
+            "Mgt Consulting",
+            "Outsourcing",
+            "HR Managed Services",
+            "IT & Technology",
+          ].map((option) => (
+            <div key={option} className="flex items-center space-x-2">
+              <Checkbox
+                id={`lob-${option}`}
+                checked={formData.lineOfBusiness?.includes(option)}
+                onCheckedChange={(checked) => {
+                  setFormData((prev) => {
+                    const current = Array.isArray(prev.lineOfBusiness)
+                      ? prev.lineOfBusiness
+                      : prev.lineOfBusiness
+                        ? [prev.lineOfBusiness]
+                        : [];
+                    return {
+                      ...prev,
+                      lineOfBusiness: checked
+                        ? [...current, option]
+                        : current.filter((item: string) => item !== option),
+                    };
+                  });
+                }}
               />
-            </PopoverContent>
-          </Popover>
+              <label
+                htmlFor={`lob-${option}`}
+                className={`text-xs sm:text-sm font-medium leading-none cursor-pointer ${
+                  formData.lineOfBusiness?.includes(option) ? "font-bold text-primary" : ""
+                }`}
+                onClick={() =>
+                  formData.lineOfBusiness?.includes(option) &&
+                  setFormData((prev) => ({ ...prev, lineOfBusiness: [option] }))
+                }
+              >
+                {option
+                  .split("-")
+                  .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                  .join(" ")}
+              </label>
+            </div>
+          ))}
         </div>
+        {(formData.lineOfBusiness?.includes("HR Consulting") ||
+          formData.lineOfBusiness?.includes("Mgt Consulting")) && (
+          <div className="mt-4 space-y-4">
+            <h4 className="text-sm font-medium">Proposal Options</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {["Technical Proposal", "Financial Proposal"].map((type) => (
+                <div key={type} className="border rounded-lg p-4 space-y-3">
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`proposal-${type}`}
+                        checked={formData.proposalOptions?.includes(type)}
+                        onCheckedChange={(checked) => {
+                          setFormData((prev) => ({
+                            ...prev,
+                            proposalOptions: checked
+                              ? [...(prev.proposalOptions || []), type]
+                              : (prev.proposalOptions || []).filter((opt) => opt !== type),
+                          }));
+                        }}
+                      />
+                      <h5 className="font-medium">{type}</h5>
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          const fileField = type.toLowerCase().includes("technical")
+                            ? "technicalProposal"
+                            : type.toLowerCase().includes("financial")
+                              ? "financialProposal"
+                              : null;
+                          const file = fileField
+                            ? uploadedFiles[fileField as keyof typeof uploadedFiles]
+                            : null;
+                          handlePreview(file as File | string | null);
+                        }}
+                        disabled={!formData.proposalOptions?.includes(type)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          const fileField = type.toLowerCase().includes("technical")
+                            ? "technicalProposal"
+                            : type.toLowerCase().includes("financial")
+                              ? "financialProposal"
+                              : null;
+                          const file = fileField
+                            ? uploadedFiles[fileField as keyof typeof uploadedFiles]
+                            : null;
+                          if (file) {
+                            handleDownload(file as File);
+                          }
+                        }}
+                        disabled={!formData.proposalOptions?.includes(type)}
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  {formData.proposalOptions?.includes(type) && (
+                    <>
+                      <Textarea
+                        value={
+                          type === "Technical Proposal"
+                            ? formData.technicalProposalNotes || ""
+                            : formData.financialProposalNotes || ""
+                        }
+                        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                          handleInputChange(
+                            type === "Technical Proposal"
+                              ? "technicalProposalNotes"
+                              : "financialProposalNotes",
+                          )(e)
+                        }
+                        placeholder={`Enter ${type} notes...`}
+                        className="min-h-[100px]"
+                      />
+                      <div className="flex justify-end">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-2"
+                          type="button"
+                          onClick={() => {
+                            if (type === "Technical Proposal") {
+                              technicalProposalOptionInputRef.current?.click();
+                            } else if (type === "Financial Proposal") {
+                              financialProposalOptionInputRef.current?.click();
+                            }
+                          }}
+                        >
+                          <Upload className="h-4 w-4" />
+                          Upload File
+                        </Button>
+                        {type === "Technical Proposal" && (
+                          <input
+                            ref={technicalProposalOptionInputRef}
+                            type="file"
+                            accept=".pdf,.jpg,.jpeg,.png"
+                            className="hidden"
+                            onChange={handleFileChange("technicalProposal")}
+                          />
+                        )}
+                        {type === "Financial Proposal" && (
+                          <input
+                            ref={financialProposalOptionInputRef}
+                            type="file"
+                            accept=".pdf,.jpg,.jpeg,.png"
+                            className="hidden"
+                            onChange={handleFileChange("financialProposal")}
+                          />
+                        )}
+                      </div>
+                      {type === "Technical Proposal" && uploadedFiles.technicalProposal && (
+                        <p className="text-xs text-muted-foreground truncate">
+                          Selected file: {uploadedFiles.technicalProposal.name}
+                        </p>
+                      )}
+                      {type === "Financial Proposal" && uploadedFiles.financialProposal && (
+                        <p className="text-xs text-muted-foreground truncate">
+                          Selected file: {uploadedFiles.financialProposal.name}
+                        </p>
+                      )}
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="contractEndDate" className="text-sm sm:text-base">
-          Contract End Date
-        </Label>
-        <div className="grid gap-2">
-          <Popover open={openEnd} onOpenChange={setOpenEnd} modal={true}>
-            <PopoverTrigger asChild>
-              <Button id="date-picker" variant="outline" className="w-full justify-start text-left font-normal">
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {formData.contractEndDate ? format(formData.contractEndDate, "PPP") : "Pick a date"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar 
-                mode="single" 
-                selected={formData.contractEndDate!} 
-                onSelect={(date) => handleSelectDate(date, "end")}
-                fromDate={new Date()}
-              />
-            </PopoverContent>
-          </Popover>
+      {/* Grouped row for contract fields */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        {/* Contract Start Date */}
+        <div className="flex-1 space-y-2">
+          <Label htmlFor="contractStartDate">Contract Start Date</Label>
+          <div className="grid gap-2">
+            <Popover open={openStart} onOpenChange={setOpenStart} modal>
+              <PopoverTrigger asChild>
+                <Button
+                  id="date-picker"
+                  variant="outline"
+                  className="w-full justify-start text-left font-normal"
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {formData.contractStartDate
+                    ? format(formData.contractStartDate, "PPP")
+                    : "Pick a date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  captionLayout="dropdown"
+                  selected={formData.contractStartDate!}
+                  onSelect={(date) => handleSelectDate(date, "start")}
+                  fromDate={new Date()}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
         </div>
-      </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="contractType" className="text-sm sm:text-base">
-          Contract Type
-        </Label>
-        <Select
-          value={formData.contractType}
-          onValueChange={(value) => {
-            const isOldLevelBased =
-              formData.contractType === "Level Based (Hiring)" ||
-              formData.contractType === "Level Based With Advance";
-            const isNewLevelBased =
-              value === "Level Based (Hiring)" || value === "Level Based With Advance";
-            setFormData((prev) => ({ ...prev, contractType: value }));
-            if (isOldLevelBased !== isNewLevelBased) {
-              setSelectedLevels([]);
-              setActiveLevel(null);
-            }
-          }}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select contract type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Fix with Advance">Fix with Advance</SelectItem>
-            <SelectItem value="Fix without Advance">Fix without Advance</SelectItem>
-            <SelectItem value="Level Based (Hiring)">Level Based (Hiring)</SelectItem>
-            <SelectItem value="Level Based With Advance">Level Based With Advance</SelectItem>
-          </SelectContent>
-        </Select>
+        {/* Contract End Date */}
+        <div className="flex-1 space-y-1">
+          <Label htmlFor="contractEndDate" >
+            Contract End Date
+          </Label>
+          <div className="grid gap-2">
+            <Popover open={openEnd} onOpenChange={setOpenEnd} modal={true}>
+              <PopoverTrigger asChild>
+                <Button
+                  id="date-picker"
+                  variant="outline"
+                  className="w-full justify-start text-left font-normal"
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {formData.contractEndDate
+                    ? format(formData.contractEndDate, "PPP")
+                    : "Pick a date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={formData.contractEndDate!}
+                  onSelect={(date) => handleSelectDate(date, "end")}
+                  fromDate={new Date()}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
+
+        {/* Contract Type */}
+        <div className="flex-1 space-y-1">
+          <Label htmlFor="contractType">
+            Contract Type
+          </Label>
+          <Select
+            value={formData.contractType}
+            onValueChange={(value) => {
+              const isOldLevelBased =
+                formData.contractType === "Level Based (Hiring)" ||
+                formData.contractType === "Level Based With Advance";
+              const isNewLevelBased =
+                value === "Level Based (Hiring)" || value === "Level Based With Advance";
+              setFormData((prev) => ({ ...prev, contractType: value }));
+              if (isOldLevelBased !== isNewLevelBased) {
+                setSelectedLevels([]);
+                setActiveLevel(null);
+              }
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select contract type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Fix with Advance">Fix with Advance</SelectItem>
+              <SelectItem value="Fix without Advance">Fix without Advance</SelectItem>
+              <SelectItem value="Level Based (Hiring)">Level Based (Hiring)</SelectItem>
+              <SelectItem value="Level Based With Advance">Level Based With Advance</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {formData.contractType === "Fix with Advance" && (
@@ -234,26 +450,28 @@ export function ContractInformationTab({
                 className="hidden"
                 onChange={handleFileChange("fixedPercentageAdvance")}
               />
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 text-xs px-2 gap-1"
-                onClick={() => handlePreview(uploadedFiles.fixedPercentageAdvance)}
-                disabled={!uploadedFiles.fixedPercentageAdvance}
-              >
-                <Eye className="h-3 w-3" />
-                Preview
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 text-xs px-2 gap-1"
-                onClick={() => handleDownload(uploadedFiles.fixedPercentageAdvance)}
-                disabled={!uploadedFiles.fixedPercentageAdvance}
-              >
-                <Download className="h-3 w-3" />
-                Download
-              </Button>
+              <div className="flex flex-col gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs px-2 gap-1"
+                  onClick={() => handlePreview(uploadedFiles.fixedPercentageAdvance)}
+                  disabled={!uploadedFiles.fixedPercentageAdvance}
+                >
+                  <Eye className="h-3 w-3" />
+                  Preview
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs  gap-0.5"
+                  onClick={() => handleDownload(uploadedFiles.fixedPercentageAdvance)}
+                  disabled={!uploadedFiles.fixedPercentageAdvance}
+                >
+                  <Download className="h-3 w-3" />
+                  Download
+                </Button>
+              </div>
             </div>
             {uploadedFiles.fixedPercentageAdvance && (
               <p className="text-xs text-muted-foreground truncate">
@@ -322,26 +540,28 @@ export function ContractInformationTab({
                 className="hidden"
                 onChange={handleFileChange("fixWithoutAdvance")}
               />
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 text-xs px-2 gap-1"
-                onClick={() => handlePreview(uploadedFiles.fixWithoutAdvance)}
-                disabled={!uploadedFiles.fixWithoutAdvance}
-              >
-                <Eye className="h-3 w-3" />
-                Preview
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 text-xs px-2 gap-1"
-                onClick={() => handleDownload(uploadedFiles.fixWithoutAdvance)}
-                disabled={!uploadedFiles.fixWithoutAdvance}
-              >
-                <Download className="h-3 w-3" />
-                Download
-              </Button>
+              <div className="flex flex-col gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs px-2 gap-1"
+                  onClick={() => handlePreview(uploadedFiles.fixWithoutAdvance)}
+                  disabled={!uploadedFiles.fixWithoutAdvance}
+                >
+                  <Eye className="h-3 w-3" />
+                  Preview
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs px-2 gap-1"
+                  onClick={() => handleDownload(uploadedFiles.fixWithoutAdvance)}
+                  disabled={!uploadedFiles.fixWithoutAdvance}
+                >
+                  <Download className="h-3 w-3" />
+                  Download
+                </Button>
+              </div>
             </div>
             {uploadedFiles.fixWithoutAdvance && (
               <p className="text-xs text-muted-foreground truncate">
@@ -483,26 +703,28 @@ export function ContractInformationTab({
                     className="hidden"
                     onChange={handleFileChange("levelBasedContractDocument")}
                   />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7 text-xs px-2 gap-1"
-                    onClick={() => handlePreview(uploadedFiles.levelBasedContractDocument)}
-                    disabled={!uploadedFiles.levelBasedContractDocument}
-                  >
-                    <Eye className="h-3 w-3" />
-                    Preview
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7 text-xs px-2 gap-1"
-                    onClick={() => handleDownload(uploadedFiles.levelBasedContractDocument)}
-                    disabled={!uploadedFiles.levelBasedContractDocument}
-                  >
-                    <Download className="h-3 w-3" />
-                    Download
-                  </Button>
+                  <div className="flex flex-col gap-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-xs px-2 gap-1"
+                      onClick={() => handlePreview(uploadedFiles.levelBasedContractDocument)}
+                      disabled={!uploadedFiles.levelBasedContractDocument}
+                    >
+                      <Eye className="h-3 w-3" />
+                      Preview
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-xs px-2 gap-1"
+                      onClick={() => handleDownload(uploadedFiles.levelBasedContractDocument)}
+                      disabled={!uploadedFiles.levelBasedContractDocument}
+                    >
+                      <Download className="h-3 w-3" />
+                      Download
+                    </Button>
+                  </div>
                   {uploadedFiles.levelBasedContractDocument && (
                     <p className="text-xs text-muted-foreground truncate w-full sm:w-auto">
                       Selected file: {uploadedFiles.levelBasedContractDocument.name}
