@@ -16,7 +16,7 @@ import { Upload, Eye, Download, CalendarIcon } from "lucide-react";
 import { ClientForm } from "@/components/create-client-modal/type";
 import { levelFieldMap } from "./constants";
 import { Textarea } from "@/components/ui/textarea";
-import { useState } from "react";
+import { useState, Fragment } from "react";
 
 interface ContractInformationTabProps {
   formData: ClientForm;
@@ -53,6 +53,9 @@ export function ContractInformationTab({
 }: ContractInformationTabProps) {
   const [openStart, setOpenStart] = useState(false);
   const [openEnd, setOpenEnd] = useState(false);
+  const [activeBusinessTab, setActiveBusinessTab] = useState<string | null>(null);
+  const [previewBusinessTab, setPreviewBusinessTab] = useState<string | null>(null);
+
   const handleLevelChange = (level: string) => {
     setSelectedLevels((prev) =>
       prev.includes(level) ? prev.filter((l) => l !== level) : [...prev, level],
@@ -70,293 +73,100 @@ export function ContractInformationTab({
     }
   };
 
-  return (
-    <div className="space-y-6 pt-4 pb-2">
-      {/* Line of Business in its own row */}
-      <div className="space-y-1">
-        <Label htmlFor="lineOfBusiness">
-          Line of Business *
-        </Label>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 border rounded-md p-2">
-          {[
-            "Recruitment",
-            "HR Consulting",
-            "Mgt Consulting",
-            "Outsourcing",
-            "HR Managed Services",
-            "IT & Technology",
-          ].map((option) => (
-            <div key={option} className="flex items-center space-x-2">
-              <Checkbox
-                id={`lob-${option}`}
-                checked={formData.lineOfBusiness?.includes(option)}
-                onCheckedChange={(checked) => {
-                  setFormData((prev) => {
-                    const current = Array.isArray(prev.lineOfBusiness)
-                      ? prev.lineOfBusiness
-                      : prev.lineOfBusiness
-                        ? [prev.lineOfBusiness]
-                        : [];
-                    return {
-                      ...prev,
-                      lineOfBusiness: checked
-                        ? [...current, option]
-                        : current.filter((item: string) => item !== option),
-                    };
-                  });
-                }}
-              />
-              <label
-                htmlFor={`lob-${option}`}
-                className={`text-xs sm:text-sm font-medium leading-none cursor-pointer ${
-                  formData.lineOfBusiness?.includes(option) ? "font-bold text-primary" : ""
-                }`}
-                onClick={() =>
-                  formData.lineOfBusiness?.includes(option) &&
-                  setFormData((prev) => ({ ...prev, lineOfBusiness: [option] }))
-                }
+  const renderStandardContractFields = () => (
+    <div className="flex flex-col sm:flex-row gap-4 mt-4">
+      {/* Contract Start Date */}
+      <div className="flex-1 space-y-2">
+        <Label htmlFor="contractStartDate">Contract Start Date</Label>
+        <div className="grid gap-2">
+          <Popover open={openStart} onOpenChange={setOpenStart} modal>
+            <PopoverTrigger asChild>
+              <Button
+                id="date-picker"
+                variant="outline"
+                className="w-full justify-start text-left font-normal"
               >
-                {option
-                  .split("-")
-                  .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                  .join(" ")}
-              </label>
-            </div>
-          ))}
-        </div>
-        {(formData.lineOfBusiness?.includes("HR Consulting") ||
-          formData.lineOfBusiness?.includes("Mgt Consulting")) && (
-          <div className="mt-4 space-y-4">
-            <h4 className="text-sm font-medium">Proposal Options</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {["Technical Proposal", "Financial Proposal"].map((type) => (
-                <div key={type} className="border rounded-lg p-4 space-y-3">
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`proposal-${type}`}
-                        checked={formData.proposalOptions?.includes(type)}
-                        onCheckedChange={(checked) => {
-                          setFormData((prev) => ({
-                            ...prev,
-                            proposalOptions: checked
-                              ? [...(prev.proposalOptions || []), type]
-                              : (prev.proposalOptions || []).filter((opt) => opt !== type),
-                          }));
-                        }}
-                      />
-                      <h5 className="font-medium">{type}</h5>
-                    </div>
-                    <div className="flex space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          const fileField = type.toLowerCase().includes("technical")
-                            ? "technicalProposal"
-                            : type.toLowerCase().includes("financial")
-                              ? "financialProposal"
-                              : null;
-                          const file = fileField
-                            ? uploadedFiles[fileField as keyof typeof uploadedFiles]
-                            : null;
-                          handlePreview(file as File | string | null);
-                        }}
-                        disabled={!formData.proposalOptions?.includes(type)}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          const fileField = type.toLowerCase().includes("technical")
-                            ? "technicalProposal"
-                            : type.toLowerCase().includes("financial")
-                              ? "financialProposal"
-                              : null;
-                          const file = fileField
-                            ? uploadedFiles[fileField as keyof typeof uploadedFiles]
-                            : null;
-                          if (file) {
-                            handleDownload(file as File);
-                          }
-                        }}
-                        disabled={!formData.proposalOptions?.includes(type)}
-                      >
-                        <Download className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  {formData.proposalOptions?.includes(type) && (
-                    <>
-                      <Textarea
-                        value={
-                          type === "Technical Proposal"
-                            ? formData.technicalProposalNotes || ""
-                            : formData.financialProposalNotes || ""
-                        }
-                        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                          handleInputChange(
-                            type === "Technical Proposal"
-                              ? "technicalProposalNotes"
-                              : "financialProposalNotes",
-                          )(e)
-                        }
-                        placeholder={`Enter ${type} notes...`}
-                        className="min-h-[100px]"
-                      />
-                      <div className="flex justify-end">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="gap-2"
-                          type="button"
-                          onClick={() => {
-                            if (type === "Technical Proposal") {
-                              technicalProposalOptionInputRef.current?.click();
-                            } else if (type === "Financial Proposal") {
-                              financialProposalOptionInputRef.current?.click();
-                            }
-                          }}
-                        >
-                          <Upload className="h-4 w-4" />
-                          Upload File
-                        </Button>
-                        {type === "Technical Proposal" && (
-                          <input
-                            ref={technicalProposalOptionInputRef}
-                            type="file"
-                            accept=".pdf,.jpg,.jpeg,.png"
-                            className="hidden"
-                            onChange={handleFileChange("technicalProposal")}
-                          />
-                        )}
-                        {type === "Financial Proposal" && (
-                          <input
-                            ref={financialProposalOptionInputRef}
-                            type="file"
-                            accept=".pdf,.jpg,.jpeg,.png"
-                            className="hidden"
-                            onChange={handleFileChange("financialProposal")}
-                          />
-                        )}
-                      </div>
-                      {type === "Technical Proposal" && uploadedFiles.technicalProposal && (
-                        <p className="text-xs text-muted-foreground truncate">
-                          Selected file: {uploadedFiles.technicalProposal.name}
-                        </p>
-                      )}
-                      {type === "Financial Proposal" && uploadedFiles.financialProposal && (
-                        <p className="text-xs text-muted-foreground truncate">
-                          Selected file: {uploadedFiles.financialProposal.name}
-                        </p>
-                      )}
-                    </>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Grouped row for contract fields */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        {/* Contract Start Date */}
-        <div className="flex-1 space-y-2">
-          <Label htmlFor="contractStartDate">Contract Start Date</Label>
-          <div className="grid gap-2">
-            <Popover open={openStart} onOpenChange={setOpenStart} modal>
-              <PopoverTrigger asChild>
-                <Button
-                  id="date-picker"
-                  variant="outline"
-                  className="w-full justify-start text-left font-normal"
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {formData.contractStartDate
-                    ? format(formData.contractStartDate, "PPP")
-                    : "Pick a date"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  captionLayout="dropdown"
-                  selected={formData.contractStartDate!}
-                  onSelect={(date) => handleSelectDate(date, "start")}
-                  fromDate={new Date()}
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-        </div>
-
-        {/* Contract End Date */}
-        <div className="flex-1 space-y-1">
-          <Label htmlFor="contractEndDate" >
-            Contract End Date
-          </Label>
-          <div className="grid gap-2">
-            <Popover open={openEnd} onOpenChange={setOpenEnd} modal={true}>
-              <PopoverTrigger asChild>
-                <Button
-                  id="date-picker"
-                  variant="outline"
-                  className="w-full justify-start text-left font-normal"
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {formData.contractEndDate
-                    ? format(formData.contractEndDate, "PPP")
-                    : "Pick a date"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={formData.contractEndDate!}
-                  onSelect={(date) => handleSelectDate(date, "end")}
-                  fromDate={new Date()}
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-        </div>
-
-        {/* Contract Type */}
-        <div className="flex-1 space-y-1">
-          <Label htmlFor="contractType">
-            Contract Type
-          </Label>
-          <Select
-            value={formData.contractType}
-            onValueChange={(value) => {
-              const isOldLevelBased =
-                formData.contractType === "Level Based (Hiring)" ||
-                formData.contractType === "Level Based With Advance";
-              const isNewLevelBased =
-                value === "Level Based (Hiring)" || value === "Level Based With Advance";
-              setFormData((prev) => ({ ...prev, contractType: value }));
-              if (isOldLevelBased !== isNewLevelBased) {
-                setSelectedLevels([]);
-                setActiveLevel(null);
-              }
-            }}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select contract type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Fix with Advance">Fix with Advance</SelectItem>
-              <SelectItem value="Fix without Advance">Fix without Advance</SelectItem>
-              <SelectItem value="Level Based (Hiring)">Level Based (Hiring)</SelectItem>
-              <SelectItem value="Level Based With Advance">Level Based With Advance</SelectItem>
-            </SelectContent>
-          </Select>
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {formData.contractStartDate
+                  ? format(formData.contractStartDate, "PPP")
+                  : "Pick a date"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                captionLayout="dropdown"
+                selected={formData.contractStartDate!}
+                onSelect={(date) => {
+                  setFormData((prev) => ({ ...prev, contractStartDate: date || null }));
+                  setOpenStart(false);
+                }}
+                fromDate={new Date()}
+              />
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
-
+      {/* Contract End Date */}
+      <div className="flex-1 space-y-1">
+        <Label htmlFor="contractEndDate">Contract End Date</Label>
+        <div className="grid gap-2">
+          <Popover open={openEnd} onOpenChange={setOpenEnd} modal={true}>
+            <PopoverTrigger asChild>
+              <Button
+                id="date-picker"
+                variant="outline"
+                className="w-full justify-start text-left font-normal"
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {formData.contractEndDate
+                  ? format(formData.contractEndDate, "PPP")
+                  : "Pick a date"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={formData.contractEndDate!}
+                onSelect={(date) => {
+                  setFormData((prev) => ({ ...prev, contractEndDate: date || null }));
+                  setOpenEnd(false);
+                }}
+                fromDate={new Date()}
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+      </div>
+      {/* Contract Type */}
+      <div className="flex-1 space-y-1">
+        <Label htmlFor="contractType">Contract Type</Label>
+        <Select
+          value={formData.contractType}
+          onValueChange={(value) => {
+            const isOldLevelBased =
+              formData.contractType === "Level Based (Hiring)" ||
+              formData.contractType === "Level Based With Advance";
+            const isNewLevelBased =
+              value === "Level Based (Hiring)" || value === "Level Based With Advance";
+            setFormData((prev) => ({ ...prev, contractType: value }));
+            if (isOldLevelBased !== isNewLevelBased) {
+              setSelectedLevels([]);
+              setActiveLevel(null);
+            }
+          }}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select contract type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Fix with Advance">Fix with Advance</SelectItem>
+            <SelectItem value="Fix without Advance">Fix without Advance</SelectItem>
+            <SelectItem value="Level Based (Hiring)">Level Based (Hiring)</SelectItem>
+            <SelectItem value="Level Based With Advance">Level Based With Advance</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
       {formData.contractType === "Fix with Advance" && (
         <div className="space-y-4 col-span-1 sm:col-span-2 border rounded-lg p-4">
           <div className="border-2 shadow-sm rounded-lg p-2 cursor-pointer transition-colors w-full border-primary bg-primary/5">
@@ -432,7 +242,6 @@ export function ContractInformationTab({
               </div>
             </div>
           </div>
-
           <div className="space-y-2">
             <Label className="text-sm sm:text-base font-semibold">Contract Document</Label>
             <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 items-center">
@@ -481,7 +290,6 @@ export function ContractInformationTab({
           </div>
         </div>
       )}
-
       {formData.contractType === "Fix without Advance" && (
         <div className="space-y-4 col-span-1 sm:col-span-2 border rounded-lg p-4">
           <div className="border-2 shadow-sm rounded-lg p-2 cursor-pointer transition-colors w-full border-primary bg-primary/5">
@@ -522,7 +330,6 @@ export function ContractInformationTab({
               </div>
             </div>
           </div>
-
           <div className="space-y-2">
             <Label className="text-sm sm:text-base font-semibold">Contract Document</Label>
             <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 items-center">
@@ -571,9 +378,7 @@ export function ContractInformationTab({
           </div>
         </div>
       )}
-
-      {(formData.contractType === "Level Based (Hiring)" ||
-        formData.contractType === "Level Based With Advance") && (
+      {["Level Based (Hiring)", "Level Based With Advance"].includes(formData.contractType || "") && (
         <div className="space-y-4 col-span-1 sm:col-span-2 border rounded-lg p-4">
           <div className="space-y-2">
             <Label className="text-sm sm:text-base font-semibold">Select Levels</Label>
@@ -595,7 +400,6 @@ export function ContractInformationTab({
               ))}
             </div>
           </div>
-
           {selectedLevels.length > 0 && (
             <div className="space-y-4">
               {selectedLevels.map((level) => {
@@ -683,7 +487,6 @@ export function ContractInformationTab({
                   </div>
                 );
               })}
-
               <div className="space-y-2">
                 <Label className="text-sm sm:text-base font-semibold">Contract Documents</Label>
                 <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 items-center mb-2">
@@ -734,6 +537,272 @@ export function ContractInformationTab({
               </div>
             </div>
           )}
+        </div>
+      )}
+    </div>
+  );
+
+  const renderConsultingFields = () => (
+    <div className="flex flex-col gap-4 mt-4">
+      {/* Contract Start Date */}
+      <div className="flex-1 space-y-2">
+        <Label htmlFor="contractStartDate">Contract Start Date</Label>
+        <div className="grid gap-2">
+          <Popover open={openStart} onOpenChange={setOpenStart} modal>
+            <PopoverTrigger asChild>
+              <Button
+                id="date-picker"
+                variant="outline"
+                className="w-full justify-start text-left font-normal"
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {formData.contractStartDate
+                  ? format(formData.contractStartDate, "PPP")
+                  : "Pick a date"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                captionLayout="dropdown"
+                selected={formData.contractStartDate!}
+                onSelect={(date) => {
+                  setFormData((prev) => ({ ...prev, contractStartDate: date || null }));
+                  setOpenStart(false);
+                }}
+                fromDate={new Date()}
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+      </div>
+      {/* Contract End Date */}
+      <div className="flex-1 space-y-1">
+        <Label htmlFor="contractEndDate">Contract End Date</Label>
+        <div className="grid gap-2">
+          <Popover open={openEnd} onOpenChange={setOpenEnd} modal={true}>
+            <PopoverTrigger asChild>
+              <Button
+                id="date-picker"
+                variant="outline"
+                className="w-full justify-start text-left font-normal"
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {formData.contractEndDate
+                  ? format(formData.contractEndDate, "PPP")
+                  : "Pick a date"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={formData.contractEndDate!}
+                onSelect={(date) => {
+                  setFormData((prev) => ({ ...prev, contractEndDate: date || null }));
+                  setOpenEnd(false);
+                }}
+                fromDate={new Date()}
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+      </div>
+      {/* Technical Proposal */}
+      <div className="flex-1 space-y-2">
+        <Label>Technical Proposal</Label>
+        <Textarea
+          value={formData.technicalProposalNotes || ""}
+          onChange={handleInputChange("technicalProposalNotes")}
+          placeholder="Enter Technical Proposal notes..."
+          className="min-h-[60px]"
+        />
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            type="button"
+            onClick={() => technicalProposalOptionInputRef.current?.click()}
+          >
+            <Upload className="h-4 w-4" /> Upload File
+          </Button>
+          <input
+            ref={technicalProposalOptionInputRef}
+            type="file"
+            accept=".pdf,.jpg,.jpeg,.png"
+            className="hidden"
+            onChange={handleFileChange("technicalProposal")}
+          />
+          {uploadedFiles.technicalProposal && (
+            <span className="text-xs text-muted-foreground truncate">
+              {uploadedFiles.technicalProposal.name}
+            </span>
+          )}
+        </div>
+      </div>
+      {/* Financial Proposal */}
+      <div className="flex-1 space-y-2">
+        <Label>Financial Proposal</Label>
+        <Textarea
+          value={formData.financialProposalNotes || ""}
+          onChange={handleInputChange("financialProposalNotes")}
+          placeholder="Enter Financial Proposal notes..."
+          className="min-h-[60px]"
+        />
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            type="button"
+            onClick={() => financialProposalOptionInputRef.current?.click()}
+          >
+            <Upload className="h-4 w-4" /> Upload File
+          </Button>
+          <input
+            ref={financialProposalOptionInputRef}
+            type="file"
+            accept=".pdf,.jpg,.jpeg,.png"
+            className="hidden"
+            onChange={handleFileChange("financialProposal")}
+          />
+          {uploadedFiles.financialProposal && (
+            <span className="text-xs text-muted-foreground truncate">
+              {uploadedFiles.financialProposal.name}
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderPreview = (business: string) => {
+    if (["HR Consulting", "Mgt Consulting"].includes(business)) {
+      return (
+        <div className="border rounded-md p-4 bg-muted/30 mt-4">
+          <h4 className="font-semibold mb-2">{business} Contract Preview</h4>
+          <div className="text-sm">
+            <div><b>Contract Start Date:</b> {formData.contractStartDate ? format(formData.contractStartDate, "PPP") : "-"}</div>
+            <div><b>Contract End Date:</b> {formData.contractEndDate ? format(formData.contractEndDate, "PPP") : "-"}</div>
+            <div><b>Technical Proposal:</b> {formData.technicalProposalNotes || "-"}</div>
+            <div><b>Financial Proposal:</b> {formData.financialProposalNotes || "-"}</div>
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div className="border rounded-md p-4 bg-muted/30 mt-4">
+        <h4 className="font-semibold mb-2">{business} Contract Preview</h4>
+        <div className="text-sm">
+          <div><b>Contract Start Date:</b> {formData.contractStartDate ? format(formData.contractStartDate, "PPP") : "-"}</div>
+          <div><b>Contract End Date:</b> {formData.contractEndDate ? format(formData.contractEndDate, "PPP") : "-"}</div>
+          <div><b>Contract Type:</b> {formData.contractType || "-"}</div>
+        </div>
+      </div>
+    );
+  };
+
+  const businessOptions = [
+    "Recruitment",
+    "HR Consulting",
+    "Mgt Consulting",
+    "Outsourcing",
+    "HR Managed Services",
+    "IT & Technology",
+  ];
+
+  return (
+    <div className="space-y-6 pt-4 pb-2">
+      <div className="space-y-1">
+        <Label htmlFor="lineOfBusiness">
+          Line of Business *
+        </Label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 border rounded-md p-2">
+          {businessOptions.map((option) => (
+            <div key={option} className="flex items-center space-x-2">
+              <Checkbox
+                id={`lob-${option}`}
+                checked={formData.lineOfBusiness?.includes(option)}
+                onCheckedChange={(checked) => {
+                  setFormData((prev) => {
+                    const current = Array.isArray(prev.lineOfBusiness)
+                      ? prev.lineOfBusiness
+                      : prev.lineOfBusiness
+                        ? [prev.lineOfBusiness]
+                        : [];
+                    return {
+                      ...prev,
+                      lineOfBusiness: checked
+                        ? [...current, option]
+                        : current.filter((item: string) => item !== option),
+                    };
+                  });
+                  if (!formData.lineOfBusiness?.includes(option) && activeBusinessTab === option) {
+                    setActiveBusinessTab(null);
+                    setPreviewBusinessTab(null);
+                  }
+                }}
+              />
+              <label
+                htmlFor={`lob-${option}`}
+                className={`text-xs sm:text-sm font-medium leading-none cursor-pointer ${
+                  formData.lineOfBusiness?.includes(option) ? "font-bold text-primary" : ""
+                }`}
+                onClick={() =>
+                  formData.lineOfBusiness?.includes(option) &&
+                  setFormData((prev) => ({ ...prev, lineOfBusiness: [option] }))
+                }
+              >
+                {option
+                  .split("-")
+                  .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                  .join(" ")}
+              </label>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {formData.lineOfBusiness && Array.isArray(formData.lineOfBusiness) && formData.lineOfBusiness.length > 0 && (
+        <div className="w-full rounded-xl border p-2 bg-[#f5f6f7] ">
+          <div className="mt-1 w-full">
+            <div className="w-full">
+              {formData.lineOfBusiness.map((business: string) => (
+                <div key={business} className="rounded-xl border bg-white py-4 px-6 mb-4 flex items-center justify-between w-full">
+                  <span className="font-medium text-xs sm:text-sm">{business} contract form</span>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      className="w-24"
+                      variant={activeBusinessTab === business && !previewBusinessTab ? "default" : "outline"}
+                      onClick={() => {
+                        setActiveBusinessTab(business);
+                        setPreviewBusinessTab(null);
+                      }}
+                    >
+                      Open
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="w-24"
+                      variant={previewBusinessTab === business ? "default" : "outline"}
+                      onClick={() => {
+                        setActiveBusinessTab(business);
+                        setPreviewBusinessTab(business);
+                      }}
+                    >
+                      Preview
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {activeBusinessTab && !previewBusinessTab && (
+              <div>
+                {["Recruitment", "HR Managed Services", "Outsourcing", "IT & Technology"].includes(activeBusinessTab) && renderStandardContractFields()}
+                {["HR Consulting", "Mgt Consulting"].includes(activeBusinessTab) && renderConsultingFields()}
+              </div>
+            )}
+            {previewBusinessTab && renderPreview(previewBusinessTab)}
+          </div>
         </div>
       )}
     </div>
