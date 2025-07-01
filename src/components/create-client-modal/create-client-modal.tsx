@@ -19,6 +19,7 @@ import { ClientForm, PrimaryContact, LocationSuggestion } from "@/components/cre
 import { createClient } from "./api";
 import { clientSubStages } from "./constants";
 import axios from "axios";
+import { useRouter } from "next/navigation";
 
 export function CreateClientModal({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const [formData, setFormData] = useState<ClientForm>({
@@ -106,6 +107,8 @@ export function CreateClientModal({ open, onOpenChange }: { open: boolean; onOpe
   const financialProposalInputRef = useRef<HTMLInputElement>(null);
   const technicalProposalOptionInputRef = useRef<HTMLInputElement>(null);
   const financialProposalOptionInputRef = useRef<HTMLInputElement>(null);
+
+  const router = useRouter();
 
   // Location suggestions
   useEffect(() => {
@@ -632,10 +635,12 @@ export function CreateClientModal({ open, onOpenChange }: { open: boolean; onOpe
         }
       }
       
-      for (const pair of formDataToSend.entries()) {
-      }
-      
       const result = await createClient(formDataToSend);
+
+      if (result && result.success && result.data && result.data.data && result.data.data._id) {
+        router.push(`/clients/${result.data.data._id}`);
+        return;
+      }
 
       setFormData({
         name: "",
