@@ -17,6 +17,7 @@ import { ClientForm } from "@/components/create-client-modal/type";
 import { levelFieldMap } from "./constants";
 import { Textarea } from "@/components/ui/textarea";
 import { useState, Fragment } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose, DialogFooter } from "@/components/ui/dialog";
 
 interface ContractInformationTabProps {
   formData: ClientForm;
@@ -55,6 +56,10 @@ export function ContractInformationTab({
   const [openEnd, setOpenEnd] = useState(false);
   const [activeBusinessTab, setActiveBusinessTab] = useState<string | null>(null);
   const [previewBusinessTab, setPreviewBusinessTab] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalBusiness, setModalBusiness] = useState<string | null>(null);
+  const [savedContracts, setSavedContracts] = useState<{ [business: string]: boolean }>({});
+  const [previewBusiness, setPreviewBusiness] = useState<string | null>(null);
 
   const handleLevelChange = (level: string) => {
     setSelectedLevels((prev) =>
@@ -691,32 +696,6 @@ export function ContractInformationTab({
     </div>
   );
 
-  const renderPreview = (business: string) => {
-    if (["HR Consulting", "Mgt Consulting"].includes(business)) {
-      return (
-        <div className="border rounded-md p-4 bg-muted/30 mt-4">
-          <h4 className="font-semibold mb-2">{business} Contract Preview</h4>
-          <div className="text-sm">
-            <div><b>Contract Start Date:</b> {formData.contractStartDate ? format(formData.contractStartDate, "PPP") : "-"}</div>
-            <div><b>Contract End Date:</b> {formData.contractEndDate ? format(formData.contractEndDate, "PPP") : "-"}</div>
-            <div><b>Technical Proposal:</b> {formData.technicalProposalNotes || "-"}</div>
-            <div><b>Financial Proposal:</b> {formData.financialProposalNotes || "-"}</div>
-          </div>
-        </div>
-      );
-    }
-    return (
-      <div className="border rounded-md p-4 bg-muted/30 mt-4">
-        <h4 className="font-semibold mb-2">{business} Contract Preview</h4>
-        <div className="text-sm">
-          <div><b>Contract Start Date:</b> {formData.contractStartDate ? format(formData.contractStartDate, "PPP") : "-"}</div>
-          <div><b>Contract End Date:</b> {formData.contractEndDate ? format(formData.contractEndDate, "PPP") : "-"}</div>
-          <div><b>Contract Type:</b> {formData.contractType || "-"}</div>
-        </div>
-      </div>
-    );
-  };
-
   const businessOptions = [
     "Recruitment",
     "HR Consulting",
@@ -793,217 +772,317 @@ export function ContractInformationTab({
                       onClick={() => {
                         setActiveBusinessTab(business);
                         setPreviewBusinessTab(null);
+                        setModalBusiness(business);
+                        setModalOpen(true);
                       }}
                     >
                       Open
                     </Button>
-                    <Button
-                      size="sm"
-                      className="w-24"
-                      variant={previewBusinessTab === business ? "default" : "outline"}
-                      onClick={() => {
-                        setActiveBusinessTab(business);
-                        setPreviewBusinessTab(business);
-                      }}
-                    >
-                      Preview
-                    </Button>
+                    {savedContracts[business] && (
+                      <Button
+                        size="sm"
+                        className="w-24"
+                        variant={previewBusinessTab === business ? "default" : "outline"}
+                        onClick={() => {
+                          setPreviewBusiness(business);
+                        }}
+                      >
+                        Preview
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}
             </div>
-            {(activeBusinessTab || previewBusinessTab) && (
-              <div className="rounded-xl border bg-white py-6 px-8 mt-6">
-                {["Recruitment", "HR Managed Services", "IT & Technology"].includes(activeBusinessTab || "") && renderStandardContractFields()}
-                {["HR Consulting", "Mgt Consulting"].includes(activeBusinessTab || "") && renderConsultingFields()}
-                {activeBusinessTab === "Outsourcing" && (
-                  <div className="flex flex-col gap-4 mt-4">
-                    {/* Dates and Contract Type in one row */}
-                    <div className="flex flex-row gap-4">
-                      {/* Contract Start Date */}
-                      <div className="flex-1 space-y-1">
-                        <Label htmlFor="outsourcingContractStartDate">Contract Start Date</Label>
-                        <div className="grid gap-2">
-                          <Popover open={openStart} onOpenChange={setOpenStart} modal>
-                            <PopoverTrigger asChild>
-                              <Button
-                                id="date-picker"
-                                variant="outline"
-                                className="w-full justify-start text-left font-normal"
-                              >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {formData.outsourcingContractStartDate
-                                  ? format(formData.outsourcingContractStartDate, "PPP")
-                                  : "Pick a date"}
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar
-                                mode="single"
-                                captionLayout="dropdown"
-                                selected={formData.outsourcingContractStartDate!}
-                                onSelect={(date) => {
-                                  setFormData((prev) => ({ ...prev, outsourcingContractStartDate: date || null }));
-                                  setOpenStart(false);
-                                }}
-                                fromDate={new Date()}
-                              />
-                            </PopoverContent>
-                          </Popover>
-                        </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal for contract form */}
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent className="max-w-2xl w-full h-[500px] p-4 gap-0">
+          <DialogHeader className="mb-0 pb-0">
+            <DialogTitle className="text-base leading-tight m-0 p-0">
+              {modalBusiness} Contract Form
+            </DialogTitle>
+          </DialogHeader>
+          <div className="overflow-y-scroll overflow-x-hidden max-h-[350px] pr-1 flex flex-col gap-1 ">
+            {modalBusiness && ["Recruitment", "HR Managed Services", "IT & Technology"].includes(modalBusiness) && renderStandardContractFields()}
+            {modalBusiness && ["HR Consulting", "Mgt Consulting"].includes(modalBusiness) && renderConsultingFields()}
+            {modalBusiness === "Outsourcing" && (
+              <div className="flex flex-col gap-1 mt-0">
+                {/* Dates and Contract Type in one row */}
+                <div className="flex flex-row gap-2">
+                  {/* Contract Start Date */}
+                  <div className="flex-1 space-y-1">
+                    <Label htmlFor="outsourcingContractStartDate">Contract Start Date</Label>
+                    <div className="grid gap-2">
+                      <Popover open={openStart} onOpenChange={setOpenStart} modal>
+                        <PopoverTrigger asChild>
+                          <Button
+                            id="date-picker"
+                            variant="outline"
+                            className="w-full justify-start text-left font-normal"
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {formData.outsourcingContractStartDate
+                              ? format(formData.outsourcingContractStartDate, "PPP")
+                              : "Pick a date"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            captionLayout="dropdown"
+                            selected={formData.outsourcingContractStartDate!}
+                            onSelect={(date) => {
+                              setFormData((prev) => ({ ...prev, outsourcingContractStartDate: date || null }));
+                              setOpenStart(false);
+                            }}
+                            fromDate={new Date()}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                  </div>
+                  {/* Contract End Date */}
+                  <div className="flex-1 space-y-1">
+                    <Label htmlFor="outsourcingContractEndDate">Contract End Date</Label>
+                    <div className="grid gap-2">
+                      <Popover open={openEnd} onOpenChange={setOpenEnd} modal={true}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            id="date-picker"
+                            variant="outline"
+                            className="w-full justify-start text-left font-normal"
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {formData.outsourcingContractEndDate
+                              ? format(formData.outsourcingContractEndDate, "PPP")
+                              : "Pick a date"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={formData.outsourcingContractEndDate!}
+                            onSelect={(date) => {
+                              setFormData((prev) => ({ ...prev, outsourcingContractEndDate: date || null }));
+                              setOpenEnd(false);
+                            }}
+                            fromDate={new Date()}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                  </div>
+                  {/* Custom Contract Type */}
+                  <div className="flex-1 space-y-1">
+                    <Label htmlFor="outsourcingContractType">Contract Type</Label>
+                    <Select
+                      value={formData.outsourcingContractType || ""}
+                      onValueChange={(value) => setFormData((prev) => ({ ...prev, outsourcingContractType: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select contract type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Fixed Cost">Fixed Cost</SelectItem>
+                        <SelectItem value="Cost Plus">Cost Plus</SelectItem>
+                        <SelectItem value="Time & Materials">Time & Materials</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                {/* Show details if a contract type is selected */}
+                {formData.outsourcingContractType && (
+                  <>
+                    <div className="flex flex-row gap-4 mt-4">
+                      <div className="flex-1">
+                        <Label>Service Category</Label>
+                        <Input
+                          value={formData.outsourcingServiceCategory || ""}
+                          onChange={e => setFormData(prev => ({ ...prev, outsourcingServiceCategory: e.target.value }))}
+                          placeholder="Service Category"
+                        />
                       </div>
-                      {/* Contract End Date */}
-                      <div className="flex-1 space-y-1">
-                        <Label htmlFor="outsourcingContractEndDate">Contract End Date</Label>
-                        <div className="grid gap-2">
-                          <Popover open={openEnd} onOpenChange={setOpenEnd} modal={true}>
-                            <PopoverTrigger asChild>
-                              <Button
-                                id="date-picker"
-                                variant="outline"
-                                className="w-full justify-start text-left font-normal"
-                              >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {formData.outsourcingContractEndDate
-                                  ? format(formData.outsourcingContractEndDate, "PPP")
-                                  : "Pick a date"}
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar
-                                mode="single"
-                                selected={formData.outsourcingContractEndDate!}
-                                onSelect={(date) => {
-                                  setFormData((prev) => ({ ...prev, outsourcingContractEndDate: date || null }));
-                                  setOpenEnd(false);
-                                }}
-                                fromDate={new Date()}
-                              />
-                            </PopoverContent>
-                          </Popover>
-                        </div>
+                      <div className="flex-1">
+                        <Label>Number of Resources</Label>
+                        <Input
+                          type="number"
+                          value={formData.outsourcingNumResources || ""}
+                          onChange={e => setFormData(prev => ({ ...prev, outsourcingNumResources: e.target.value }))}
+                          placeholder="Number of Resources"
+                        />
                       </div>
-                      {/* Custom Contract Type */}
-                      <div className="flex-1 space-y-1">
-                        <Label htmlFor="outsourcingContractType">Contract Type</Label>
-                        <Select
-                          value={formData.outsourcingContractType || ""}
-                          onValueChange={(value) => setFormData((prev) => ({ ...prev, outsourcingContractType: value }))}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select contract type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Fixed Cost">Fixed Cost</SelectItem>
-                            <SelectItem value="Cost Plus">Cost Plus</SelectItem>
-                            <SelectItem value="Time & Materials">Time & Materials</SelectItem>
-                          </SelectContent>
-                        </Select>
+                      <div className="flex-1">
+                        <Label>Duration Per Resource</Label>
+                        <Input
+                          value={formData.outsourcingDurationPerResource || ""}
+                          onChange={e => setFormData(prev => ({ ...prev, outsourcingDurationPerResource: e.target.value }))}
+                          placeholder="Duration Per Resource"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <Label>SLA Terms</Label>
+                        <Input
+                          value={formData.outsourcingSlaTerms || ""}
+                          onChange={e => setFormData(prev => ({ ...prev, outsourcingSlaTerms: e.target.value }))}
+                          placeholder="SLA Terms"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <Label>Total Cost</Label>
+                        <Input
+                          type="number"
+                          value={formData.outsourcingTotalCost || ""}
+                          onChange={e => setFormData(prev => ({ ...prev, outsourcingTotalCost: e.target.value }))}
+                          placeholder="Total Cost"
+                        />
                       </div>
                     </div>
-                    {/* Show details if a contract type is selected */}
-                    {formData.outsourcingContractType && (
-                      <>
-                        <div className="flex flex-row gap-4 mt-4">
-                          <div className="flex-1">
-                            <Label>Service Category</Label>
-                            <Input
-                              value={formData.outsourcingServiceCategory || ""}
-                              onChange={e => setFormData(prev => ({ ...prev, outsourcingServiceCategory: e.target.value }))}
-                              placeholder="Service Category"
-                            />
-                          </div>
-                          <div className="flex-1">
-                            <Label>Number of Resources</Label>
-                            <Input
-                              type="number"
-                              value={formData.outsourcingNumResources || ""}
-                              onChange={e => setFormData(prev => ({ ...prev, outsourcingNumResources: e.target.value }))}
-                              placeholder="Number of Resources"
-                            />
-                          </div>
-                          <div className="flex-1">
-                            <Label>Duration Per Resource</Label>
-                            <Input
-                              value={formData.outsourcingDurationPerResource || ""}
-                              onChange={e => setFormData(prev => ({ ...prev, outsourcingDurationPerResource: e.target.value }))}
-                              placeholder="Duration Per Resource"
-                            />
-                          </div>
-                          <div className="flex-1">
-                            <Label>SLA Terms</Label>
-                            <Input
-                              value={formData.outsourcingSlaTerms || ""}
-                              onChange={e => setFormData(prev => ({ ...prev, outsourcingSlaTerms: e.target.value }))}
-                              placeholder="SLA Terms"
-                            />
-                          </div>
-                          <div className="flex-1">
-                            <Label>Total Cost</Label>
-                            <Input
-                              type="number"
-                              value={formData.outsourcingTotalCost || ""}
-                              onChange={e => setFormData(prev => ({ ...prev, outsourcingTotalCost: e.target.value }))}
-                              placeholder="Total Cost"
-                            />
-                          </div>
+                    {/* Contract Document row */}
+                    <div className="space-y-2 mt-4">
+                      <Label className="text-sm sm:text-base font-semibold">Contract Document</Label>
+                      <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 items-center">
+                        <div
+                          className="border-2 border-dashed rounded-lg p-2 text-center cursor-pointer hover:bg-muted/50 flex-1 w-full"
+                          onClick={() => document.getElementById("outsourcingContractDocumentInput")?.click()}
+                        >
+                          <Upload className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
+                          <p className="text-xs text-muted-foreground">Upload (PDF, JPEG, PNG)</p>
                         </div>
-                        {/* Contract Document row */}
-                        <div className="space-y-2 mt-4">
-                          <Label className="text-sm sm:text-base font-semibold">Contract Document</Label>
-                          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 items-center">
-                            <div
-                              className="border-2 border-dashed rounded-lg p-2 text-center cursor-pointer hover:bg-muted/50 flex-1 w-full"
-                              onClick={() => document.getElementById("outsourcingContractDocumentInput")?.click()}
-                            >
-                              <Upload className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
-                              <p className="text-xs text-muted-foreground">Upload (PDF, JPEG, PNG)</p>
-                            </div>
-                            <input
-                              id="outsourcingContractDocumentInput"
-                              type="file"
-                              accept=".pdf,.jpg,.jpeg,.png"
-                              className="hidden"
-                              onChange={handleFileChange("outsourcingContractDocument")}
-                            />
-                            <div className="flex flex-col gap-1">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-7 text-xs px-2 gap-1"
-                                onClick={() => handlePreview(uploadedFiles.outsourcingContractDocument)}
-                                disabled={!uploadedFiles.outsourcingContractDocument}
-                              >
-                                <Eye className="h-3 w-3" />
-                                Preview
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-7 text-xs gap-1"
-                                onClick={() => handleDownload(uploadedFiles.outsourcingContractDocument)}
-                                disabled={!uploadedFiles.outsourcingContractDocument}
-                              >
-                                <Download className="h-3 w-3" />
-                                Download
-                              </Button>
-                            </div>
-                            {uploadedFiles.outsourcingContractDocument && (
-                              <span className="text-xs text-muted-foreground truncate">
-                                Selected file: {uploadedFiles.outsourcingContractDocument.name}
-                              </span>
-                            )}
-                          </div>
+                        <input
+                          id="outsourcingContractDocumentInput"
+                          type="file"
+                          accept=".pdf,.jpg,.jpeg,.png"
+                          className="hidden"
+                          onChange={handleFileChange("outsourcingContractDocument")}
+                        />
+                        <div className="flex flex-col gap-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs px-2 gap-1"
+                            onClick={() => handlePreview(uploadedFiles.outsourcingContractDocument)}
+                            disabled={!uploadedFiles.outsourcingContractDocument}
+                          >
+                            <Eye className="h-3 w-3" />
+                            Preview
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs gap-1"
+                            onClick={() => handleDownload(uploadedFiles.outsourcingContractDocument)}
+                            disabled={!uploadedFiles.outsourcingContractDocument}
+                          >
+                            <Download className="h-3 w-3" />
+                            Download
+                          </Button>
                         </div>
-                      </>
-                    )}
-                  </div>
+                        {uploadedFiles.outsourcingContractDocument && (
+                          <span className="text-xs text-muted-foreground truncate">
+                            Selected file: {uploadedFiles.outsourcingContractDocument.name}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </>
                 )}
               </div>
             )}
           </div>
-        </div>
-      )}
+          <DialogFooter>
+            <Button type="button" className="ml-auto" onClick={() => {
+              if (modalBusiness) {
+                setSavedContracts(prev => ({ ...prev, [modalBusiness]: true }));
+              }
+              setModalOpen(false);
+            }}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Preview Modal */}
+      <Dialog open={!!previewBusiness} onOpenChange={() => setPreviewBusiness(null)}>
+        <DialogContent className="max-w-2xl w-full h-[500px] p-4 gap-0">
+          <DialogHeader className="mb-0 pb-0">
+            <DialogTitle className="text-base leading-tight m-0 p-0">
+              {previewBusiness} Contract Preview
+            </DialogTitle>
+          </DialogHeader>
+          <div className="overflow-y-scroll overflow-x-hidden max-h-[350px] pr-1 flex flex-col gap-1 ">
+            {/* Render contract fields in read-only mode. You can customize this as needed. */}
+            {previewBusiness && ["Recruitment", "HR Managed Services", "IT & Technology"].includes(previewBusiness) && (
+              <div className="flex flex-col gap-2 mt-4">
+                <div className="flex flex-row gap-4">
+                  <div className="flex-1 space-y-1">
+                    <Label>Contract Start Date</Label>
+                    <div className="grid gap-2">
+                      <div className="w-full border rounded px-3 py-2 bg-muted/50">
+                        {formData.contractStartDate ? format(formData.contractStartDate, "PPP") : "-"}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <Label>Contract End Date</Label>
+                    <div className="grid gap-2">
+                      <div className="w-full border rounded px-3 py-2 bg-muted/50">
+                        {formData.contractEndDate ? format(formData.contractEndDate, "PPP") : "-"}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <Label>Contract Type</Label>
+                    <div className="w-full border rounded px-3 py-2 bg-muted/50">
+                      {formData.contractType || "-"}
+                    </div>
+                  </div>
+                </div>
+                {/* Add more read-only fields as needed */}
+              </div>
+            )}
+            {previewBusiness && ["HR Consulting", "Mgt Consulting"].includes(previewBusiness) && (
+              <div className="flex flex-col gap-2 mt-4">
+                <div className="flex flex-row gap-4">
+                  <div className="flex-1 space-y-1">
+                    <Label>Contract Start Date</Label>
+                    <div className="grid gap-2">
+                      <div className="w-full border rounded px-3 py-2 bg-muted/50">
+                        {formData.contractStartDate ? format(formData.contractStartDate, "PPP") : "-"}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <Label>Contract End Date</Label>
+                    <div className="grid gap-2">
+                      <div className="w-full border rounded px-3 py-2 bg-muted/50">
+                        {formData.contractEndDate ? format(formData.contractEndDate, "PPP") : "-"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex flex-row gap-4 mt-2">
+                  <div className="flex-1 space-y-1">
+                    <Label>Technical Proposal</Label>
+                    <div className="w-full border rounded px-3 py-2 bg-muted/50">
+                      {formData.technicalProposalNotes || "-"}
+                    </div>
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <Label>Financial Proposal</Label>
+                    <div className="w-full border rounded px-3 py-2 bg-muted/50">
+                      {formData.financialProposalNotes || "-"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            {/* Add more preview layouts for other business types as needed */}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

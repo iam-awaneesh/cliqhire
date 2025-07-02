@@ -21,6 +21,16 @@ interface ContactDetailsTabProps {
   handleDownload: (file: File | null) => void;
   technicalProposalOptionInputRef: React.RefObject<HTMLInputElement>;
   financialProposalOptionInputRef: React.RefObject<HTMLInputElement>;
+  errors?: {
+    name?: string;
+    phoneNumber?: string;
+    address?: string;
+    primaryContacts?: string;
+    website?: string;
+    linkedInProfile?: string;
+    googleMapsLink?: string;
+    primaryContactEmails?: string;
+  };
 }
 
 export function ContactDetailsTab({
@@ -34,6 +44,7 @@ export function ContactDetailsTab({
   handleDownload,
   technicalProposalOptionInputRef,
   financialProposalOptionInputRef,
+  errors = {},
 }: ContactDetailsTabProps) {
   const getCountryCodeLabel = (code: string) => {
     const country = countryCodes.find((option) => option.code === code);
@@ -45,7 +56,7 @@ export function ContactDetailsTab({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 pt-4 pb-2">
         {/* Client Name */}
         <div className="space-y-1">
-          <Label htmlFor="name">Client Name *</Label>
+          <Label htmlFor="name">Client Name<span className="text-red-700">*</span></Label>
           <Input
             id="name"
             value={formData.name}
@@ -54,6 +65,7 @@ export function ContactDetailsTab({
             className="w-full"
             placeholder="Enter client name"
           />
+          {errors.name && <div className="text-xs text-red-500 mt-1">{errors.name}</div>}
         </div>
 
         {/* Client Email(s) */}
@@ -72,7 +84,7 @@ export function ContactDetailsTab({
 
         {/* Client Landline Number */}
         <div className="space-y-1">
-          <Label htmlFor="phoneNumber">Client Landline Number *</Label>
+          <Label htmlFor="phoneNumber">Client Landline Number<span className="text-red-700">*</span></Label>
           <PhoneInput
             country={"sa"}
             value={formData.phoneNumber || "966"}
@@ -81,11 +93,14 @@ export function ContactDetailsTab({
             inputProps={{ id: "phoneNumber", required: true }}
             enableSearch={true}
           />
+          {errors.phoneNumber && (
+            <div className="text-xs text-red-500 mt-1">{errors.phoneNumber}</div>
+          )}
         </div>
 
         {/* Client Address */}
         <div className="space-y-1">
-          <Label htmlFor="address">Client Address *</Label>
+          <Label htmlFor="address">Client Address <span className="text-red-700">*</span></Label>
           <Input
             id="address"
             value={formData.address}
@@ -94,6 +109,7 @@ export function ContactDetailsTab({
             required
             className="w-full"
           />
+          {errors.address && <div className="text-xs text-red-500 mt-1">{errors.address}</div>}
         </div>
 
         {/* Client Website */}
@@ -148,7 +164,7 @@ export function ContactDetailsTab({
       {/* Primary Contacts full row */}
       <div className="space-y-1 mb-6">
         <div className="flex items-center justify-between mb-2">
-          <Label>Primary Contacts *</Label>
+          <Label>Primary Contacts <span className="text-red-700">*</span></Label>
           <Button
             variant="outline"
             size="sm"
@@ -166,6 +182,9 @@ export function ContactDetailsTab({
             Add
           </Button>
         </div>
+        {errors.primaryContacts && (
+          <div className="text-xs text-red-500 mb-2">{errors.primaryContacts}</div>
+        )}
         <div className="bg-white rounded-lg border shadow-sm p-4">
           {formData.primaryContacts.length === 0 ? (
             <div className="text-sm text-muted-foreground text-center py-4">No contacts added.</div>
