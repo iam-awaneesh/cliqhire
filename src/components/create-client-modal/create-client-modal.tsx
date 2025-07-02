@@ -405,6 +405,89 @@ export function CreateClientModal({
     }
 
     try {
+      // Always create the payload, regardless of selectedLevels
+      const formDataToSend = new FormData();
+      formDataToSend.append("name", formData.name.trim());
+      if (formData.emails && formData.emails.length > 0) {
+        formDataToSend.append("emails", JSON.stringify(formData.emails));
+      }
+      formDataToSend.append("phoneNumber", formData.phoneNumber);
+      if (formData.website) {
+        formDataToSend.append("website", formData.website);
+      }
+      formDataToSend.append("industry", formData.industry || "");
+      formDataToSend.append("address", formData.address || "");
+      if (formData.googleMapsLink) {
+        formDataToSend.append("googleMapsLink", formData.googleMapsLink);
+      }
+      if (Array.isArray(formData.lineOfBusiness)) {
+        formDataToSend.append("lineOfBusiness", JSON.stringify(formData.lineOfBusiness));
+      } else if (typeof formData.lineOfBusiness === "string") {
+        const lineOfBusinessArray = formData.lineOfBusiness.split(",").filter(Boolean);
+        formDataToSend.append("lineOfBusiness", JSON.stringify(lineOfBusinessArray));
+      }
+      if (formData.countryOfBusiness) {
+        formDataToSend.append("countryOfBusiness", formData.countryOfBusiness);
+      }
+      formDataToSend.append("referredBy", formData.referredBy || "");
+      if (formData.linkedInProfile) {
+        formDataToSend.append("linkedInProfile", formData.linkedInProfile);
+      }
+      formDataToSend.append("countryCode", formData.countryCode || "+966");
+      if (formData.primaryContacts && formData.primaryContacts.length > 0) {
+        formDataToSend.append(
+          "primaryContacts",
+          JSON.stringify(
+            formData.primaryContacts.map((contact) => ({
+              name: `${contact.firstName || ""} ${contact.lastName || ""}`.trim(),
+              gender: contact.gender,
+              email: contact.email,
+              phone: contact.phone,
+              countryCode: contact.countryCode,
+              designation: contact.designation,
+              linkedin: contact.linkedin || "",
+              isPrimary: contact.isPrimary,
+            })),
+          ),
+        );
+      }
+      formDataToSend.append("clientTeam", formData.clientTeam || "Enterprise");
+      if (clientSubStages.includes(formData.clientStage!)) {
+        formDataToSend.append("clientStage", "Engaged");
+        formDataToSend.append("clientStageStatus", formData.clientStage || "");
+      } else {
+        formDataToSend.append("clientStage", formData.clientStage || "");
+      }
+      formDataToSend.append("salesLead", formData.salesLead ?? "");
+      if (formData.clientPriority) {
+        formDataToSend.append("clientPriority", formData.clientPriority.toString());
+      }
+      if (formData.clientSegment) {
+        formDataToSend.append("clientSegment", formData.clientSegment);
+      }
+      if (formData.clientSource) {
+        formDataToSend.append("clientSource", formData.clientSource);
+      }
+      if (formData.technicalProposalNotes) {
+        formDataToSend.append("technicalProposalNotes", formData.technicalProposalNotes);
+      }
+      if (formData.financialProposalNotes) {
+        formDataToSend.append("financialProposalNotes", formData.financialProposalNotes);
+      }
+      if (formData.contractStartDate) {
+        const startDate = new Date(formData.contractStartDate);
+        const startDateStr = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, "0")}-${String(startDate.getDate()).padStart(2, "0")}`;
+        formDataToSend.append("contractStartDate", startDateStr);
+      }
+      if (formData.contractEndDate) {
+        const endDate = new Date(formData.contractEndDate);
+        const endDateStr = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, "0")}-${String(endDate.getDate()).padStart(2, "0")}`;
+        formDataToSend.append("contractEndDate", endDateStr);
+      }
+      if (formData.contractType) {
+        formDataToSend.append("contractType", formData.contractType);
+      }
+      // Only add level-based fields if selectedLevels has values
       if (selectedLevels?.length) {
         const labelType: Record<string, string> = {};
         const fieldMap: Record<string, string> = {
@@ -412,118 +495,12 @@ export function CreateClientModal({
           Executives: "executives",
           "Non-Executives": "nonExecutives",
         };
-
         selectedLevels.forEach((level) => {
           const fieldName = fieldMap[level] || "other";
-
           if (!labelType[fieldName]) {
             labelType[fieldName] = level;
           }
         });
-
-        const formDataToSend = new FormData();
-
-        formDataToSend.append("name", formData.name.trim());
-
-        if (formData.emails && formData.emails.length > 0) {
-          formDataToSend.append("emails", JSON.stringify(formData.emails));
-        }
-
-        formDataToSend.append("phoneNumber", formData.phoneNumber);
-
-        if (formData.website) {
-          formDataToSend.append("website", formData.website);
-        }
-
-        formDataToSend.append("industry", formData.industry || "");
-        formDataToSend.append("address", formData.address || "");
-
-        if (formData.googleMapsLink) {
-          formDataToSend.append("googleMapsLink", formData.googleMapsLink);
-        }
-
-        if (Array.isArray(formData.lineOfBusiness)) {
-          formDataToSend.append("lineOfBusiness", JSON.stringify(formData.lineOfBusiness));
-        } else if (typeof formData.lineOfBusiness === "string") {
-          const lineOfBusinessArray = formData.lineOfBusiness.split(",").filter(Boolean);
-          formDataToSend.append("lineOfBusiness", JSON.stringify(lineOfBusinessArray));
-        }
-
-        if (formData.countryOfBusiness) {
-          formDataToSend.append("countryOfBusiness", formData.countryOfBusiness);
-        }
-
-        formDataToSend.append("referredBy", formData.referredBy || "");
-
-        if (formData.linkedInProfile) {
-          formDataToSend.append("linkedInProfile", formData.linkedInProfile);
-        }
-
-        formDataToSend.append("countryCode", formData.countryCode || "+966");
-
-        if (formData.primaryContacts && formData.primaryContacts.length > 0) {
-          formDataToSend.append(
-            "primaryContacts",
-            JSON.stringify(
-              formData.primaryContacts.map((contact) => ({
-                name: `${contact.firstName || ""} ${contact.lastName || ""}`.trim(),
-                gender: contact.gender,
-                email: contact.email,
-                phone: contact.phone,
-                countryCode: contact.countryCode,
-                designation: contact.designation,
-                linkedin: contact.linkedin || "",
-                isPrimary: contact.isPrimary,
-              })),
-            ),
-          );
-        }
-
-        formDataToSend.append("clientTeam", formData.clientTeam || "Enterprise");
-        if (clientSubStages.includes(formData.clientStage!)) {
-          formDataToSend.append("clientStage", "Engaged");
-          formDataToSend.append("clientStageStatus", formData.clientStage || "");
-        } else {
-          formDataToSend.append("clientStage", formData.clientStage || "");
-        }
-        formDataToSend.append("salesLead", formData.salesLead ?? "");
-
-        if (formData.clientPriority) {
-          formDataToSend.append("clientPriority", formData.clientPriority.toString());
-        }
-
-        if (formData.clientSegment) {
-          formDataToSend.append("clientSegment", formData.clientSegment);
-        }
-
-        if (formData.clientSource) {
-          formDataToSend.append("clientSource", formData.clientSource);
-        }
-
-        if (formData.technicalProposalNotes) {
-          formDataToSend.append("technicalProposalNotes", formData.technicalProposalNotes);
-        }
-
-        if (formData.financialProposalNotes) {
-          formDataToSend.append("financialProposalNotes", formData.financialProposalNotes);
-        }
-
-        if (formData.contractStartDate) {
-          const startDate = new Date(formData.contractStartDate);
-          const startDateStr = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, "0")}-${String(startDate.getDate()).padStart(2, "0")}`;
-          formDataToSend.append("contractStartDate", startDateStr);
-        }
-
-        if (formData.contractEndDate) {
-          const endDate = new Date(formData.contractEndDate);
-          const endDateStr = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, "0")}-${String(endDate.getDate()).padStart(2, "0")}`;
-          formDataToSend.append("contractEndDate", endDateStr);
-        }
-
-        if (formData.contractType) {
-          formDataToSend.append("contractType", formData.contractType);
-        }
-
         if (formData.contractType === "Level Based (Hiring)") {
           if (selectedLevels.includes("Senior Level")) {
             formDataToSend.append(
@@ -559,29 +536,6 @@ export function CreateClientModal({
             formDataToSend.append("otherNotes", formData.otherNotes);
           }
         }
-
-        if (formData.contractType === "Fix with Advance") {
-          if (
-            formData.fixWithoutAdvanceValue !== undefined &&
-            formData.fixWithoutAdvanceValue !== null
-          )
-            formDataToSend.append(
-              "fixWithoutAdvanceValue",
-              formData.fixWithoutAdvanceValue.toString(),
-            );
-          if (
-            formData.fixWithoutAdvance !== undefined &&
-            formData.fixWithoutAdvance !== null &&
-            formData.fixWithoutAdvance !== ""
-          )
-            formDataToSend.append("fixWithoutAdvance", formData.fixWithoutAdvance.toString());
-          if (formData.fixedPercentageAdvanceNotes)
-            formDataToSend.append(
-              "fixedPercentageAdvanceNotes",
-              formData.fixedPercentageAdvanceNotes,
-            );
-        }
-
         if (formData.contractType === "Level Based With Advance") {
           if (selectedLevels.includes("Senior Level")) {
             if (formData.seniorLevelPercentage !== undefined)
@@ -632,155 +586,166 @@ export function CreateClientModal({
             if (formData.otherNotes) formDataToSend.append("otherNotes", formData.otherNotes);
           }
         }
-
-        if (formData.cLevelPercentage) {
-          formDataToSend.append("cLevelPercentage", formData.cLevelPercentage.toString());
-        }
-
-        if (formData.belowCLevelPercentage) {
-          formDataToSend.append("belowCLevelPercentage", formData.belowCLevelPercentage.toString());
-        }
-
-        if (formData.fixedPercentageNotes) {
-          formDataToSend.append("fixedPercentageNotes", formData.fixedPercentageNotes);
-        }
-
-        if (formData.cLevelPercentageNotes) {
-          formDataToSend.append("cLevelPercentageNotes", formData.cLevelPercentageNotes);
-        }
-
-        if (formData.fixWithoutAdvanceNotes) {
-          formDataToSend.append("fixWithoutAdvanceNotes", formData.fixWithoutAdvanceNotes);
-        }
-
-        if (formData.fixedPercentage) {
-          formDataToSend.append("fixedPercentage", formData.fixedPercentage.toString());
-        }
-
-        if (formData.fixWithoutAdvanceValue) {
+      }
+      if (formData.contractType === "Fix with Advance") {
+        if (
+          formData.fixWithoutAdvanceValue !== undefined &&
+          formData.fixWithoutAdvanceValue !== null
+        )
           formDataToSend.append(
             "fixWithoutAdvanceValue",
             formData.fixWithoutAdvanceValue.toString(),
           );
-        }
-
-        const fileFields: (keyof typeof uploadedFiles)[] = [
-          "crCopy",
-          "vatCopy",
-          "gstTinDocument",
-          "fixedPercentage",
-          "fixedPercentageAdvance",
-          "variablePercentageCLevel",
-          "variablePercentageBelowCLevel",
-          "fixWithoutAdvance",
-          "seniorLevel",
-          "executives",
-          "nonExecutives",
-          "other",
-          "profileImage",
-          "technicalProposal",
-          "financialProposal",
-        ];
-
-        for (const field of fileFields) {
-          if (uploadedFiles[field]) {
-            formDataToSend.append(field.toString(), uploadedFiles[field]!);
-          }
-        }
-
-        const payload = { ...formData };
-        const result = await createClient(formDataToSend);
-
-        if (result && result.success && result.data && result.data.data && result.data.data._id) {
-          router.push(`/clients/${result.data.data._id}`);
-          return;
-        }
-
-        setFormData({
-          name: "",
-          emails: [],
-          phoneNumber: "",
-          website: "",
-          industry: "",
-          location: "",
-          address: "",
-          googleMapsLink: "",
-          incorporationDate: "",
-          registrationNumber: "",
-          lineOfBusiness: [],
-          countryOfBusiness: "",
-          referredBy: "",
-          linkedInProfile: "",
-          linkedInPage: "",
-          countryCode: "+966",
-          primaryContacts: [],
-          clientStage: undefined,
-          clientTeam: "Enterprise",
-          clientRm: "",
-          clientAge: 0,
-          contractNumber: "",
-          contractStartDate: null,
-          contractEndDate: null,
-          contractValue: 0,
-          contractType: "",
-          cLevelPercentage: 0,
-          belowCLevelPercentage: 0,
-          fixedPercentageNotes: "",
-          fixedPercentageAdvanceNotes: "",
-          advanceMoneyCurrency: "USD",
-          advanceMoneyAmount: 0,
-          cLevelPercentageNotes: "",
-          fixWithoutAdvanceNotes: "",
-          seniorLevelPercentage: 0,
-          executivesPercentage: 0,
-          nonExecutivesPercentage: 0,
-          otherPercentage: 0,
-          seniorLevelNotes: "",
-          executivesNotes: "",
-          nonExecutivesNotes: "",
-          otherNotes: "",
-          salesLead: "",
-          clientPriority: 1,
-          clientSegment: "",
-          clientSource: undefined,
-          proposalOptions: [],
-          businessContracts: {},
-        });
-        setEmailInput("");
-        setUploadedFiles({
-          profileImage: null,
-          crCopy: null,
-          vatCopy: null,
-          gstTinDocument: null,
-          fixedPercentage: null,
-          fixedPercentageAdvance: null,
-          variablePercentageCLevel: null,
-          variablePercentageBelowCLevel: null,
-          fixWithoutAdvance: null,
-          seniorLevel: null,
-          executives: null,
-          nonExecutives: null,
-          other: null,
-          technicalProposal: null,
-          financialProposal: null,
-        });
-        setNewContact({
-          firstName: "",
-          lastName: "",
-          gender: "",
-          email: "",
-          phone: "",
-          countryCode: "+966",
-          designation: "",
-          linkedin: "",
-          isPrimary: true,
-        });
-        setCurrentTab(0);
-        setIsContactModalOpen(false);
-        setSelectedLevels([]);
-        setActiveLevel(null);
-        onOpenChange(false);
+        if (
+          formData.fixWithoutAdvance !== undefined &&
+          formData.fixWithoutAdvance !== null &&
+          formData.fixWithoutAdvance !== ""
+        )
+          formDataToSend.append("fixWithoutAdvance", formData.fixWithoutAdvance.toString());
+        if (formData.fixedPercentageAdvanceNotes)
+          formDataToSend.append(
+            "fixedPercentageAdvanceNotes",
+            formData.fixedPercentageAdvanceNotes,
+          );
       }
+      if (formData.cLevelPercentage) {
+        formDataToSend.append("cLevelPercentage", formData.cLevelPercentage.toString());
+      }
+      if (formData.belowCLevelPercentage) {
+        formDataToSend.append("belowCLevelPercentage", formData.belowCLevelPercentage.toString());
+      }
+      if (formData.fixedPercentageNotes) {
+        formDataToSend.append("fixedPercentageNotes", formData.fixedPercentageNotes);
+      }
+      if (formData.cLevelPercentageNotes) {
+        formDataToSend.append("cLevelPercentageNotes", formData.cLevelPercentageNotes);
+      }
+      if (formData.fixWithoutAdvanceNotes) {
+        formDataToSend.append("fixWithoutAdvanceNotes", formData.fixWithoutAdvanceNotes);
+      }
+      if (formData.fixedPercentage) {
+        formDataToSend.append("fixedPercentage", formData.fixedPercentage.toString());
+      }
+      if (formData.fixWithoutAdvanceValue) {
+        formDataToSend.append("fixWithoutAdvanceValue", formData.fixWithoutAdvanceValue.toString());
+      }
+      const fileFields: (keyof typeof uploadedFiles)[] = [
+        "crCopy",
+        "vatCopy",
+        "gstTinDocument",
+        "fixedPercentage",
+        "fixedPercentageAdvance",
+        "variablePercentageCLevel",
+        "variablePercentageBelowCLevel",
+        "fixWithoutAdvance",
+        "seniorLevel",
+        "executives",
+        "nonExecutives",
+        "other",
+        "profileImage",
+        "technicalProposal",
+        "financialProposal",
+      ];
+      for (const field of fileFields) {
+        if (uploadedFiles[field]) {
+          formDataToSend.append(field.toString(), uploadedFiles[field]!);
+        }
+      }
+      // Debug log: print all key-value pairs in FormData before sending
+      for (let pair of formDataToSend.entries()) {
+        console.log(`[CreateClientModal] Payload: ${pair[0]}:`, pair[1]);
+      }
+      const payload = { ...formData };
+      const result = await createClient(formDataToSend);
+      if (result && result.success && result.data && result.data.data && result.data.data._id) {
+        router.push(`/clients/${result.data.data._id}`);
+        return;
+      }
+
+      setFormData({
+        name: "",
+        emails: [],
+        phoneNumber: "",
+        website: "",
+        industry: "",
+        location: "",
+        address: "",
+        googleMapsLink: "",
+        incorporationDate: "",
+        registrationNumber: "",
+        lineOfBusiness: [],
+        countryOfBusiness: "",
+        referredBy: "",
+        linkedInProfile: "",
+        linkedInPage: "",
+        countryCode: "+966",
+        primaryContacts: [],
+        clientStage: undefined,
+        clientTeam: "Enterprise",
+        clientRm: "",
+        clientAge: 0,
+        contractNumber: "",
+        contractStartDate: null,
+        contractEndDate: null,
+        contractValue: 0,
+        contractType: "",
+        cLevelPercentage: 0,
+        belowCLevelPercentage: 0,
+        fixedPercentageNotes: "",
+        fixedPercentageAdvanceNotes: "",
+        advanceMoneyCurrency: "USD",
+        advanceMoneyAmount: 0,
+        cLevelPercentageNotes: "",
+        fixWithoutAdvanceNotes: "",
+        seniorLevelPercentage: 0,
+        executivesPercentage: 0,
+        nonExecutivesPercentage: 0,
+        otherPercentage: 0,
+        seniorLevelNotes: "",
+        executivesNotes: "",
+        nonExecutivesNotes: "",
+        otherNotes: "",
+        salesLead: "",
+        clientPriority: 1,
+        clientSegment: "",
+        clientSource: undefined,
+        proposalOptions: [],
+        businessContracts: {},
+      });
+      setEmailInput("");
+      setUploadedFiles({
+        profileImage: null,
+        crCopy: null,
+        vatCopy: null,
+        gstTinDocument: null,
+        fixedPercentage: null,
+        fixedPercentageAdvance: null,
+        variablePercentageCLevel: null,
+        variablePercentageBelowCLevel: null,
+        fixWithoutAdvance: null,
+        seniorLevel: null,
+        executives: null,
+        nonExecutives: null,
+        other: null,
+        technicalProposal: null,
+        financialProposal: null,
+      });
+      setNewContact({
+        firstName: "",
+        lastName: "",
+        gender: "",
+        email: "",
+        phone: "",
+        countryCode: "+966",
+        designation: "",
+        linkedin: "",
+        isPrimary: true,
+      });
+      setCurrentTab(0);
+      setIsContactModalOpen(false);
+      setSelectedLevels([]);
+      setActiveLevel(null);
+      onOpenChange(false);
     } catch (error) {
       console.error("Error creating client:", error);
       setErrors({ general: "An error occurred while creating the client. Please try again." });
@@ -879,7 +844,12 @@ export function CreateClientModal({
                   handleInputChange={handleInputChange}
                   technicalProposalOptionInputRef={technicalProposalOptionInputRef}
                   financialProposalOptionInputRef={financialProposalOptionInputRef}
-                  setBusinessContracts={(business, data) => setFormData(prev => ({ ...prev, businessContracts: { ...prev.businessContracts, [business]: data } }))}
+                  setBusinessContracts={(business, data) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      businessContracts: { ...prev.businessContracts, [business]: data },
+                    }))
+                  }
                   savedContracts={savedContracts}
                   setSavedContracts={setSavedContracts}
                 />
@@ -924,12 +894,22 @@ export function CreateClientModal({
                       )}
                       {currentTab < 3 ? (
                         <>
-                          {console.log('[CreateClientModal] savedContracts:', savedContracts, 'contractsSaved:', contractsSaved)}
-                          {console.log('[CreateClientModal] Next button render. currentTab:', currentTab, 'disabled:', loading || (currentTab === 2 && !contractsSaved))}
+                          {console.log(
+                            "[CreateClientModal] savedContracts:",
+                            savedContracts,
+                            "contractsSaved:",
+                            contractsSaved,
+                          )}
+                          {console.log(
+                            "[CreateClientModal] Next button render. currentTab:",
+                            currentTab,
+                            "disabled:",
+                            loading,
+                          )}
                           <Button
                             type="button"
                             onClick={handleNext}
-                            disabled={loading || (currentTab === 2 && !contractsSaved)}
+                            disabled={loading}
                             className="w-full sm:w-auto"
                           >
                             Next

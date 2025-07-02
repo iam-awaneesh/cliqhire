@@ -998,7 +998,9 @@ export function ContractInformationTab({
             )}
           </div>
           <DialogFooter>
-            <Button type="button" className="ml-auto" onClick={() => {
+            <Button type="button" className="ml-auto" onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
               if (modalBusiness) {
                 setSavedContracts(prev => ({ ...prev, [modalBusiness]: true }));
                 setBusinessContracts(modalBusiness, { ...formData });
