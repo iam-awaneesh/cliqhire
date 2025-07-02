@@ -847,7 +847,7 @@ export function ContractInformationTab({
                   {/* Dates and Contract Type in one row */}
                   <div className="flex flex-row gap-2">
                     {/* Contract Start Date */}
-                    <div className="flex-1 space-y-1">
+                    <div className="flex-1 space-y-1 ml-2">
                       <Label htmlFor="outsourcingContractStartDate">Contract Start Date</Label>
                       <div className="grid gap-2">
                         <Popover open={openStart} onOpenChange={setOpenStart} modal>
@@ -935,135 +935,125 @@ export function ContractInformationTab({
                       </Select>
                     </div>
                   </div>
-                  {/* Show details if a contract type is selected */}
-                  {formData.outsourcingContractType && (
-                    <>
-                      <div className="flex flex-row gap-4 mt-4">
-                        <div className="flex-1">
-                          <Label>Service Category</Label>
-                          <Input
-                            value={formData.outsourcingServiceCategory || ""}
-                            onChange={(e) =>
-                              setFormData((prev) => ({
-                                ...prev,
-                                outsourcingServiceCategory: e.target.value,
-                              }))
-                            }
-                            placeholder="Service Category"
-                          />
-                        </div>
-                        <div className="flex-1">
-                          <Label>Number of Resources</Label>
-                          <Input
-                            type="number"
-                            value={formData.outsourcingNumResources || ""}
-                            onChange={(e) =>
-                              setFormData((prev) => ({
-                                ...prev,
-                                outsourcingNumResources: e.target.value,
-                              }))
-                            }
-                            placeholder="Number of Resources"
-                          />
-                        </div>
-                        <div className="flex-1">
-                          <Label>Duration Per Resource</Label>
-                          <Input
-                            value={formData.outsourcingDurationPerResource || ""}
-                            onChange={(e) =>
-                              setFormData((prev) => ({
-                                ...prev,
-                                outsourcingDurationPerResource: e.target.value,
-                              }))
-                            }
-                            placeholder="Duration Per Resource"
-                          />
-                        </div>
-                        <div className="flex-1">
-                          <Label>SLA Terms</Label>
-                          <Input
-                            value={formData.outsourcingSlaTerms || ""}
-                            onChange={(e) =>
-                              setFormData((prev) => ({
-                                ...prev,
-                                outsourcingSlaTerms: e.target.value,
-                              }))
-                            }
-                            placeholder="SLA Terms"
-                          />
-                        </div>
-                        <div className="flex-1">
-                          <Label>Total Cost</Label>
-                          <Input
-                            type="number"
-                            value={formData.outsourcingTotalCost || ""}
-                            onChange={(e) =>
-                              setFormData((prev) => ({
-                                ...prev,
-                                outsourcingTotalCost: e.target.value,
-                              }))
-                            }
-                            placeholder="Total Cost"
-                          />
-                        </div>
+                  {/* Always show details fields, even if contract type is not selected */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                    <div className="flex-1 ml-2">
+                      <Label>Service Category</Label>
+                      <Input
+                        value={formData.outsourcingServiceCategory || ""}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            outsourcingServiceCategory: e.target.value,
+                          }))
+                        }
+                        placeholder="Service Category"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <Label>Number of Resources</Label>
+                      <Input
+                        type="number"
+                        value={formData.outsourcingNumResources || ""}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            outsourcingNumResources: e.target.value,
+                          }))
+                        }
+                        placeholder="Number of Resources"
+                      />
+                    </div>
+                    <div className="flex-1 ml-2">
+                      <Label>Duration Per Resource</Label>
+                      <Input
+                        value={formData.outsourcingDurationPerResource || ""}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            outsourcingDurationPerResource: e.target.value,
+                          }))
+                        }
+                        placeholder="Duration Per Resource"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <Label>SLA Terms</Label>
+                      <Input
+                        value={formData.outsourcingSlaTerms || ""}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            outsourcingSlaTerms: e.target.value,
+                          }))
+                        }
+                        placeholder="SLA Terms"
+                      />
+                    </div>
+                    <div className="flex-1 ml-2">
+                      <Label>Total Cost</Label>
+                      <Input
+                        type="number"
+                        value={formData.outsourcingTotalCost || ""}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            outsourcingTotalCost: e.target.value,
+                          }))
+                        }
+                        placeholder="Total Cost"
+                      />
+                    </div>
+                  </div>
+                  {/* Contract Document row */}
+                  <div className="space-y-2 mt-4">
+                    <Label className="text-sm sm:text-base font-semibold">Contract Document</Label>
+                    <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 items-center">
+                      <div
+                        className="border-2 border-dashed rounded-lg p-2 text-center cursor-pointer hover:bg-muted/50 flex-1 w-full"
+                        onClick={() =>
+                          document.getElementById("outsourcingContractDocumentInput")?.click()
+                        }
+                      >
+                        <Upload className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
+                        <p className="text-xs text-muted-foreground">Upload (PDF, JPEG, PNG)</p>
                       </div>
-                      {/* Contract Document row */}
-                      <div className="space-y-2 mt-4">
-                        <Label className="text-sm sm:text-base font-semibold">
-                          Contract Document
-                        </Label>
-                        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 items-center">
-                          <div
-                            className="border-2 border-dashed rounded-lg p-2 text-center cursor-pointer hover:bg-muted/50 flex-1 w-full"
-                            onClick={() =>
-                              document.getElementById("outsourcingContractDocumentInput")?.click()
-                            }
-                          >
-                            <Upload className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
-                            <p className="text-xs text-muted-foreground">Upload (PDF, JPEG, PNG)</p>
-                          </div>
-                          <input
-                            id="outsourcingContractDocumentInput"
-                            type="file"
-                            accept=".pdf,.jpg,.jpeg,.png"
-                            className="hidden"
-                            onChange={handleFileChange("outsourcingContractDocument")}
-                          />
-                          <div className="flex flex-col gap-1">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-7 text-xs px-2 gap-1"
-                              onClick={() =>
-                                handlePreview(uploadedFiles.outsourcingContractDocument)
-                              }
-                              disabled={!uploadedFiles.outsourcingContractDocument}
-                            >
-                              <Eye className="h-3 w-3" />
-                              Preview
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-7 text-xs gap-1"
-                              onClick={() =>
-                                handleDownload(uploadedFiles.outsourcingContractDocument)
-                              }
-                              disabled={!uploadedFiles.outsourcingContractDocument}
-                            >
-                              <Download className="h-3 w-3" />
-                              Download
-                            </Button>
-                          </div>
-                          {uploadedFiles.outsourcingContractDocument && (
-                            <span className="text-xs text-muted-foreground truncate">
-                              Selected file: {uploadedFiles.outsourcingContractDocument.name}
-                            </span>
-                          )}
-                        </div>
+                      <input
+                        id="outsourcingContractDocumentInput"
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        className="hidden"
+                        onChange={handleFileChange("outsourcingContractDocument")}
+                      />
+                      <div className="flex flex-col gap-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-xs px-2 gap-1"
+                          onClick={() => handlePreview(uploadedFiles.outsourcingContractDocument)}
+                          disabled={!uploadedFiles.outsourcingContractDocument}
+                        >
+                          <Eye className="h-3 w-3" />
+                          Preview
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-xs gap-1"
+                          onClick={() => handleDownload(uploadedFiles.outsourcingContractDocument)}
+                          disabled={!uploadedFiles.outsourcingContractDocument}
+                        >
+                          <Download className="h-3 w-3" />
+                          Download
+                        </Button>
                       </div>
-                    </>
-                  )}
+                      {uploadedFiles.outsourcingContractDocument && (
+                        <span className="text-xs text-muted-foreground truncate">
+                          Selected file: {uploadedFiles.outsourcingContractDocument.name}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
