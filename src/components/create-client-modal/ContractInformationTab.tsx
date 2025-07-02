@@ -16,7 +16,7 @@ import { Upload, Eye, Download, CalendarIcon } from "lucide-react";
 import { ClientForm } from "@/components/create-client-modal/type";
 import { levelFieldMap } from "./constants";
 import { Textarea } from "@/components/ui/textarea";
-import { useState, Fragment } from "react";
+import { useState, Fragment, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose, DialogFooter } from "@/components/ui/dialog";
 
 interface ContractInformationTabProps {
@@ -35,6 +35,9 @@ interface ContractInformationTabProps {
   ) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
   technicalProposalOptionInputRef: React.RefObject<HTMLInputElement>;
   financialProposalOptionInputRef: React.RefObject<HTMLInputElement>;
+  setBusinessContracts: (business: string, data: any) => void;
+  savedContracts: { [business: string]: boolean };
+  setSavedContracts: React.Dispatch<React.SetStateAction<{ [business: string]: boolean }>>;
 }
 
 export function ContractInformationTab({
@@ -51,6 +54,9 @@ export function ContractInformationTab({
   technicalProposalOptionInputRef,
   financialProposalOptionInputRef,
   handleInputChange,
+  setBusinessContracts,
+  savedContracts,
+  setSavedContracts,
 }: ContractInformationTabProps) {
   const [openStart, setOpenStart] = useState(false);
   const [openEnd, setOpenEnd] = useState(false);
@@ -58,8 +64,6 @@ export function ContractInformationTab({
   const [previewBusinessTab, setPreviewBusinessTab] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalBusiness, setModalBusiness] = useState<string | null>(null);
-  const [savedContracts, setSavedContracts] = useState<{ [business: string]: boolean }>({});
-  const [previewBusiness, setPreviewBusiness] = useState<string | null>(null);
 
   const handleLevelChange = (level: string) => {
     setSelectedLevels((prev) =>
@@ -709,7 +713,7 @@ export function ContractInformationTab({
     <div className="space-y-6 pt-4 pb-2">
       <div className="space-y-1">
         <Label htmlFor="lineOfBusiness">
-          Line of Business *
+          Line of Business<span className="text-red-700">*</span>
         </Label>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 border rounded-md p-2">
           {businessOptions.map((option) => (
@@ -784,7 +788,7 @@ export function ContractInformationTab({
                         className="w-24"
                         variant={previewBusinessTab === business ? "default" : "outline"}
                         onClick={() => {
-                          setPreviewBusiness(business);
+                          setPreviewBusinessTab(business);
                         }}
                       >
                         Preview
@@ -997,6 +1001,7 @@ export function ContractInformationTab({
             <Button type="button" className="ml-auto" onClick={() => {
               if (modalBusiness) {
                 setSavedContracts(prev => ({ ...prev, [modalBusiness]: true }));
+                setBusinessContracts(modalBusiness, { ...formData });
               }
               setModalOpen(false);
             }}>Save</Button>
@@ -1005,16 +1010,16 @@ export function ContractInformationTab({
       </Dialog>
 
       {/* Preview Modal */}
-      <Dialog open={!!previewBusiness} onOpenChange={() => setPreviewBusiness(null)}>
+      <Dialog open={!!previewBusinessTab} onOpenChange={() => setPreviewBusinessTab(null)}>
         <DialogContent className="max-w-2xl w-full h-[500px] p-4 gap-0">
           <DialogHeader className="mb-0 pb-0">
             <DialogTitle className="text-base leading-tight m-0 p-0">
-              {previewBusiness} Contract Preview
+              {previewBusinessTab} Contract Preview
             </DialogTitle>
           </DialogHeader>
           <div className="overflow-y-scroll overflow-x-hidden max-h-[350px] pr-1 flex flex-col gap-1 ">
             {/* Render contract fields in read-only mode. You can customize this as needed. */}
-            {previewBusiness && ["Recruitment", "HR Managed Services", "IT & Technology"].includes(previewBusiness) && (
+            {previewBusinessTab && ["Recruitment", "HR Managed Services", "IT & Technology"].includes(previewBusinessTab) && (
               <div className="flex flex-col gap-2 mt-4">
                 <div className="flex flex-row gap-4">
                   <div className="flex-1 space-y-1">
@@ -1043,7 +1048,7 @@ export function ContractInformationTab({
                 {/* Add more read-only fields as needed */}
               </div>
             )}
-            {previewBusiness && ["HR Consulting", "Mgt Consulting"].includes(previewBusiness) && (
+            {previewBusinessTab && ["HR Consulting", "Mgt Consulting"].includes(previewBusinessTab) && (
               <div className="flex flex-col gap-2 mt-4">
                 <div className="flex flex-row gap-4">
                   <div className="flex-1 space-y-1">

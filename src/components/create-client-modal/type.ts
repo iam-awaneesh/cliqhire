@@ -94,6 +94,7 @@ export interface ClientForm {
   outsourcingSlaTerms?: string;
   outsourcingTotalCost?: string;
   outsourcingContractDocument?: any;
+  businessContracts?: Record<string, any>;
 }
 
 export interface CreateClientModalProps {

@@ -72,6 +72,7 @@ export function CreateClientModal({
     proposalOptions: [],
     technicalProposalNotes: "",
     financialProposalNotes: "",
+    businessContracts: {},
   });
 
   const [emailInput, setEmailInput] = useState<string>("");
@@ -129,6 +130,9 @@ export function CreateClientModal({
   const financialProposalOptionInputRef = useRef<HTMLInputElement>(null);
 
   const router = useRouter();
+
+  const [savedContracts, setSavedContracts] = useState<{ [business: string]: boolean }>({});
+  const contractsSaved = Object.values(savedContracts).some(Boolean);
 
   // Location suggestions
   useEffect(() => {
@@ -684,6 +688,7 @@ export function CreateClientModal({
           }
         }
 
+        const payload = { ...formData };
         const result = await createClient(formDataToSend);
 
         if (result && result.success && result.data && result.data.data && result.data.data._id) {
@@ -739,6 +744,7 @@ export function CreateClientModal({
           clientSegment: "",
           clientSource: undefined,
           proposalOptions: [],
+          businessContracts: {},
         });
         setEmailInput("");
         setUploadedFiles({
@@ -783,7 +789,8 @@ export function CreateClientModal({
   };
 
   const handleNext = () => {
-    setCurrentTab((prev) => Math.min(prev + 1, 3));
+    const newTab = Math.min(currentTab + 1, 3);
+    setCurrentTab(newTab);
   };
 
   const handlePrevious = () => {
@@ -872,6 +879,9 @@ export function CreateClientModal({
                   handleInputChange={handleInputChange}
                   technicalProposalOptionInputRef={technicalProposalOptionInputRef}
                   financialProposalOptionInputRef={financialProposalOptionInputRef}
+                  setBusinessContracts={(business, data) => setFormData(prev => ({ ...prev, businessContracts: { ...prev.businessContracts, [business]: data } }))}
+                  savedContracts={savedContracts}
+                  setSavedContracts={setSavedContracts}
                 />
               )}
               {currentTab === 3 && (
@@ -913,14 +923,18 @@ export function CreateClientModal({
                         </Button>
                       )}
                       {currentTab < 3 ? (
-                        <Button
-                          type="button"
-                          onClick={handleNext}
-                          disabled={loading}
-                          className="w-full sm:w-auto"
-                        >
-                          Next
-                        </Button>
+                        <>
+                          {console.log('[CreateClientModal] savedContracts:', savedContracts, 'contractsSaved:', contractsSaved)}
+                          {console.log('[CreateClientModal] Next button render. currentTab:', currentTab, 'disabled:', loading || (currentTab === 2 && !contractsSaved))}
+                          <Button
+                            type="button"
+                            onClick={handleNext}
+                            disabled={loading || (currentTab === 2 && !contractsSaved)}
+                            className="w-full sm:w-auto"
+                          >
+                            Next
+                          </Button>
+                        </>
                       ) : (
                         <>
                           <Button
