@@ -864,7 +864,7 @@ export function CreateClientModal({
               )}
 
               {/* Move DialogFooter and buttons inside the form */}
-              <div className="fixed left-1/2 -translate-x-1/2 bottom-0 w-full max-w-[95vw] sm:max-w-[90vw] md:max-w-3xl lg:max-w-4xl xl:max-w-5xl bg-white z-50 border-t p-4">
+              <div className="fixed left-1/2 -translate-x-1/2 bottom-0 w-full max-w-[95vw] sm:max-w-[90vw] md:max-w-3xl lg:max-w-4xl xl:max-w-5xl bg-white z-50 border-t p-4 rounded-b-xl shadow-lg">
                 <DialogFooter>
                   <div className="flex flex-col sm:flex-row justify-between w-full gap-2">
                     <div>

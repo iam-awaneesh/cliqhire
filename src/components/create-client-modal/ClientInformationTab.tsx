@@ -57,7 +57,7 @@ export function ClientInformationTab({
 }: ClientInformationTabProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 pt-4 pb-2">
-      <div className="space-y-1">
+      <div className="space-y-1 ml-2">
         <div className="flex items-center mb-1">
           <Popover>
             <PopoverTrigger asChild>
@@ -124,7 +124,7 @@ export function ClientInformationTab({
         </Select>
       </div>
 
-      <div className="space-y-1">
+      <div className="space-y-1 ml-2">
         <Label htmlFor="referredBy">Referred By (External)</Label>
         <Input
           id="referredBy"
@@ -159,7 +159,7 @@ export function ClientInformationTab({
         </Select>
       </div>
 
-      <div className="space-y-1">
+      <div className="space-y-1 ml-2">
         <Label htmlFor="clientSegment">Client Segment</Label>
         <Select
           onValueChange={(value) => setFormData((prev) => ({ ...prev, clientSegment: value }))}
@@ -212,7 +212,7 @@ export function ClientInformationTab({
         </Select>
       </div>
 
-      <div className="space-y-1">
+      <div className="space-y-1 ml-2">
         <Label htmlFor="industry">Client Industry</Label>
         <Select
           value={formData.industry}

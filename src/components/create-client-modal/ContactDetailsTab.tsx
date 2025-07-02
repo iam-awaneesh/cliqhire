@@ -55,7 +55,7 @@ export function ContactDetailsTab({
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 pt-4 pb-2">
         {/* Client Name */}
-        <div className="space-y-1">
+        <div className="space-y-1 ml-2">
           <Label htmlFor="name">Client Name<span className="text-red-700">*</span></Label>
           <Input
             id="name"
@@ -83,7 +83,7 @@ export function ContactDetailsTab({
         </div>
 
         {/* Client Landline Number */}
-        <div className="space-y-1">
+        <div className="space-y-1 ml-2">
           <Label htmlFor="phoneNumber">Client Landline Number<span className="text-red-700">*</span></Label>
           <PhoneInput
             country={"sa"}
@@ -113,7 +113,7 @@ export function ContactDetailsTab({
         </div>
 
         {/* Client Website */}
-        <div className="space-y-1">
+        <div className="space-y-1 ml-2">
           <Label htmlFor="website">Client Website</Label>
           <Input
             id="website"
@@ -138,7 +138,7 @@ export function ContactDetailsTab({
         </div>
 
         {/* Google Maps Link */}
-        <div className="space-y-1">
+        <div className="space-y-1 ml-2">
           <Label htmlFor="googleMapsLink">Google Maps Link</Label>
           <Input
             id="googleMapsLink"
@@ -162,7 +162,7 @@ export function ContactDetailsTab({
         </div>
       </div>
       {/* Primary Contacts full row */}
-      <div className="space-y-1 mb-6">
+      <div className="space-y-1 ml-2 mb-6">
         <div className="flex items-center justify-between mb-2">
           <Label>Primary Contacts <span className="text-red-700">*</span></Label>
           <Button
