@@ -66,6 +66,36 @@ const formDataInitial ={
     financialProposalNotes: "",
     businessContracts: {},
 }
+
+const newContactInitial ={
+    firstName: "",
+    lastName: "",
+    gender: "",
+    email: "",
+    phone: "",
+    countryCode: "+966",
+    designation: "",
+    linkedin: "",
+    isPrimary: true,
+  }
+
+  const uploadedFilesInitial = {
+    profileImage: null,
+    crCopy: null,
+    vatCopy: null,
+    gstTinDocument: null,
+    fixedPercentage: null,
+    fixedPercentageAdvance: null,
+    variablePercentageCLevel: null,
+    variablePercentageBelowCLevel: null,
+    fixWithoutAdvance: null,
+    seniorLevel: null,
+    executives: null,
+    nonExecutives: null,
+    other: null,
+    technicalProposal: null,
+    financialProposal: null,
+  }
 export function CreateClientModal({
   open,
   onOpenChange,
@@ -74,7 +104,6 @@ export function CreateClientModal({
   onOpenChange: (open: boolean) => void;
 }) {
   const [formData, setFormData] = useState<ClientForm>(formDataInitial);
-
   const [emailInput, setEmailInput] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{
@@ -92,48 +121,17 @@ export function CreateClientModal({
   const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
   const [currentTab, setCurrentTab] = useState(0);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
-  const [newContact, setNewContact] = useState<PrimaryContact>({
-    firstName: "",
-    lastName: "",
-    gender: "",
-    email: "",
-    phone: "",
-    countryCode: "+966",
-    designation: "",
-    linkedin: "",
-    isPrimary: true,
-  });
+  const [newContact, setNewContact] = useState<PrimaryContact>(newContactInitial);
   const [selectedLevels, setSelectedLevels] = useState<string[]>([]);
   const [activeLevel, setActiveLevel] = useState<string | null>(null);
-
-  const [uploadedFiles, setUploadedFiles] = useState<{ [key: string]: File | null }>({
-    profileImage: null,
-    crCopy: null,
-    vatCopy: null,
-    gstTinDocument: null,
-    fixedPercentage: null,
-    fixedPercentageAdvance: null,
-    variablePercentageCLevel: null,
-    variablePercentageBelowCLevel: null,
-    fixWithoutAdvance: null,
-    seniorLevel: null,
-    executives: null,
-    nonExecutives: null,
-    other: null,
-    technicalProposal: null,
-    financialProposal: null,
-  });
-
+  const [uploadedFiles, setUploadedFiles] = useState<{ [key: string]: File | null }>(uploadedFilesInitial);
   const technicalProposalInputRef = useRef<HTMLInputElement>(null);
   const financialProposalInputRef = useRef<HTMLInputElement>(null);
   const technicalProposalOptionInputRef = useRef<HTMLInputElement>(null);
   const financialProposalOptionInputRef = useRef<HTMLInputElement>(null);
-
-  const router = useRouter();
-
   const [savedContracts, setSavedContracts] = useState<{ [business: string]: boolean }>({});
   const contractsSaved = Object.values(savedContracts).some(Boolean);
-
+  const router = useRouter();
   // Location suggestions
   useEffect(() => {
     const fetchLocationSuggestions = async () => {
@@ -347,17 +345,7 @@ export function CreateClientModal({
       ...prev,
       primaryContacts: [...prev.primaryContacts, { ...contact }],
     }));
-    setNewContact({
-      firstName: "",
-      lastName: "",
-      gender: "",
-      email: "",
-      phone: "",
-      countryCode: "+966",
-      designation: "",
-      linkedin: "",
-      isPrimary: true,
-    });
+    setNewContact(newContactInitial);
     setIsContactModalOpen(false);
     setErrors({});
   };
@@ -664,34 +652,8 @@ export function CreateClientModal({
 
       setFormData(formDataInitial);
       setEmailInput("");
-      setUploadedFiles({
-        profileImage: null,
-        crCopy: null,
-        vatCopy: null,
-        gstTinDocument: null,
-        fixedPercentage: null,
-        fixedPercentageAdvance: null,
-        variablePercentageCLevel: null,
-        variablePercentageBelowCLevel: null,
-        fixWithoutAdvance: null,
-        seniorLevel: null,
-        executives: null,
-        nonExecutives: null,
-        other: null,
-        technicalProposal: null,
-        financialProposal: null,
-      });
-      setNewContact({
-        firstName: "",
-        lastName: "",
-        gender: "",
-        email: "",
-        phone: "",
-        countryCode: "+966",
-        designation: "",
-        linkedin: "",
-        isPrimary: true,
-      });
+      setUploadedFiles(uploadedFilesInitial);
+      setNewContact(newContactInitial);
       setCurrentTab(0);
       setIsContactModalOpen(false);
       setSelectedLevels([]);
