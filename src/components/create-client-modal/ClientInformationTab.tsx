@@ -1,7 +1,6 @@
 import { NestedSelect } from "@/components/ui/nested-select";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
-import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import "@/styles/phone-input-override.css";
 import { Label } from "@/components/ui/label";
@@ -15,46 +14,20 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Info } from "lucide-react";
-import { ClientForm, LocationSuggestion } from "@/components/create-client-modal/type";
-import { optionsForClient, countryCodes } from "./constants";
+import { optionsForClient } from "./constants";
 import { INDUSTRIES } from "@/lib/constants";
+import { ClientGeneralInfo } from "./type";
 
 interface ClientInformationTabProps {
-  formData: ClientForm;
-  setFormData: React.Dispatch<React.SetStateAction<ClientForm>>;
-  emailInput: string;
-  handleInputChange: (
-    field: keyof ClientForm,
-  ) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
-  handleUrlBlur: (field: keyof ClientForm) => (e: React.FocusEvent<HTMLInputElement>) => void;
-  handleEmailBlur: () => void;
-  locationSuggestions: LocationSuggestion[];
-  showLocationSuggestions: boolean;
-  handleLocationSelect: (suggestion: LocationSuggestion) => void;
-  errors?: {
-    name?: string;
-    phoneNumber?: string;
-    address?: string;
-    primaryContacts?: string;
-    website?: string;
-    linkedInProfile?: string;
-    googleMapsLink?: string;
-    primaryContactEmails?: string;
-  };
+  formData: ClientGeneralInfo;
+  setFormData: React.Dispatch<React.SetStateAction<ClientGeneralInfo>>;
 }
 
 export function ClientInformationTab({
   formData,
   setFormData,
-  emailInput,
-  handleInputChange,
-  handleUrlBlur,
-  handleEmailBlur,
-  locationSuggestions,
-  showLocationSuggestions,
-  handleLocationSelect,
-  errors = {},
 }: ClientInformationTabProps) {
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 pt-4 pb-2">
       <div className="space-y-1 ml-2">
@@ -129,7 +102,7 @@ export function ClientInformationTab({
         <Input
           id="referredBy"
           value={formData.referredBy}
-          onChange={handleInputChange("referredBy")}
+          onChange={(e) => setFormData((prev) => ({ ...prev, referredBy: e.target.value }))}
           className="w-full"
           placeholder="Enter the name of the person who referred"
         />

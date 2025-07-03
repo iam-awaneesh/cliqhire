@@ -1,4 +1,5 @@
 import { ClientForm } from "@/components/create-client-modal/type";
+import { PrimaryContact } from "@/services/clientService";
 
 export const optionsForClient = [
   {
@@ -66,3 +67,106 @@ export const levelFieldMap: Record<string, { percentage: keyof ClientForm; notes
 
 
 export const clientSubStages = [ "Calls", "Profile Sent", "Contract Sent", "Attended a meeting", "Replied to a message", "Contract Negotiation" ];
+
+export const levelValue = {
+  percentage: 0,
+  notes: ""
+}
+
+export const levelValueAdvance = {
+  percentage: 0,
+  notes: "",
+  amount: 0,
+  currency: "SAR"
+}
+
+export const businessInitialState = {
+  contractStartDate: null,
+  contractEndDate: null, 
+  contractType: "",
+  //fixed with advance
+  fixedPercentage: 0,
+  advanceMoneyCurrency: "SAR",
+  advanceMoneyAmount: 0,
+  fixedPercentageAdvanceNotes: "",
+
+  //fixed without advance
+  fixWithoutAdvanceValue: 0,
+  fixWithoutAdvanceNotes: "",
+
+  levelBasedHiring: {
+    levelTypes: [],
+    seniorLevel: { ...levelValue },
+    executives: { ...levelValue },
+    nonExecutives: { ...levelValue },
+    other: { ...levelValue }
+  },
+
+  levelBasedAdvanceHiring: {
+    levelTypes: [],
+    seniorLevel: { ...levelValueAdvance },
+    executives: { ...levelValueAdvance },
+    nonExecutives: { ...levelValueAdvance },
+    other: { ...levelValueAdvance }
+  },
+  
+  contractDocument: null,
+}
+
+export const consultingInitialState = {
+  contractStartDate: null,
+  contractEndDate: null,
+  technicalProposalDocument: null,
+  financialProposalDocument: null,
+  technicalProposalNotes: "",
+  financialProposalNotes: "",
+}
+
+export const primaryContactInitialState = {
+  firstName: "",
+  lastName: "",
+  gender: "",
+  email: "",
+  phone: "",
+  countryCode: "+966",
+  designation: "",
+  linkedin: "",
+  isPrimary: true,
+}
+
+export const outsourcingInitialState = {
+  contractStartDate: null,
+  contractEndDate: null,
+  contractType: "",
+  serviceCategory: "",
+  numberOfResources: 0,
+  durationPerResource: 0,
+  slaTerms: "",
+  totalCost: 0,
+  contractDocument: null
+}
+
+export const clientGeneralInfoInitialState = {
+  clientStage: undefined,
+  salesLead: undefined,
+  referredBy: undefined,
+  clientPriority: undefined,
+  clientSegment: undefined,
+  clientSource: undefined,
+  industry: undefined,
+  clientSubStage: undefined,
+}
+
+export const clientContactInfoInitialstate = {
+  name: "",
+  emails: [],
+  phoneNumber: "",
+  address: "",
+  website: "",
+  linkedInProfile: "",
+  location: "",
+  googleMapsLink: "",
+  countryOfBusiness: "",
+  primaryContacts: [],
+}
+

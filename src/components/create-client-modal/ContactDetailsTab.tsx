@@ -1,26 +1,16 @@
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Upload, Eye, Download } from "lucide-react";
 import { ClientForm } from "@/components/create-client-modal/type";
 import { countryCodes } from "./constants";
 import { Input } from "@/components/ui/input";
 import PhoneInput from "react-phone-input-2";
+import { ClientContactInfo } from "./create-client-modal";
+import { useState } from "react";
 
 interface ContactDetailsTabProps {
-  formData: ClientForm;
-  setFormData: React.Dispatch<React.SetStateAction<ClientForm>>;
+  formData: ClientContactInfo;
+  setFormData: React.Dispatch<React.SetStateAction<ClientContactInfo>>;
   setIsContactModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  handleInputChange: (
-    field: keyof ClientForm,
-  ) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
-  uploadedFiles: { [key: string]: File | null };
-  handleFileChange: (field: any) => (e: React.ChangeEvent<HTMLInputElement>) => void;
-  handlePreview: (file: File | string | null) => void;
-  handleDownload: (file: File | null) => void;
-  technicalProposalOptionInputRef: React.RefObject<HTMLInputElement>;
-  financialProposalOptionInputRef: React.RefObject<HTMLInputElement>;
   errors?: {
     name?: string;
     phoneNumber?: string;
@@ -37,18 +27,16 @@ export function ContactDetailsTab({
   formData,
   setFormData,
   setIsContactModalOpen,
-  handleInputChange,
-  uploadedFiles,
-  handleFileChange,
-  handlePreview,
-  handleDownload,
-  technicalProposalOptionInputRef,
-  financialProposalOptionInputRef,
   errors = {},
 }: ContactDetailsTabProps) {
+
   const getCountryCodeLabel = (code: string) => {
     const country = countryCodes.find((option) => option.code === code);
     return country ? country.label : code;
+  };
+
+  const handleInputChange = (field: keyof ClientContactInfo) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    setFormData((prev) => ({ ...prev, [field]: e.target.value }));
   };
 
   return (
@@ -60,7 +48,7 @@ export function ContactDetailsTab({
           <Input
             id="name"
             value={formData.name}
-            onChange={handleInputChange("name")}
+            onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
             required
             className="w-full"
             placeholder="Enter client name"
@@ -74,8 +62,8 @@ export function ContactDetailsTab({
           <Input
             id="emails"
             type="text"
-            value={formData.emails?.join(",")}
-            onChange={handleInputChange("emails")}
+            value={formData.emails?.join(", ")}
+            onChange={(e) => setFormData((prev) => ({ ...prev, emails: e.target.value.split(", ") }))}
             placeholder="Enter client email(s) separated by commas"
             autoComplete="off"
             className="w-full"
@@ -89,7 +77,7 @@ export function ContactDetailsTab({
             country={"sa"}
             value={formData.phoneNumber || "966"}
             onChange={(value) => setFormData((prev) => ({ ...prev, phoneNumber: value || "" }))}
-            inputClass="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm w-full"
+            inputClass="flex h-9 rounded-md border border-input bg-transparent px-3 py-0 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm w-full"
             inputProps={{ id: "phoneNumber", required: true }}
             enableSearch={true}
           />
@@ -104,7 +92,7 @@ export function ContactDetailsTab({
           <Input
             id="address"
             value={formData.address}
-            onChange={handleInputChange("address")}
+            onChange={(e) => setFormData((prev) => ({ ...prev, address: e.target.value }))}
             placeholder="Enter detailed address"
             required
             className="w-full"
@@ -119,7 +107,7 @@ export function ContactDetailsTab({
             id="website"
             type="url"
             value={formData.website}
-            onChange={handleInputChange("website")}
+            onChange={(e) => setFormData((prev) => ({ ...prev, website: e.target.value }))}
             placeholder="https://www.example.com"
             className="w-full"
           />
@@ -131,7 +119,7 @@ export function ContactDetailsTab({
           <Input
             id="linkedInProfile"
             value={formData.linkedInProfile}
-            onChange={handleInputChange("linkedInProfile")}
+            onChange={(e) => setFormData((prev) => ({ ...prev, linkedInProfile: e.target.value }))}
             placeholder="https://www.linkedin.com/in/..."
             className="w-full"
           />
@@ -143,7 +131,7 @@ export function ContactDetailsTab({
           <Input
             id="googleMapsLink"
             value={formData.googleMapsLink}
-            onChange={handleInputChange("googleMapsLink")}
+            onChange={(e) => setFormData((prev) => ({ ...prev, googleMapsLink: e.target.value }))}
             placeholder="https://maps.google.com/..."
             className="w-full"
           />
@@ -155,7 +143,7 @@ export function ContactDetailsTab({
           <Input
             id="countryOfBusiness"
             value={formData.countryOfBusiness}
-            onChange={handleInputChange("countryOfBusiness")}
+            onChange={(e) => setFormData((prev) => ({ ...prev, countryOfBusiness: e.target.value }))}
             placeholder="Enter country of business"
             className="w-full"
           />

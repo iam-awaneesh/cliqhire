@@ -7,7 +7,7 @@ export interface PrimaryContact {
   countryCode: string;
   designation: string;
   linkedin?: string;
-  isPrimary: boolean;
+  isPrimary: boolean
 }
 
 export interface ClientForm {
@@ -106,4 +106,33 @@ export interface LocationSuggestion {
   display_name: string;
   lat: string;
   lon: string;
+}
+
+export type ClientGeneralInfo = {
+  clientStage: string | undefined;
+  clientSubStage: string | undefined;
+  salesLead: string | undefined;
+  referredBy: string | undefined;
+  clientPriority: number | undefined;
+  clientSegment: string | undefined;
+  clientSource: string | undefined;
+  industry: string | undefined;
+}
+
+export type ClientContactInfo = {
+  name: string;
+  emails: string[];
+  phoneNumber: string;
+  address: string;
+  website: string;
+  linkedInProfile: string;
+  location: string;
+  googleMapsLink: string;
+  countryOfBusiness: string;
+  primaryContacts: PrimaryContact[];
+}
+
+export type ClientContractInfo = {
+  lineOfBusiness: string[];
+  contractForms: Record<string, Object>;
 }

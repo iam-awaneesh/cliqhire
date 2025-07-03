@@ -1,9 +1,9 @@
 import axios from "axios";
 
 export const createClient = async (data: FormData) => {
+  console.log(data)
   try {
     const response = await axios.post(
-      // "http://localhost:5000/api/clients",
       "https://aems-backend.onrender.com/api/clients",
       data,
       {
