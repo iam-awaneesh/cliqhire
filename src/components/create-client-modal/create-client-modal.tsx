@@ -24,16 +24,8 @@ import { createClient } from "./api";
 import { clientSubStages } from "./constants";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-
-export function CreateClientModal({
-  open,
-  onOpenChange,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
-  const [formData, setFormData] = useState<ClientForm>({
-    name: "",
+const formDataInitial ={
+   name: "",
     emails: [],
     phoneNumber: "",
     website: "",
@@ -73,7 +65,15 @@ export function CreateClientModal({
     technicalProposalNotes: "",
     financialProposalNotes: "",
     businessContracts: {},
-  });
+}
+export function CreateClientModal({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const [formData, setFormData] = useState<ClientForm>(formDataInitial);
 
   const [emailInput, setEmailInput] = useState<string>("");
   const [loading, setLoading] = useState(false);
@@ -662,56 +662,7 @@ export function CreateClientModal({
         return;
       }
 
-      setFormData({
-        name: "",
-        emails: [],
-        phoneNumber: "",
-        website: "",
-        industry: "",
-        location: "",
-        address: "",
-        googleMapsLink: "",
-        incorporationDate: "",
-        registrationNumber: "",
-        lineOfBusiness: [],
-        countryOfBusiness: "",
-        referredBy: "",
-        linkedInProfile: "",
-        linkedInPage: "",
-        countryCode: "+966",
-        primaryContacts: [],
-        clientStage: undefined,
-        clientTeam: "Enterprise",
-        clientRm: "",
-        clientAge: 0,
-        contractNumber: "",
-        contractStartDate: null,
-        contractEndDate: null,
-        contractValue: 0,
-        contractType: "",
-        cLevelPercentage: 0,
-        belowCLevelPercentage: 0,
-        fixedPercentageNotes: "",
-        fixedPercentageAdvanceNotes: "",
-        advanceMoneyCurrency: "USD",
-        advanceMoneyAmount: 0,
-        cLevelPercentageNotes: "",
-        fixWithoutAdvanceNotes: "",
-        seniorLevelPercentage: 0,
-        executivesPercentage: 0,
-        nonExecutivesPercentage: 0,
-        otherPercentage: 0,
-        seniorLevelNotes: "",
-        executivesNotes: "",
-        nonExecutivesNotes: "",
-        otherNotes: "",
-        salesLead: "",
-        clientPriority: 1,
-        clientSegment: "",
-        clientSource: undefined,
-        proposalOptions: [],
-        businessContracts: {},
-      });
+      setFormData(formDataInitial);
       setEmailInput("");
       setUploadedFiles({
         profileImage: null,
