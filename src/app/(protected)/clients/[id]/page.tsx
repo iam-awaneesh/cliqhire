@@ -1,5 +1,5 @@
-'use client'
-import React, { useState, useEffect } from "react"
+"use client";
+import React, { useState, useEffect } from "react";
 import {
   Plus,
   SlidersHorizontal,
@@ -14,26 +14,38 @@ import {
   X,
   LayoutGrid,
   List,
-  MoreVertical
-} from "lucide-react"
-import { useRouter, notFound } from "next/navigation"
-import { Job, JobStage } from "@/types/job"
-import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { ClientStageBadge } from "@/components/client-stage-badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Checkbox } from "@/components/ui/checkbox"
-import { SummaryContent } from "@/components/clients/summary/summary-content"
-import { ActivitiesContent } from "@/components/clients/activities/activities-content"
-import { NotesContent } from "@/components/clients/notes/notes-content"
-import { AttachmentsContent } from "@/components/clients/attachments/attachments-content"
-import TeamContent from "@/components/clients/team/team-content"
-import { ContactsContent } from "@/components/clients/contacts/contacts-content"
-import { HistoryContent } from "@/components/clients/history/history-content"
+  MoreVertical,
+} from "lucide-react";
+import { useRouter, notFound } from "next/navigation";
+import { Job, JobStage } from "@/types/job";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { ClientStageBadge } from "@/components/client-stage-badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
+import { SummaryContent } from "@/components/clients/summary/summary-content";
+import { ActivitiesContent } from "@/components/clients/activities/activities-content";
+import { NotesContent } from "@/components/clients/notes/notes-content";
+import { AttachmentsContent } from "@/components/clients/attachments/attachments-content";
+import TeamContent from "@/components/clients/team/team-content";
+import { ContactsContent } from "@/components/clients/contacts/contacts-content";
+import { HistoryContent } from "@/components/clients/history/history-content";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,35 +55,42 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import { CreateJobModal } from "@/components/jobs/create-job-modal"
+} from "@/components/ui/alert-dialog";
+import { CreateJobModal } from "@/components/jobs/create-job-modal";
 
 interface PageProps {
-  params: { id: string }
+  params: { id: string };
 }
 
 interface FilterState {
-  jobStage: Job['stage'] | ''
-  location: string
-  minSalary: string
-  maxSalary: string
+  jobStage: Job["stage"] | "";
+  location: string;
+  minSalary: string;
+  maxSalary: string;
 }
 
 const jobStages: JobStage[] = [
-  "New", "Sourcing", "Screening", "Interviewing", "Shortlisted",
-  "Offer", "Hired", "On Hold", "Cancelled"
+  "New",
+  "Sourcing",
+  "Screening",
+  "Interviewing",
+  "Shortlisted",
+  "Offer",
+  "Hired",
+  "On Hold",
+  "Cancelled",
 ];
 
 const stageColors: Record<JobStage, string> = {
-  "New": "bg-blue-100 text-blue-800",
-  "Sourcing": "bg-purple-100 text-purple-800",
-  "Screening": "bg-yellow-100 text-yellow-800",
-  "Interviewing": "bg-orange-100 text-orange-800",
-  "Shortlisted": "bg-green-100 text-green-800",
-  "Offer": "bg-pink-100 text-pink-800",
-  "Hired": "bg-green-200 text-green-900",
+  New: "bg-blue-100 text-blue-800",
+  Sourcing: "bg-purple-100 text-purple-800",
+  Screening: "bg-yellow-100 text-yellow-800",
+  Interviewing: "bg-orange-100 text-orange-800",
+  Shortlisted: "bg-green-100 text-green-800",
+  Offer: "bg-pink-100 text-pink-800",
+  Hired: "bg-green-200 text-green-900",
   "On Hold": "bg-gray-200 text-gray-800",
-  "Cancelled": "bg-red-100 text-red-800"
+  Cancelled: "bg-red-100 text-red-800",
 };
 
 function ConfirmStageChangeDialog({
@@ -79,9 +98,9 @@ function ConfirmStageChangeDialog({
   onOpenChange,
   onConfirm,
 }: {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onConfirm: () => void
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onConfirm: () => void;
 }) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -98,7 +117,7 @@ function ConfirmStageChangeDialog({
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-  )
+  );
 }
 
 export default function ClientPage({ params }: PageProps) {
@@ -108,15 +127,15 @@ export default function ClientPage({ params }: PageProps) {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isCreateJobOpen, setIsCreateJobOpen] = useState(false);
   const [filters, setFilters] = useState<FilterState>({
-    jobStage: '',
-    location: '',
-    minSalary: '',
-    maxSalary: ''
+    jobStage: "",
+    location: "",
+    minSalary: "",
+    maxSalary: "",
   });
   const [client, setClient] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [clientJobs, setClientJobs] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState("Jobs");
+  const [activeTab, setActiveTab] = useState("Summary");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingStageChange, setPendingStageChange] = useState<{
     jobId: string;
@@ -151,7 +170,7 @@ export default function ClientPage({ params }: PageProps) {
   useEffect(() => {
     const fetchJobs = async () => {
       try {
-        const response = await fetch('https://aems-backend.onrender.com/api/jobs');
+        const response = await fetch("https://aems-backend.onrender.com/api/jobs");
         if (!response.ok) throw new Error("Failed to fetch jobs");
         const responseData = await response.json();
         const jobs = responseData.data;
@@ -169,22 +188,22 @@ export default function ClientPage({ params }: PageProps) {
     try {
       // Refetch client data and jobs
       const clientResponse = await fetch(`https://aems-backend.onrender.com/api/clients/${id}`);
-      const jobsResponse = await fetch('https://aems-backend.onrender.com/api/jobs');
-      
+      const jobsResponse = await fetch("https://aems-backend.onrender.com/api/jobs");
+
       if (clientResponse.ok) {
         const clientData = await clientResponse.json();
         setClient(clientData.data);
       }
-      
+
       if (jobsResponse.ok) {
         const jobsData = await jobsResponse.json();
         setClientJobs(jobsData.data.filter((job: any) => job.client === id));
       }
-      
+
       // Reset filters
-      setFilters({ jobStage: '', location: '', minSalary: '', maxSalary: '' });
+      setFilters({ jobStage: "", location: "", minSalary: "", maxSalary: "" });
     } catch (error) {
-      console.error('Error refreshing data:', error);
+      console.error("Error refreshing data:", error);
     } finally {
       setIsLoading(false);
     }
@@ -197,31 +216,31 @@ export default function ClientPage({ params }: PageProps) {
 
   const confirmStageChange = async () => {
     if (!pendingStageChange) return;
-    
+
     const { jobId, newStage } = pendingStageChange;
-    
+
     try {
       // Update local state immediately for better UX
-      setClientJobs(prev => prev.map(job => 
-        job._id === jobId ? { ...job, stage: newStage } : job
-      ));
+      setClientJobs((prev) =>
+        prev.map((job) => (job._id === jobId ? { ...job, stage: newStage } : job)),
+      );
 
       // Make API call to update the stage
       const response = await fetch(`https://aems-backend.onrender.com/api/jobs/${jobId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ stage: newStage }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update job stage');
+        throw new Error("Failed to update job stage");
       }
     } catch (error) {
-      console.error('Error updating job stage:', error);
+      console.error("Error updating job stage:", error);
       // Revert the local state if the API call fails
-      setClientJobs(prev => prev.map(job => 
-        job._id === jobId ? { ...job, stage: job.stage } : job
-      ));
+      setClientJobs((prev) =>
+        prev.map((job) => (job._id === jobId ? { ...job, stage: job.stage } : job)),
+      );
     } finally {
       setPendingStageChange(null);
       setConfirmOpen(false);
@@ -252,11 +271,15 @@ export default function ClientPage({ params }: PageProps) {
 
   const filteredJobs = clientJobs.filter((job) => {
     const matchesStage = !filters.jobStage || job.stage === filters.jobStage;
-    const matchesLocation = !filters.location || (job.location && job.location.toLowerCase().includes(filters.location.toLowerCase()));
+    const matchesLocation =
+      !filters.location ||
+      (job.location && job.location.toLowerCase().includes(filters.location.toLowerCase()));
     const minSalary = filters.minSalary ? parseFloat(filters.minSalary) : null;
     const maxSalary = filters.maxSalary ? parseFloat(filters.maxSalary) : null;
-    const matchesMinSalary = minSalary === null || (job.minimumSalary && Number(job.minimumSalary) >= minSalary);
-    const matchesMaxSalary = maxSalary === null || (job.maximumSalary && Number(job.maximumSalary) <= maxSalary);
+    const matchesMinSalary =
+      minSalary === null || (job.minimumSalary && Number(job.minimumSalary) >= minSalary);
+    const matchesMaxSalary =
+      maxSalary === null || (job.maximumSalary && Number(job.maximumSalary) <= maxSalary);
     return matchesStage && matchesLocation && matchesMinSalary && matchesMaxSalary;
   });
 
@@ -272,7 +295,9 @@ export default function ClientPage({ params }: PageProps) {
               <span>•</span>
               <span>{client.location || "Riyadh Region, Saudi Arabia"}</span>
               <span>•</span>
-              <Badge variant="outline" className="bg-blue-100 text-blue-800 hover:bg-blue-100">Lead</Badge>
+              <Badge variant="outline" className="bg-blue-100 text-blue-800 hover:bg-blue-100">
+                Lead
+              </Badge>
             </div>
           </div>
           <div className="flex gap-2">
@@ -288,52 +313,64 @@ export default function ClientPage({ params }: PageProps) {
 
       {/* Button Bar */}
       <div className="flex items-center justify-between p-4 border-b">
-        <Button 
+        <Button
           className="bg-black text-white hover:bg-gray-800 rounded-md flex items-center gap-2"
           onClick={() => setIsCreateJobOpen(true)}
         >
           <Plus className="h-4 w-4" />
           Create Job Requirement
         </Button>
-          
+
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="border rounded-md flex items-center gap-2" onClick={() => setIsFilterOpen(true)}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="border rounded-md flex items-center gap-2"
+            onClick={() => setIsFilterOpen(true)}
+          >
             <SlidersHorizontal className="h-4 w-4" />
             Filters
           </Button>
-          <Button variant="outline" size="sm" className="border rounded-md flex items-center gap-2" onClick={handleRefresh} disabled={isLoading}>
-            <RefreshCcw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+          <Button
+            variant="outline"
+            size="sm"
+            className="border rounded-md flex items-center gap-2"
+            onClick={handleRefresh}
+            disabled={isLoading}
+          >
+            <RefreshCcw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
             Refresh
           </Button>
         </div>
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="Jobs" className="w-full">
+      <Tabs defaultValue="Summary" className="w-full">
         <TabsList className="flex border-b w-full rounded-none justify-start h-12 bg-transparent p-0">
-          <TabsTrigger 
-            value="Jobs" 
-            className="data-[state=active]:border-b-2 data-[state=active]:border-black data-[state=active]:shadow-none rounded-none flex items-center gap-2 h-12 px-6"
-          >
-            <FileText className="h-4 w-4" />
-            Jobs
-          </TabsTrigger>
-          <TabsTrigger 
-            value="Summary" 
+          <TabsTrigger
+            value="Summary"
             className="data-[state=active]:border-b-2 data-[state=active]:border-black data-[state=active]:shadow-none rounded-none flex items-center gap-2 h-12 px-6"
           >
             <FileIcon className="h-4 w-4" />
             Summary
           </TabsTrigger>
-          <TabsTrigger 
-            value="Activities" 
+
+          <TabsTrigger
+            value="Jobs"
+            className="data-[state=active]:border-b-2 data-[state=active]:border-black data-[state=active]:shadow-none rounded-none flex items-center gap-2 h-12 px-6"
+          >
+            <FileIcon className="h-4 w-4" />
+            Jobs
+          </TabsTrigger>
+          <TabsTrigger
+            value="Activities"
             className="data-[state=active]:border-b-2 data-[state=active]:border-black data-[state=active]:shadow-none rounded-none flex items-center gap-2 h-12 px-6"
           >
             <MessageSquare className="h-4 w-4" />
             Activities
           </TabsTrigger>
-          <TabsTrigger 
-            value="Notes" 
+          <TabsTrigger
+            value="Notes"
             className="data-[state=active]:border-b-2 data-[state=active]:border-black data-[state=active]:shadow-none rounded-none flex items-center gap-2 h-12 px-6"
           >
             <StickyNote className="h-4 w-4" />
@@ -346,22 +383,22 @@ export default function ClientPage({ params }: PageProps) {
             <Paperclip className="h-4 w-4" />
             Attachments
           </TabsTrigger> */}
-          <TabsTrigger 
-            value="ClientTeam" 
+          <TabsTrigger
+            value="ClientTeam"
             className="data-[state=active]:border-b-2 data-[state=active]:border-black data-[state=active]:shadow-none rounded-none flex items-center gap-2 h-12 px-6"
           >
             <Users className="h-4 w-4" />
             Client Team
           </TabsTrigger>
-          <TabsTrigger 
-            value="Contacts" 
+          <TabsTrigger
+            value="Contacts"
             className="data-[state=active]:border-b-2 data-[state=active]:border-black data-[state=active]:shadow-none rounded-none flex items-center gap-2 h-12 px-6"
           >
             <Users className="h-4 w-4" />
             Contacts
           </TabsTrigger>
-          <TabsTrigger 
-            value="History" 
+          <TabsTrigger
+            value="History"
             className="data-[state=active]:border-b-2 data-[state=active]:border-black data-[state=active]:shadow-none rounded-none flex items-center gap-2 h-12 px-6"
           >
             <Clock className="h-4 w-4" />
@@ -384,7 +421,7 @@ export default function ClientPage({ params }: PageProps) {
               </div>
             </div>
           </div>
-          <div className="overflow-auto">  
+          <div className="overflow-auto">
             {filteredJobs.length > 0 ? (
               filteredJobs.map((job) => (
                 <div key={job._id} className="border-b hover:bg-gray-50 py-3 px-4">
@@ -396,7 +433,7 @@ export default function ClientPage({ params }: PageProps) {
                       <div>{job.location}</div>
                       <div>{job.headcount}</div>
                       <div>
-                        <Badge 
+                        <Badge
                           className={`${stageColors[job.stage as JobStage]} cursor-pointer`}
                           onClick={(e) => {
                             e.stopPropagation();
@@ -423,27 +460,27 @@ export default function ClientPage({ params }: PageProps) {
         <TabsContent value="Summary" className="p-4">
           <SummaryContent clientId={id} />
         </TabsContent>
-        
+
         <TabsContent value="Activities" className="p-4">
           <ActivitiesContent clientId={id} />
         </TabsContent>
-        
+
         <TabsContent value="Notes" className="p-4">
           <NotesContent clientId={id} />
         </TabsContent>
-        
+
         <TabsContent value="Attachments" className="p-4">
           <AttachmentsContent clientId={id} />
         </TabsContent>
-        
+
         <TabsContent value="ClientTeam" className="p-4">
           <TeamContent clientId={id} />
         </TabsContent>
-        
+
         <TabsContent value="Contacts" className="p-4">
           <ContactsContent clientId={id} />
         </TabsContent>
-        
+
         <TabsContent value="History" className="p-4">
           <HistoryContent clientId={id} />
         </TabsContent>
@@ -461,14 +498,16 @@ export default function ClientPage({ params }: PageProps) {
                 <Label>Job Stage</Label>
                 <Select
                   value={filters.jobStage}
-                  onValueChange={value => setFilters(prev => ({ ...prev, jobStage: value as Job['stage'] }))}
+                  onValueChange={(value) =>
+                    setFilters((prev) => ({ ...prev, jobStage: value as Job["stage"] }))
+                  }
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select job stage" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="">All Stages</SelectItem>
-                    {jobStages.map(stage => (
+                    {jobStages.map((stage) => (
                       <SelectItem key={stage} value={stage}>
                         <Badge className={stageColors[stage]}>{stage}</Badge>
                       </SelectItem>
@@ -481,7 +520,7 @@ export default function ClientPage({ params }: PageProps) {
                 <Input
                   placeholder="Filter by location"
                   value={filters.location}
-                  onChange={(e) => setFilters(prev => ({ ...prev, location: e.target.value }))}
+                  onChange={(e) => setFilters((prev) => ({ ...prev, location: e.target.value }))}
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -491,7 +530,7 @@ export default function ClientPage({ params }: PageProps) {
                     type="number"
                     placeholder="Minimum"
                     value={filters.minSalary}
-                    onChange={(e) => setFilters(prev => ({ ...prev, minSalary: e.target.value }))}
+                    onChange={(e) => setFilters((prev) => ({ ...prev, minSalary: e.target.value }))}
                   />
                 </div>
                 <div className="space-y-2">
@@ -500,7 +539,7 @@ export default function ClientPage({ params }: PageProps) {
                     type="number"
                     placeholder="Maximum"
                     value={filters.maxSalary}
-                    onChange={(e) => setFilters(prev => ({ ...prev, maxSalary: e.target.value }))}
+                    onChange={(e) => setFilters((prev) => ({ ...prev, maxSalary: e.target.value }))}
                   />
                 </div>
               </div>
@@ -509,7 +548,9 @@ export default function ClientPage({ params }: PageProps) {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setFilters({ jobStage: '', location: '', minSalary: '', maxSalary: '' })}
+                onClick={() =>
+                  setFilters({ jobStage: "", location: "", minSalary: "", maxSalary: "" })
+                }
               >
                 Reset
               </Button>
@@ -522,14 +563,14 @@ export default function ClientPage({ params }: PageProps) {
       </Dialog>
 
       {/* Create Job Modal */}
-      <CreateJobModal 
-        open={isCreateJobOpen} 
+      <CreateJobModal
+        open={isCreateJobOpen}
         onOpenChange={setIsCreateJobOpen}
         clientId={id}
         clientName={client.name}
         onJobCreated={handleRefresh}
       />
-      
+
       <ConfirmStageChangeDialog
         open={confirmOpen}
         onOpenChange={setConfirmOpen}

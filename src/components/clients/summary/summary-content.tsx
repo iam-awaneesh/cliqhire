@@ -15,6 +15,7 @@ import { ContractSection } from "./contract-section";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SalesInfo } from "./sales/salesInfo";
 
 interface SummaryContentProps {
   clientId: string;
@@ -491,11 +492,11 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
               value={clientDetails.address}
               onUpdate={handleUpdateField("address")}
             />
-            <DetailRow
+            {/* <DetailRow
               label="Registration Number"
               value={clientDetails.registrationNumber}
               onUpdate={handleUpdateField("registrationNumber")}
-            />
+            /> */}
             <DetailRow
               label="Country of Business"
               value={clientDetails.countryOfBusiness}
@@ -507,11 +508,11 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
               onUpdate={handleUpdateField("linkedInProfile")}
               optional
             />
-            <DetailRow
+            {/* <DetailRow
               label="Client LinkedIn Page"
               value={clientDetails.clientLinkedInPage || clientDetails.linkedInPage}
               onUpdate={handleUpdateField(clientDetails.linkedInPage ? "linkedInPage" : "clientLinkedInPage")}
-            />
+            /> */}
             <FileUploadRow
               id="vat-copy-upload"
               label="VAT Copy"
@@ -538,11 +539,13 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
         <ContractSection 
           clientId={clientId} 
           clientData={{
-            contractStartDate: clientDetails.contractStartDate,
-            contractEndDate: clientDetails.contractEndDate,
-            labelType: clientDetails.labelType
+          contractStartDate: clientDetails.contractStartDate,
+          contractEndDate: clientDetails.contractEndDate,
+          labelType: clientDetails.labelType
           }} 
         />
+        <SalesInfo />
+        
         <div className="bg-white rounded-lg border shadow-sm p-4">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold">Team</h2>
@@ -559,6 +562,7 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
             ))}
           </div>
         </div>
+
         <div className="bg-white rounded-lg border shadow-sm p-4">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold">Description</h2>
@@ -588,6 +592,10 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
             )}
           </div>
         </div>
+        
+
+
+
       </div>
       <AddTeamMemberModal
         open={isTeamModalOpen}

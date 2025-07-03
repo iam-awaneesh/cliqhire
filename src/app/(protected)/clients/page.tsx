@@ -1,26 +1,10 @@
 "use client";
 import axios from "axios";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import {AlertDialog,AlertDialogAction,AlertDialogCancel,AlertDialogContent,AlertDialogDescription,AlertDialogFooter,AlertDialogHeader,AlertDialogTitle,} from "@/components/ui/alert-dialog"
 import { useRouter, useParams } from "next/navigation";
 import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import {Table,TableBody,TableCell,TableHead,TableHeader,TableRow,}from "@/components/ui/table";
 import { getJobCountsByClient } from "@/services/jobService";
 import { Plus, RefreshCcw, SlidersHorizontal, MoreVertical } from "lucide-react";
 import { CreateClientModal } from "@/components/create-client-modal/create-client-modal";
@@ -33,7 +17,6 @@ import { Input } from "@/components/ui/input";
 import { differenceInYears } from 'date-fns';
 import Dashboardheader from "@/components/dashboard-header";
 import Tableheader from "@/components/table-header";
-
 
 const columsArr = [
   "Name",
@@ -244,45 +227,6 @@ export default function ClientsPage() {
     }
   };
   
-
-  
-  // const fetchJobCounts = async (clientsList: Client[]) => {
-  //   try {
-  //     const jobCountPromises = clientsList.map(async (client: Client) => {
-  //       try {
-  //         const response = await fetch(`${API_URL}/jobs/count/${client.id}`);
-  //         if (!response.ok) {
-  //           throw new Error(`HTTP error! status: ${response.status}`);
-  //         }
-  //         const jobCountData = await response.json();
-  //         let count = 0;
-  //         if (jobCountData && typeof jobCountData === 'object') {
-  //           if (jobCountData.success && jobCountData.data && typeof jobCountData.data.count === 'number') {
-  //             count = jobCountData.data.count;
-  //           } else if (typeof jobCountData.count === 'number') {
-  //             count = jobCountData.count;
-  //           }
-  //         }
-  //         return { clientId: client.id, count };
-  //       } catch (error) {
-  //         console.error(`Error fetching job count for client ${client.id}:`, error);
-  //         return { clientId: client.id, count: 0 };
-  //       }
-  //     });
-
-  //     const jobCounts = await Promise.all(jobCountPromises);
-
-  //     setClients(prevClients => {
-  //       const updatedClients = prevClients.map(client => {
-  //         const jobCountInfo = jobCounts.find(jc => jc.clientId === client.id);
-  //         return { ...client, jobCount: jobCountInfo ? jobCountInfo.count : 0 };
-  //       });
-  //       return updatedClients;
-  //     });
-  //   } catch (error) {
-  //     console.error('Error in fetchJobCounts:', error);
-  //   }
-  // };
 
   // Handle page change
  
