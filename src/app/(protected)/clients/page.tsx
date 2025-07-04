@@ -280,12 +280,16 @@ export default function ClientsPage() {
 
   const handleStageChange = (clientId: string, newStage: Client["stage"]) => {
     setPendingChange({ clientId, stage: newStage });
-    setShowConfirmDialog(true);
+    setTimeout(() => {
+      setShowConfirmDialog(true);
+    }, 0);
   };
 
   const handleStageStatusChange = (clientId: string, newStatus: ClientStageStatus) => {
     setPendingStatusChange({ clientId, status: newStatus });
-    setShowStatusConfirmDialog(true);
+    setTimeout(() => {
+      setShowStatusConfirmDialog(true);
+    }, 0);
   };
 
   const filteredAndSortedClients = useMemo(() => {
@@ -456,27 +460,32 @@ export default function ClientsPage() {
       </Dialog>
 
       {/* Confirmation Dialog for Stage Status Change */}
-      <AlertDialog open={showStatusConfirmDialog} onOpenChange={setShowStatusConfirmDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will update the client's stage status.
-              {error && (
-                <div className="text-red-600 mt-4 p-3 bg-red-50 rounded-md">
-                  {error}
-                </div>
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => { setShowStatusConfirmDialog(false); setError(null); }}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmStatusChange} disabled={isUpdating}>
-              {isUpdating ? "Updating..." : "Confirm"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <Dialog open={showStatusConfirmDialog} onOpenChange={setShowStatusConfirmDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Are you sure?</DialogTitle>
+          </DialogHeader>
+          <DialogDescription>
+            This will update the client's stage status.
+            {error && (
+              <div className="text-red-600 mt-4 p-3 bg-red-50 rounded-md">
+                {error}
+              </div>
+            )}
+          </DialogDescription>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {setShowStatusConfirmDialog(false); setError(null);}}>Cancel</Button>
+            <Button variant="default" onClick={handleConfirmStatusChange} disabled={isUpdating}>
+              {isUpdating ? (
+                <>
+                  <RefreshCcw className="h-4 w-4 mr-2 animate-spin" />
+                  Updating...
+                </>
+              ) : 'Confirm'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <div className="flex flex-col h-full">
         {/* Header */}
