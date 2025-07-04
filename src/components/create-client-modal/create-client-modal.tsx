@@ -28,6 +28,7 @@ import {
 } from "./constants";
 import { ClientContractInfo, ClientContactInfo, ClientGeneralInfo } from "./type";
 import { createClient } from "./api";
+import { useRouter } from "next/navigation";
 
 export function CreateClientModal({
   open,
@@ -36,6 +37,7 @@ export function CreateClientModal({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const router = useRouter();
 
   const [clientGeneralInfo, setClientGeneralInfo] = useState<ClientGeneralInfo>(clientGeneralInfoInitialState)
 
@@ -199,348 +201,9 @@ export function CreateClientModal({
     setErrors({});
   };
 
-  // const handleSubmit = async (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   setLoading(true);
-  //   const newErrors: typeof errors = {};
-
-  //   if (!formData.name || formData.name.trim() === "") {
-  //     newErrors.name = "Client name is required";
-  //   }
-  //   if (!formData.phoneNumber) {
-  //     newErrors.phoneNumber = "Phone number is required";
-  //   }
-  //   if (!formData.address) {
-  //     newErrors.address = "Address is required";
-  //   }
-  //   if (formData.primaryContacts.length === 0) {
-  //     newErrors.primaryContacts = "At least one primary contact is required";
-  //   }
-  //   const invalidContactEmails = formData.primaryContacts.filter(
-  //     (contact: PrimaryContact) =>
-  //       contact.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email),
-  //   );
-  //   if (invalidContactEmails.length > 0) {
-  //     newErrors.primaryContactEmails = `Invalid contact email(s): ${invalidContactEmails
-  //       .map((c) => c.email)
-  //       .join(", ")}`;
-  //   }
-  //   if (formData.website && !validateUrl(formData.website)) {
-  //     newErrors.website = "Invalid website URL";
-  //   }
-  //   if (formData.linkedInProfile && !validateUrl(formData.linkedInProfile)) {
-  //     newErrors.linkedInProfile = "Invalid LinkedIn profile URL";
-  //   }
-  //   if (formData.googleMapsLink && !validateUrl(formData.googleMapsLink)) {
-  //     newErrors.googleMapsLink = "Invalid Google Maps link";
-  //   }
-
-  //   setErrors(newErrors);
-  //   if (Object.keys(newErrors).length > 0) {
-  //     setLoading(false);
-  //     return;
-  //   }
-
-  //   try {
-  //     // Always create the payload, regardless of selectedLevels
-  //     const formDataToSend = new FormData();
-  //     formDataToSend.append("name", formData.name.trim());
-  //     if (formData.emails && formData.emails.length > 0) {
-  //       formDataToSend.append("emails", JSON.stringify(formData.emails));
-  //     }
-  //     formDataToSend.append("phoneNumber", formData.phoneNumber);
-  //     if (formData.website) {
-  //       formDataToSend.append("website", formData.website);
-  //     }
-  //     formDataToSend.append("industry", formData.industry || "");
-  //     formDataToSend.append("address", formData.address || "");
-  //     if (formData.googleMapsLink) {
-  //       formDataToSend.append("googleMapsLink", formData.googleMapsLink);
-  //     }
-  //     if (Array.isArray(formData.lineOfBusiness)) {
-  //       formDataToSend.append("lineOfBusiness", JSON.stringify(formData.lineOfBusiness));
-  //     } else if (typeof formData.lineOfBusiness === "string") {
-  //       const lineOfBusinessArray = formData.lineOfBusiness.split(",").filter(Boolean);
-  //       formDataToSend.append("lineOfBusiness", JSON.stringify(lineOfBusinessArray));
-  //     }
-  //     if (formData.countryOfBusiness) {
-  //       formDataToSend.append("countryOfBusiness", formData.countryOfBusiness);
-  //     }
-  //     formDataToSend.append("referredBy", formData.referredBy || "");
-  //     if (formData.linkedInProfile) {
-  //       formDataToSend.append("linkedInProfile", formData.linkedInProfile);
-  //     }
-  //     formDataToSend.append("countryCode", formData.countryCode || "+966");
-  //     if (formData.primaryContacts && formData.primaryContacts.length > 0) {
-  //       formDataToSend.append(
-  //         "primaryContacts",
-  //         JSON.stringify(
-  //           formData.primaryContacts.map((contact) => ({
-  //             name: `${contact.firstName || ""} ${contact.lastName || ""}`.trim(),
-  //             gender: contact.gender,
-  //             email: contact.email,
-  //             phone: contact.phone,
-  //             countryCode: contact.countryCode,
-  //             designation: contact.designation,
-  //             linkedin: contact.linkedin || "",
-  //             isPrimary: contact.isPrimary,
-  //           })),
-  //         ),
-  //       );
-  //     }
-  //     formDataToSend.append("clientTeam", formData.clientTeam || "Enterprise");
-  //     if (clientSubStages.includes(formData.clientStage!)) {
-  //       formDataToSend.append("clientStage", "Engaged");
-  //       formDataToSend.append("clientStageStatus", formData.clientStage || "");
-  //     } else {
-  //       formDataToSend.append("clientStage", formData.clientStage || "");
-  //     }
-  //     formDataToSend.append("salesLead", formData.salesLead ?? "");
-  //     if (formData.clientPriority) {
-  //       formDataToSend.append("clientPriority", formData.clientPriority.toString());
-  //     }
-  //     if (formData.clientSegment) {
-  //       formDataToSend.append("clientSegment", formData.clientSegment);
-  //     }
-  //     if (formData.clientSource) {
-  //       formDataToSend.append("clientSource", formData.clientSource);
-  //     }
-  //     if (formData.technicalProposalNotes) {
-  //       formDataToSend.append("technicalProposalNotes", formData.technicalProposalNotes);
-  //     }
-  //     if (formData.financialProposalNotes) {
-  //       formDataToSend.append("financialProposalNotes", formData.financialProposalNotes);
-  //     }
-  //     if (formData.contractStartDate) {
-  //       const startDate = new Date(formData.contractStartDate);
-  //       const startDateStr = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, "0")}-${String(startDate.getDate()).padStart(2, "0")}`;
-  //       formDataToSend.append("contractStartDate", startDateStr);
-  //     }
-  //     if (formData.contractEndDate) {
-  //       const endDate = new Date(formData.contractEndDate);
-  //       const endDateStr = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, "0")}-${String(endDate.getDate()).padStart(2, "0")}`;
-  //       formDataToSend.append("contractEndDate", endDateStr);
-  //     }
-  //     if (formData.contractType) {
-  //       formDataToSend.append("contractType", formData.contractType);
-  //     }
-  //     // Only add level-based fields if selectedLevels has values
-  //     if (selectedLevels?.length) {
-  //       const labelType: Record<string, string> = {};
-  //       const fieldMap: Record<string, string> = {
-  //         "Senior Level": "seniorLevel",
-  //         Executives: "executives",
-  //         "Non-Executives": "nonExecutives",
-  //       };
-  //       selectedLevels.forEach((level) => {
-  //         const fieldName = fieldMap[level] || "other";
-  //         if (!labelType[fieldName]) {
-  //           labelType[fieldName] = level;
-  //         }
-  //       });
-  //       if (formData.contractType === "Level Based (Hiring)") {
-  //         if (selectedLevels.includes("Senior Level")) {
-  //           formDataToSend.append(
-  //             "seniorLevelPercentage",
-  //             (formData.seniorLevelPercentage ?? 0).toString(),
-  //           );
-  //         }
-  //         if (selectedLevels.includes("Executives")) {
-  //           formDataToSend.append(
-  //             "executivesPercentage",
-  //             (formData.executivesPercentage ?? 0).toString(),
-  //           );
-  //         }
-  //         if (selectedLevels.includes("Non-Executives")) {
-  //           formDataToSend.append(
-  //             "nonExecutivesPercentage",
-  //             (formData.nonExecutivesPercentage ?? 0).toString(),
-  //           );
-  //         }
-  //         if (selectedLevels.includes("Other")) {
-  //           formDataToSend.append("otherPercentage", (formData.otherPercentage ?? 0).toString());
-  //         }
-  //         if (selectedLevels.includes("Senior Level") && formData.seniorLevelNotes) {
-  //           formDataToSend.append("seniorLevelNotes", formData.seniorLevelNotes);
-  //         }
-  //         if (selectedLevels.includes("Executives") && formData.executivesNotes) {
-  //           formDataToSend.append("executivesNotes", formData.executivesNotes);
-  //         }
-  //         if (selectedLevels.includes("Non-Executives") && formData.nonExecutivesNotes) {
-  //           formDataToSend.append("nonExecutivesNotes", formData.nonExecutivesNotes);
-  //         }
-  //         if (selectedLevels.includes("Other") && formData.otherNotes) {
-  //           formDataToSend.append("otherNotes", formData.otherNotes);
-  //         }
-  //       }
-  //       if (formData.contractType === "Level Based With Advance") {
-  //         if (selectedLevels.includes("Senior Level")) {
-  //           if (formData.seniorLevelPercentage !== undefined)
-  //             formDataToSend.append(
-  //               "seniorLevelPercentage",
-  //               (formData.seniorLevelPercentage ?? 0).toString(),
-  //             );
-  //           if (formData.seniorLevelMoney !== undefined && formData.seniorLevelMoney !== null)
-  //             formDataToSend.append("seniorLevelMoney", formData.seniorLevelMoney.toString());
-  //           if (formData.seniorLevelCurrency)
-  //             formDataToSend.append("seniorLevelCurrency", formData.seniorLevelCurrency);
-  //           if (formData.seniorLevelNotes)
-  //             formDataToSend.append("seniorLevelNotes", formData.seniorLevelNotes);
-  //         }
-  //         if (selectedLevels.includes("Executives")) {
-  //           if (formData.executivesPercentage !== undefined)
-  //             formDataToSend.append(
-  //               "executivesPercentage",
-  //               (formData.executivesPercentage ?? 0).toString(),
-  //             );
-  //           if (formData.executivesMoney !== undefined && formData.executivesMoney !== null)
-  //             formDataToSend.append("executivesMoney", formData.executivesMoney.toString());
-  //           if (formData.executivesCurrency)
-  //             formDataToSend.append("executivesCurrency", formData.executivesCurrency);
-  //           if (formData.executivesNotes)
-  //             formDataToSend.append("executivesNotes", formData.executivesNotes);
-  //         }
-  //         if (selectedLevels.includes("Non-Executives")) {
-  //           if (formData.nonExecutivesPercentage !== undefined)
-  //             formDataToSend.append(
-  //               "nonExecutivesPercentage",
-  //               (formData.nonExecutivesPercentage ?? 0).toString(),
-  //             );
-  //           if (formData.nonExecutivesMoney !== undefined && formData.nonExecutivesMoney !== null)
-  //             formDataToSend.append("nonExecutivesMoney", formData.nonExecutivesMoney.toString());
-  //           if (formData.nonExecutivesCurrency)
-  //             formDataToSend.append("nonExecutivesCurrency", formData.nonExecutivesCurrency);
-  //           if (formData.nonExecutivesNotes)
-  //             formDataToSend.append("nonExecutivesNotes", formData.nonExecutivesNotes);
-  //         }
-  //         if (selectedLevels.includes("Other")) {
-  //           if (formData.otherPercentage !== undefined)
-  //             formDataToSend.append("otherPercentage", (formData.otherPercentage ?? 0).toString());
-  //           if (formData.otherMoney !== undefined && formData.otherMoney !== null)
-  //             formDataToSend.append("otherMoney", formData.otherMoney.toString());
-  //           if (formData.otherCurrency)
-  //             formDataToSend.append("otherCurrency", formData.otherCurrency);
-  //           if (formData.otherNotes) formDataToSend.append("otherNotes", formData.otherNotes);
-  //         }
-  //       }
-  //     }
-  //     if (formData.contractType === "Fix with Advance") {
-  //       if (
-  //         formData.fixWithoutAdvanceValue !== undefined &&
-  //         formData.fixWithoutAdvanceValue !== null
-  //       )
-  //         formDataToSend.append(
-  //           "fixWithoutAdvanceValue",
-  //           formData.fixWithoutAdvanceValue.toString(),
-  //         );
-  //       if (
-  //         formData.fixWithoutAdvance !== undefined &&
-  //         formData.fixWithoutAdvance !== null &&
-  //         formData.fixWithoutAdvance !== ""
-  //       )
-  //         formDataToSend.append("fixWithoutAdvance", formData.fixWithoutAdvance.toString());
-  //       if (formData.fixedPercentageAdvanceNotes)
-  //         formDataToSend.append(
-  //           "fixedPercentageAdvanceNotes",
-  //           formData.fixedPercentageAdvanceNotes,
-  //         );
-  //     }
-  //     if (formData.cLevelPercentage) {
-  //       formDataToSend.append("cLevelPercentage", formData.cLevelPercentage.toString());
-  //     }
-  //     if (formData.belowCLevelPercentage) {
-  //       formDataToSend.append("belowCLevelPercentage", formData.belowCLevelPercentage.toString());
-  //     }
-  //     if (formData.fixedPercentageNotes) {
-  //       formDataToSend.append("fixedPercentageNotes", formData.fixedPercentageNotes);
-  //     }
-  //     if (formData.cLevelPercentageNotes) {
-  //       formDataToSend.append("cLevelPercentageNotes", formData.cLevelPercentageNotes);
-  //     }
-  //     if (formData.fixWithoutAdvanceNotes) {
-  //       formDataToSend.append("fixWithoutAdvanceNotes", formData.fixWithoutAdvanceNotes);
-  //     }
-  //     if (formData.fixedPercentage) {
-  //       formDataToSend.append("fixedPercentage", formData.fixedPercentage.toString());
-  //     }
-  //     if (formData.fixWithoutAdvanceValue) {
-  //       formDataToSend.append("fixWithoutAdvanceValue", formData.fixWithoutAdvanceValue.toString());
-  //     }
-  //     const fileFields: (keyof typeof uploadedFiles)[] = [
-  //       "crCopy",
-  //       "vatCopy",
-  //       "gstTinDocument",
-  //       "fixedPercentage",
-  //       "fixedPercentageAdvance",
-  //       "variablePercentageCLevel",
-  //       "variablePercentageBelowCLevel",
-  //       "fixWithoutAdvance",
-  //       "seniorLevel",
-  //       "executives",
-  //       "nonExecutives",
-  //       "other",
-  //       "profileImage",
-  //       "technicalProposal",
-  //       "financialProposal",
-  //     ];
-  //     for (const field of fileFields) {
-  //       if (uploadedFiles[field]) {
-  //         formDataToSend.append(field.toString(), uploadedFiles[field]!);
-  //       }
-  //     }
-  //     // Debug log: print all key-value pairs in FormData before sending
-  //     for (let pair of formDataToSend.entries()) {
-  //       console.log(`[CreateClientModal] Payload: ${pair[0]}:`, pair[1]);
-  //     }
-  //     const payload = { ...formData };
-  //     const result = await createClient(formDataToSend);
-  //     if (result && result.success && result.data && result.data.data && result.data.data._id) {
-  //       router.push(`/clients/${result.data.data._id}`);
-  //       return;
-  //     }
-
-  //     setEmailInput("");
-  //     setUploadedFiles({
-  //       profileImage: null,
-  //       crCopy: null,
-  //       vatCopy: null,
-  //       gstTinDocument: null,
-  //       fixedPercentage: null,
-  //       fixedPercentageAdvance: null,
-  //       variablePercentageCLevel: null,
-  //       variablePercentageBelowCLevel: null,
-  //       fixWithoutAdvance: null,
-  //       seniorLevel: null,
-  //       executives: null,
-  //       nonExecutives: null,
-  //       other: null,
-  //       technicalProposal: null,
-  //       financialProposal: null,
-  //     });
-  //     setNewContact({
-  //       firstName: "",
-  //       lastName: "",
-  //       gender: "",
-  //       email: "",
-  //       phone: "",
-  //       countryCode: "+966",
-  //       designation: "",
-  //       linkedin: "",
-  //     });
-  //     setCurrentTab(0);
-  //     setIsContactModalOpen(false);
-  //     setSelectedLevels([]);
-  //     setActiveLevel(null);
-  //     onOpenChange(false);
-  //   } catch (error) {
-  //     console.error("Error creating client:", error);
-  //     setErrors({ general: "An error occurred while creating the client. Please try again." });
-  //     setLoading(false);
-  //   }
-  // };
-
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setLoading(true);
     const formData = new FormData();
     // Client General Info
     formData.append("clientStage", clientGeneralInfo.clientStage ?? "");
@@ -570,23 +233,31 @@ export function CreateClientModal({
 
     Object.entries(clientContractInfo.contractForms).forEach(([key, value]) => {
       console.log(key, value);
-      if(key === "HR Consulting" || key === "Mgt Consulting") {
+      if(key === "HR Consulting") {
         const { technicalProposalDocument, financialProposalDocument, ...rest } = value as any;
-        formData.append(`consultingContractDetails-${key}`, JSON.stringify(rest));
-        formData.append("technicalProposalDocumentHRConsulting", technicalProposalDocument ?? "");
-        formData.append("financialProposalDocumentHRConsulting", financialProposalDocument ?? "");
+        formData.append("consultingContractHRC", JSON.stringify(rest));
+        formData.append("techProposalDocHRC", technicalProposalDocument ?? "");
+        formData.append("finProposalDocHRC", financialProposalDocument ?? "");
       } else if(key === "Mgt Consulting") {
         const { technicalProposalDocument, financialProposalDocument, ...rest } = value as any;
-        formData.append(`consultingContractDetails-${key}`, JSON.stringify(rest));
-        formData.append("technicalProposalDocumentMgtConsulting", technicalProposalDocument ?? "");
-        formData.append("financialProposalDocumentMgtConsulting", financialProposalDocument ?? "");
-      } else if (key === "Recruitment" || key == "HR Managed Services" || key === "IT & Technology") {
+        formData.append("consultingContractMGTC", JSON.stringify(rest));
+        formData.append("techProposalDocMGTC", technicalProposalDocument ?? "");
+        formData.append("finProposalDocMGTC", financialProposalDocument ?? "");
+      } else if (key === "Recruitment") {
         const { contractDocument, ...rest } = value as any;
-        formData.append(`businessContractDetails-${key}`, JSON.stringify(rest));
-        formData.append(`contractDocument-${key}`, contractDocument ?? "");
+        formData.append("businessContractRQT", JSON.stringify(rest));
+        formData.append("contractDocumentRQT", contractDocument ?? "");
+      } else if (key === "HR Managed Services") {
+        const { contractDocument, ...rest } = value as any;
+        formData.append("businessContractDetailsHMS", JSON.stringify(rest));
+        formData.append("contractDocumentHMS", contractDocument ?? "");
+      } else if (key === "IT & Technology") {
+        const { contractDocument, ...rest } = value as any;
+        formData.append("businessContractIT", JSON.stringify(rest));
+        formData.append("contractDocumentIT", contractDocument ?? "");
       } else if (key === "Outsourcing") {
         const { contractDocument, ...rest } = value as any;
-        formData.append("outsourcingContractDetails", JSON.stringify(rest));
+        formData.append("outsourcingContract", JSON.stringify(rest));
         formData.append("contractDocumentOutsourcing", contractDocument ?? "");
       }
     })
@@ -603,6 +274,14 @@ export function CreateClientModal({
         router.push(`/clients/${result.data.data._id}`);
         return;
       }
+      setClientContactInfo(clientContactInfoInitialstate);
+      setClientGeneralInfo(clientGeneralInfoInitialState);
+      setClientContractInfo({
+        lineOfBusiness: [],
+        contractForms: {},
+      });
+      setPrimaryContact(primaryContactInitialState);
+      setLoading(false);
     } catch (error) {
       console.error("Error creating client:", error);
     }
