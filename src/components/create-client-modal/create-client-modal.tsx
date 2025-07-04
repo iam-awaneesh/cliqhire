@@ -24,6 +24,7 @@ import { ArrowLeftIcon, ArrowRightIcon } from "lucide-react";
 import { 
   clientContactInfoInitialstate, 
   clientGeneralInfoInitialState, 
+  clientSubStages, 
   primaryContactInitialState 
 } from "./constants";
 import { ClientContractInfo, ClientContactInfo, ClientGeneralInfo } from "./type";
@@ -206,8 +207,13 @@ export function CreateClientModal({
     setLoading(true);
     const formData = new FormData();
     // Client General Info
-    formData.append("clientStage", clientGeneralInfo.clientStage ?? "");
-    formData.append("clientSubStage", clientGeneralInfo.clientSubStage ?? "");
+    if(clientSubStages.includes(clientGeneralInfo.clientSubStage!)){
+      formData.append("clientStage", "Engaged");
+      formData.append("clientSubStage", clientGeneralInfo.clientSubStage!); 
+    } else {
+      formData.append("clientStage", clientGeneralInfo.clientStage ?? "");
+      formData.append("clientSubStage", "");
+    }
     formData.append("salesLead", clientGeneralInfo.salesLead ?? "");
     formData.append("referredBy", clientGeneralInfo.referredBy ?? "");
     formData.append("clientPriority", clientGeneralInfo.clientPriority?.toString() ?? "");
