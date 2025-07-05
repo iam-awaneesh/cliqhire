@@ -183,9 +183,9 @@ const validateAndSanitizeClientData = (data: any) => {
     if (sanitized.contractEndDate && !(typeof sanitized.contractEndDate === 'string')) {
       sanitized.contractEndDate = new Date(sanitized.contractEndDate).toISOString();
     }
-    if (sanitized.incorporationDate && !(typeof sanitized.incorporationDate === 'string')) {
-      sanitized.incorporationDate = new Date(sanitized.incorporationDate).toISOString();
-    }
+    // if (sanitized.incorporationDate && !(typeof sanitized.incorporationDate === 'string')) {
+    //   sanitized.incorporationDate = new Date(sanitized.incorporationDate).toISOString();
+    // }
     
     // Validate primary contacts
     if (sanitized.primaryContacts && Array.isArray(sanitized.primaryContacts)) {
