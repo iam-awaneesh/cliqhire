@@ -1,9 +1,9 @@
-import React, { useRef, useState } from 'react'
-import { Label } from '../ui/label'
-import { Textarea } from '../ui/textarea'
-import { Button } from '../ui/button'
-import { Upload } from 'lucide-react'
-import DatePicker from './date-picker'
+import React, { useRef, useState } from "react";
+import { Label } from "../ui/label";
+import { Textarea } from "../ui/textarea";
+import { Button } from "../ui/button";
+import { Upload } from "lucide-react";
+import DatePicker from "./date-picker";
 interface ConsultingContractFormProps {
   formData: {
     contractStartDate: Date | null;
@@ -16,26 +16,22 @@ interface ConsultingContractFormProps {
   setFormData: React.Dispatch<React.SetStateAction<any>>;
 }
 
-const ConsultingContractForm = ({
-  formData,
-  setFormData
-}: ConsultingContractFormProps) => {
+const ConsultingContractForm = ({ formData, setFormData }: ConsultingContractFormProps) => {
+  const [openStartDatePicker, setOpenStartDatePicker] = useState(false);
+  const [openEndDatePicker, setOpenEndDatePicker] = useState(false);
 
-  const [openStartDatePicker, setOpenStartDatePicker] = useState(false)
-  const [openEndDatePicker, setOpenEndDatePicker] = useState(false)
-
-  const technicalProposalOptionInputRef = useRef<HTMLInputElement>(null)
-  const financialProposalOptionInputRef = useRef<HTMLInputElement>(null)
+  const technicalProposalOptionInputRef = useRef<HTMLInputElement>(null);
+  const financialProposalOptionInputRef = useRef<HTMLInputElement>(null);
 
   return (
     <div className="flex flex-col gap-4 mt-4">
       {/* Dates in one row */}
-      <div className="flex flex-row gap-4">
+      <div className="flex flex-row gap-4 ml-2">
         {/* Contract Start Date */}
         <div className="flex-1 space-y-1">
           <Label htmlFor="contractStartDate">Contract Start Date</Label>
           <div className="grid gap-2">
-            <DatePicker 
+            <DatePicker
               open={openStartDatePicker}
               setOpen={setOpenStartDatePicker}
               value={formData.contractStartDate!}
@@ -47,7 +43,7 @@ const ConsultingContractForm = ({
         <div className="flex-1 space-y-1">
           <Label htmlFor="contractEndDate">Contract End Date</Label>
           <div className="grid gap-2">
-            <DatePicker 
+            <DatePicker
               open={openEndDatePicker}
               setOpen={setOpenEndDatePicker}
               value={formData.contractEndDate!}
@@ -57,7 +53,7 @@ const ConsultingContractForm = ({
         </div>
       </div>
       {/* Proposals in one row */}
-      <div className="flex flex-row gap-4">
+      <div className="flex flex-row gap-4 ml-2">
         {/* Technical Proposal */}
         <div className="flex-1 space-y-1">
           <Label>Technical Proposal</Label>
@@ -81,10 +77,15 @@ const ConsultingContractForm = ({
               type="file"
               accept=".pdf,.jpg,.jpeg,.png"
               className="hidden"
-              onChange={(e) => setFormData({ ...formData, technicalProposalDocument: e.target.files?.[0] || null })}
+              onChange={(e) =>
+                setFormData({ ...formData, technicalProposalDocument: e.target.files?.[0] || null })
+              }
             />
             {formData.technicalProposalDocument && (
-              <span className="text-xs text-muted-foreground truncate">
+              <span
+                className="text-xs text-muted-foreground truncate max-w-[150px] inline-block align-middle"
+                title={formData.technicalProposalDocument.name}
+              >
                 {formData.technicalProposalDocument.name}
               </span>
             )}
@@ -113,10 +114,15 @@ const ConsultingContractForm = ({
               type="file"
               accept=".pdf,.jpg,.jpeg,.png"
               className="hidden"
-              onChange={(e) => setFormData({ ...formData, financialProposalDocument: e.target.files?.[0] || null })}
+              onChange={(e) =>
+                setFormData({ ...formData, financialProposalDocument: e.target.files?.[0] || null })
+              }
             />
             {formData.financialProposalDocument && (
-              <span className="text-xs text-muted-foreground truncate">
+              <span
+                className="text-xs text-muted-foreground truncate max-w-[150px] inline-block align-middle"
+                title={formData.financialProposalDocument.name}
+              >
                 {formData.financialProposalDocument.name}
               </span>
             )}
@@ -124,7 +130,7 @@ const ConsultingContractForm = ({
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default ConsultingContractForm
+export default ConsultingContractForm;

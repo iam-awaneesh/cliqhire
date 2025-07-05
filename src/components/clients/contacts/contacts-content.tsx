@@ -1,10 +1,11 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Plus } from "lucide-react"
+import { Plus, Pencil } from "lucide-react"
 import { useState, useEffect } from "react"
 import { CreateContactDialog } from "./create-contact-dialog"
 import { getClientById, PrimaryContact, ClientResponse } from "@/services/clientService"
+import { EditFieldModal } from "../summary/edit-field-modal"
 
 interface ContactsContentProps {
   clientId: string;
@@ -30,8 +31,10 @@ export function ContactsContent({ clientId }: ContactsContentProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [primaryContacts, setPrimaryContacts] = useState<ExtendedPrimaryContact[]>([]);
+  const [clientPhoneNumber, setClientPhoneNumber] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [isPhoneEditOpen, setIsPhoneEditOpen] = useState(false);
 
   useEffect(() => {
     const fetchClientData = async () => {
@@ -74,6 +77,7 @@ export function ContactsContent({ clientId }: ContactsContentProps) {
         }));
 
         setPrimaryContacts(mappedContacts);
+        setClientPhoneNumber(clientData.phoneNumber || "");
         setLoading(false);
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : "Failed to load client data";
@@ -112,6 +116,12 @@ export function ContactsContent({ clientId }: ContactsContentProps) {
     return country ? country.label : code;
   };
 
+  const handlePhoneNumberUpdate = (newPhoneNumber: string) => {
+    setClientPhoneNumber(newPhoneNumber);
+    setIsPhoneEditOpen(false);
+    // TODO: Optionally, call an API to persist the change
+  };
+
   if (loading) {
     return <div className="p-8 text-center">Loading contacts...</div>;
   }
@@ -130,62 +140,79 @@ export function ContactsContent({ clientId }: ContactsContentProps) {
   // If there are primary contacts, show them
   if (primaryContacts.length > 0) {
     return (
-      <div className="p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold">Primary Contacts</h2>
-          <Button className="gap-2" onClick={() => setIsDialogOpen(true)}>
-            <Plus className="h-4 w-4" />
-            Add Contact
-          </Button>
-        </div>
-        
-        <div className="grid gap-4">
-          {primaryContacts.map((contact, index) => (
-            <div key={index} className="bg-white rounded-lg border shadow-sm p-4">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="font-medium text-lg">
-                    {(contact.firstName || contact.lastName)
-                      ? `${contact.firstName || ''} ${contact.lastName || ''}`.trim()
-                      : (contact.name || "Unnamed Contact")}
-                  </div>
-                  {contact.gender && (
-                    <div className="text-sm text-muted-foreground mb-1">{contact.gender}</div>
-                  )}
-                  {contact.position && (
-                    <div className="text-sm text-muted-foreground mb-2">{contact.position}</div>
-                  )}
-                  <div className="space-y-1">
-                    {contact.email && (
-                      <div className="text-sm">
-                        <span className="font-medium">Email:</span> {contact.email}
-                      </div>
-                    )}
-                    {contact.phone && (
-                      <div className="text-sm">
-                        <span className="font-medium">Phone:</span> {getCountryCodeLabel(contact.countryCode || "")} {contact.phone}
-                      </div>
-                    )}
-                    {contact.linkedin && (
-                      <div className="text-sm">
-                        <span className="font-medium">LinkedIn:</span>{" "}
-                        <a
-                          href={contact.linkedin}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:underline"
-                        >
-                          View Profile
-                        </a>
-                      </div>
-                    )}
-                  </div>
-                </div>
+      <div className="p-0">
+        {/* <div className="mb-6">
+          <h2 className="text-lg font-semibold">Contacts</h2>
+        </div> */}
+        <div className="flex gap-8 flex-wrap">
+          {/* Client Phone Number on the left */}
+          <div className="flex-1 min-w-[260px] max-w-xs">
+            <div className="bg-white rounded-lg border shadow-sm p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-semibold">Client Phone Number</span>
+                <Button variant="outline" size="sm" className="h-8 gap-2" onClick={() => setIsPhoneEditOpen(true)}>
+                  <Pencil className="h-4 w-4 mr-2" />Edit
+                </Button>
+              </div>
+              <div className="text-base">
+                {clientPhoneNumber ? (
+                  <span>{clientPhoneNumber}</span>
+                ) : (
+                  <span className="text-muted-foreground">No phone number</span>
+                )}
               </div>
             </div>
-          ))}
+            <EditFieldModal
+              open={isPhoneEditOpen}
+              onClose={() => setIsPhoneEditOpen(false)}
+              fieldName="Client Phone Number"
+              currentValue={clientPhoneNumber}
+              onSave={handlePhoneNumberUpdate}
+            />
+          </div>
+          {/* Primary Contacts on the right */}
+          <div className="flex-1 min-w-[320px]">
+            <div className="bg-white rounded-lg border shadow-sm p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-semibold">Primary Contacts</span>
+                <Button variant="outline" size="sm" onClick={() => setIsDialogOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />Add
+                </Button>
+              </div>
+              {primaryContacts.length === 0 ? (
+                <div className="text-sm text-muted-foreground text-center py-4">No primary contacts</div>
+              ) : (
+                <div className="space-y-3">
+                  {primaryContacts.map((contact, index) => (
+                    <div key={index} className="p-3 rounded-md border">
+                      <div className="font-medium">{`${contact.firstName || ''} ${contact.lastName || ''}`.trim() || contact.name || "Unnamed Contact"}</div>
+                      {contact.gender && <div className="text-sm text-muted-foreground">{contact.gender}</div>}
+                      {contact.position && <p className="text-sm text-muted-foreground">{contact.position}</p>}
+                      {contact.email && <p className="text-sm text-muted-foreground">{contact.email}</p>}
+                      <div className="text-sm text-muted-foreground">
+                        {getCountryCodeLabel(contact.countryCode || "")} {contact.phone || "No phone"}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {contact.linkedin ? (
+                          <a
+                            href={contact.linkedin}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline"
+                          >
+                            LinkedIn
+                          </a>
+                        ) : (
+                          "No LinkedIn"
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-
         <CreateContactDialog 
           open={isDialogOpen}
           onOpenChange={setIsDialogOpen}
