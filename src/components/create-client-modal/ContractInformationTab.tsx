@@ -68,7 +68,7 @@ export function ContractInformationTab({
     setModalOpen(false);
   };
 
-  console.log(formData);
+  // console.log(formData);
 
   const businessOptions = [
     "Recruitment",

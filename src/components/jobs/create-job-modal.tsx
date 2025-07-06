@@ -570,10 +570,8 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
                                   onMouseDown={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
-                                    console.log('Selecting client:', client.name, client._id);
                                     setFormData(prev => {
                                       const newData = { ...prev, client: client._id };
-                                      console.log('Updated form data:', newData);
                                       return newData;
                                     });
                                     setSearchClient(client.name || '');

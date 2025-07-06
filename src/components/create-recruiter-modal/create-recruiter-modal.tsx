@@ -78,9 +78,7 @@ export function CreateRecruiterModal({ open, onOpenChange, onSuccess }: CreateRe
     setIsSubmitting(true);
     try {
       const createdRecruiter = await createRecruiter(formData);
-      
-      console.log('Recruiter created:', createdRecruiter);
-      
+            
       // Reset form
       setFormData({
         name: '',

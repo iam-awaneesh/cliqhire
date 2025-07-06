@@ -181,12 +181,11 @@ const PercentageCurrencyNotesRow: React.FC<{
 }) => (
   <div className="w-full">
     <div className="flex items-center space-x-2 w-full sm:w-auto">
-      <div className="relative w-40">
-        {" "}
-        {/* 10rem */}
+      <div className={`relative ${!showCurrency ? "w-[22rem]" : "w-40"}`}>
+        {/* 22rem for only Percentage+Notes, 10rem (w-40) for with currency */}
         <Input
           type="number"
-          placeholder="0"
+          placeholder="Percentage"
           min="0"
           max="100"
           onChange={(e) => {
@@ -194,7 +193,7 @@ const PercentageCurrencyNotesRow: React.FC<{
             onPercentageChange(isNaN(value) ? 0 : Math.min(100, Math.max(0, value)));
           }}
           value={percentageValue || ""}
-          className="h-8 pl-2 pr-6 text-xs"
+          className="h-8 pl-2 pr-6 text-xs w-full"
         />
         <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-muted-foreground">
           %
@@ -202,11 +201,9 @@ const PercentageCurrencyNotesRow: React.FC<{
       </div>
       {showCurrency && onCurrencyChange && (
         <div className="flex items-center space-x-0 border rounded-md overflow-hidden w-48">
-          {" "}
           {/* 12rem: 6rem (currency) + 6rem (amount) */}
           <Select value={currencyValue || "SAR"} onValueChange={onCurrencyChange}>
             <SelectTrigger className="h-8 text-xs w-24 rounded-r-none border-r-0">
-              {" "}
               {/* 6rem */}
               <SelectValue placeholder="Currency" />
             </SelectTrigger>
@@ -239,7 +236,7 @@ const PercentageCurrencyNotesRow: React.FC<{
           placeholder={notesPlaceholder}
           onChange={(e) => onNotesChange(e.target.value)}
           value={notesValue || ""}
-          className="h-8 text-xs w-[22rem] sm:w-[22rem]" // 10rem (percentage) + 12rem (currency+amount)
+          className={`h-8 text-xs ${!showCurrency ? "w-[22rem]" : "w-[22.5rem] sm:w-[22.5rem]"}`}
         />
       </div>
     )}
@@ -400,7 +397,7 @@ const StandardContractForm = ({ formData, setFormData }: StandardContractFormPro
         {formData.contractType === "Fix with Advance" && (
           <div className="w-full">
             <div className="space-y-4 col-span-1 sm:col-span-2 border rounded-lg p-4">
-              <div className="border-2 shadow-sm rounded-lg p-2 cursor-pointer transition-colors w-full border-primary bg-primary/5">
+              <div className="border-2 shadow-sm rounded-lg p-2 cursor-pointer transition-colors w-full border-primary">
                 <div className="flex flex-col sm:flex-row items-center sm:space-x-4 space-y-2 sm:space-y-0">
                   <h4 className="font-medium text-xs sm:text-sm w-28">Fix with Advance</h4>
                   <PercentageCurrencyNotesRow
@@ -447,7 +444,7 @@ const StandardContractForm = ({ formData, setFormData }: StandardContractFormPro
         {formData.contractType === "Fix without Advance" && (
           <div className="w-full">
             <div className="space-y-4 col-span-1 sm:col-span-2 border rounded-lg p-4">
-              <div className="border-2 shadow-sm rounded-lg p-2 cursor-pointer transition-colors w-full border-primary bg-primary/5">
+              <div className="border-2 shadow-sm rounded-lg p-2 cursor-pointer transition-colors w-full border-primary">
                 <div className="flex flex-col sm:flex-row items-center sm:space-x-4 space-y-2 sm:space-y-0">
                   <h4 className="font-medium text-xs sm:text-sm w-28">Fix without Advance</h4>
                   <PercentageCurrencyNotesRow

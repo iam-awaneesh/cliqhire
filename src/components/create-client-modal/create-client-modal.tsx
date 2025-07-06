@@ -235,10 +235,8 @@ export function CreateClientModal({
     // Client Contract Info
     formData.append("lineOfBusiness", JSON.stringify(clientContractInfo.lineOfBusiness) || "");
 
-    console.log(clientContractInfo.contractForms)
-
     Object.entries(clientContractInfo.contractForms).forEach(([key, value]) => {
-      console.log(key, value);
+      // console.log(key, value);
       if(key === "HR Consulting") {
         const { technicalProposalDocument, financialProposalDocument, ...rest } = value as any;
         formData.append("consultingContractHRC", JSON.stringify(rest));
@@ -296,9 +294,6 @@ export function CreateClientModal({
   const handleNext = () => {
     const newTab = Math.min(currentTab + 1, 3);
     setCurrentTab(newTab);
-    console.log(clientGeneralInfo);
-    console.log(clientContactInfo);
-    console.log(clientContractInfo);
   };
 
   const handlePrevious = () => {

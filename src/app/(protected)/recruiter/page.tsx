@@ -68,12 +68,11 @@ export default function RecruiterPage() {
   };
 
   const handleViewRecruiter = (recruiterId: string) => {
-    console.log("View recruiter:", recruiterId);
     router.push(`/recruiter/${recruiterId}`);
   };
 
   const handleEditRecruiter = (recruiterId: string) => {
-    console.log("Edit recruiter:", recruiterId);
+    // console.log("Edit recruiter:", recruiterId);
     // Open edit modal
   };
 
@@ -92,7 +91,6 @@ export default function RecruiterPage() {
   };
 
   const handleDownloadResume = (resumeUrl: string, recruiterName: string) => {
-    console.log("Download resume:", resumeUrl);
     // Handle resume download
     if (resumeUrl) {
       window.open(resumeUrl, '_blank');
