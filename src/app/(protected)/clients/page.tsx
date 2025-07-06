@@ -21,14 +21,32 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { getJobCountsByClient } from "@/services/jobService";
 import { Plus, RefreshCcw, SlidersHorizontal, MoreVertical } from "lucide-react";
-import { CreateClientModal } from "@/components/create-client-modal";
-import { getClients, updateClientStage, ClientResponse } from "@/services/clientService";
+import { CreateClientModal } from "@/components/create-client-modal/create-client-modal";
+import { getClients, updateClientStage, updateClientStageStatus, ClientResponse, ClientStageStatus } from "@/services/clientService";
 import { ClientStageBadge } from "@/components/client-stage-badge";
+import { ClientStageStatusBadge } from "@/components/client-stage-status-badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { differenceInYears } from 'date-fns';
+import Dashboardheader from "@/components/dashboard-header";
+import Tableheader from "@/components/table-header";
+
+
+const columsArr = [
+  "Name",
+  "Industry",
+  "Location",
+  "Stage",
+  "Stage Status",
+  "Sales RM",
+  "Client Team",
+  "Client Age",
+  "Job Count"
+];
+
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://aems-backend.onrender.com/api";
 
@@ -38,6 +56,7 @@ interface Client {
   industry: string;
   location: string;
   stage: "Lead" | "Negotiation" | "Engaged" | "Signed";
+  clientStageStatus: ClientStageStatus;
   owner: string;
   team: string;
   createdAt: string;
@@ -59,21 +78,12 @@ interface Filters {
   maxAge: string;
 }
 
-interface JobCountResponse {
-  success: boolean;
-  data: {
-    _id: string;
-    count: number;
-    clientName: string;
-  }[];
-}
+
 
 export default function ClientsPage() {
   const router = useRouter();
-  const params = useParams();
   const [open, setOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
-  const [viewType, setViewType] = useState<"list" | "board">("list");
   const [sortConfig, setSortConfig] = useState<SortConfig>({ field: "name", order: "asc" });
   const [filters, setFilters] = useState<Filters>({
     name: "",
@@ -85,6 +95,8 @@ export default function ClientsPage() {
   const [initialLoading, setInitialLoading] = useState<boolean>(true);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [pendingChange, setPendingChange] = useState<{ clientId: string; stage: Client["stage"] } | null>(null);
+  const [pendingStatusChange, setPendingStatusChange] = useState<{ clientId: string; status: ClientStageStatus } | null>(null);
+  const [showStatusConfirmDialog, setShowStatusConfirmDialog] = useState(false);
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
   
   // Pagination states
@@ -97,7 +109,6 @@ export default function ClientsPage() {
     setInitialLoading(true);
     try {
       // Fetch all clients from the API (no pagination in the API call)
-      console.log('Fetching all clients from API');
       
       // First try with the service function
       try {
@@ -107,15 +118,12 @@ export default function ClientsPage() {
           ...(filters.industry && { industry: filters.industry })
         });
         
-        console.log('API Response from service:', response);
         
         if (response && response.clients && Array.isArray(response.clients)) {
           // Extract data from response
           const apiClients: ClientResponse[] = response.clients;
           const total = apiClients.length;
-          
-          console.log(`Fetched ${total} clients from API`);
-          
+                    
           // Map API clients to our format
           const mappedClients = apiClients.map((client: ClientResponse) => ({
             id: client._id,
@@ -123,6 +131,7 @@ export default function ClientsPage() {
             industry: client.industry || '',
             location: client.location || '',
             stage: client.clientStage || 'Lead',
+            clientStageStatus: client.clientStageStatus || "Calls",
             owner: client.clientRm || '',
             team: client.clientTeam || '',
             createdAt: client.createdAt,
@@ -135,7 +144,7 @@ export default function ClientsPage() {
           
           // Reset to first page when fetching new data
           setCurrentPage(1);
-          
+
           // Fetch job counts in the background
           fetchJobCounts(mappedClients);
           
@@ -152,7 +161,6 @@ export default function ClientsPage() {
       }
       
       // Fallback: Direct API call
-      console.log('Falling back to direct API call');
       const directResponse = await axios.get(`${API_URL}/clients`, {
         params: {
           // Don't pass page/limit to get all clients
@@ -161,7 +169,6 @@ export default function ClientsPage() {
         }
       });
       
-      console.log('Direct API Response:', directResponse.data);
       
       // Process the direct API response
       if (directResponse.data && directResponse.data.success) {
@@ -169,9 +176,7 @@ export default function ClientsPage() {
           directResponse.data.data : 
           (directResponse.data.data && Array.isArray(directResponse.data.data.clients) ? 
             directResponse.data.data.clients : []);
-        
-        console.log(`Fetched ${apiClients.length} clients directly from API`);
-        
+                
         // Map API clients to our format
         const mappedClients = apiClients.map((client: ClientResponse) => ({
           id: client._id,
@@ -179,11 +184,12 @@ export default function ClientsPage() {
           industry: client.industry || '',
           location: client.location || '',
           stage: client.clientStage || 'Lead',
+          clientStageStatus: client.clientStageStatus || "Calls",
           owner: client.clientRm || '',
           team: client.clientTeam || '',
           createdAt: client.createdAt,
           incorporationDate: client.incorporationDate || '',
-          jobCount: 0 // Will be updated with actual job counts
+          jobCount: client.jobCount || 0
         }));
         
         // Set clients state with all clients (pagination is handled client-side)
@@ -191,9 +197,6 @@ export default function ClientsPage() {
         
         // Reset to first page when fetching new data
         setCurrentPage(1);
-        
-        // Fetch job counts in the background
-        fetchJobCounts(mappedClients);
         
         // Save to localStorage as backup
         if (typeof window !== 'undefined') {
@@ -224,13 +227,11 @@ export default function ClientsPage() {
           const paginatedClients = storedClients.slice(startIndex, endIndex);
           
           setClients(paginatedClients);
-          console.log(`Fallback: Showing clients ${startIndex + 1} to ${endIndex} of ${total} from localStorage`);
         } else {
           // No clients in localStorage either
           setClients([]);
           setTotalClients(0);
           setTotalPages(1);
-          console.log('No clients available in localStorage');
         }
       } catch (fallbackError) {
         console.error('Error with fallback clients:', fallbackError);
@@ -243,72 +244,62 @@ export default function ClientsPage() {
     }
   };
   
-  // Separate function to fetch job counts in the background
-  const fetchJobCounts = async (clientsList: Client[]) => {
-    console.log('Starting to fetch job counts for', clientsList.length, 'clients');
-    
-    try {
-      // Fetch job counts for all clients
-      const jobCountPromises = clientsList.map(async (client: Client) => {
-        try {
-          console.log(`Fetching job count for client ${client.id} (${client.name})`);
-          const response = await fetch(`${API_URL}/jobs/count/${client.id}`);
-          
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          
-          const jobCountData = await response.json();
-          console.log(`Job count response for client ${client.id}:`, jobCountData);
-          
-          // Handle different possible response formats
-          let count = 0;
-          if (jobCountData && typeof jobCountData === 'object') {
-            if (jobCountData.success && jobCountData.data && typeof jobCountData.data.count === 'number') {
-              count = jobCountData.data.count;
-            } else if (typeof jobCountData.count === 'number') {
-              count = jobCountData.count;
-            } else if (Array.isArray(jobCountData)) {
-              // Handle case where the API returns an array of job counts
-              count = jobCountData.length;
-            }
-          }
-          
-          console.log(`Client ${client.id} has ${count} jobs`);
-          return {
-            clientId: client.id,
-            count: count
-          };
-        } catch (error) {
-          console.error(`Error fetching job count for client ${client.id} (${client.name}):`, error);
-          return { clientId: client.id, count: 0 }; // Return 0 as fallback
-        }
-      });
-      
-      // Wait for all job count requests to complete
-      const jobCounts = await Promise.all(jobCountPromises);
-      
-      // Update clients with job counts
-      setClients(prevClients => {
-        const updatedClients = prevClients.map((client: Client) => {
-          const jobCountInfo = jobCounts.find(jc => jc.clientId === client.id);
-          return { 
-            ...client, 
-            jobCount: jobCountInfo ? jobCountInfo.count : 0 
-          };
-        });
-        
-        console.log('Updated clients with job counts:', updatedClients);
-        return updatedClients;
-      });
-      
-      console.log('Successfully updated all clients with job counts');
-    } catch (error) {
-      console.error('Error in fetchJobCounts:', error);
-    }
-  };
+
   
+  // const fetchJobCounts = async (clientsList: Client[]) => {
+  //   try {
+  //     const jobCountPromises = clientsList.map(async (client: Client) => {
+  //       try {
+  //         const response = await fetch(`${API_URL}/jobs/count/${client.id}`);
+  //         if (!response.ok) {
+  //           throw new Error(`HTTP error! status: ${response.status}`);
+  //         }
+  //         const jobCountData = await response.json();
+  //         let count = 0;
+  //         if (jobCountData && typeof jobCountData === 'object') {
+  //           if (jobCountData.success && jobCountData.data && typeof jobCountData.data.count === 'number') {
+  //             count = jobCountData.data.count;
+  //           } else if (typeof jobCountData.count === 'number') {
+  //             count = jobCountData.count;
+  //           }
+  //         }
+  //         return { clientId: client.id, count };
+  //       } catch (error) {
+  //         console.error(`Error fetching job count for client ${client.id}:`, error);
+  //         return { clientId: client.id, count: 0 };
+  //       }
+  //     });
+
+  //     const jobCounts = await Promise.all(jobCountPromises);
+
+  //     setClients(prevClients => {
+  //       const updatedClients = prevClients.map(client => {
+  //         const jobCountInfo = jobCounts.find(jc => jc.clientId === client.id);
+  //         return { ...client, jobCount: jobCountInfo ? jobCountInfo.count : 0 };
+  //       });
+  //       return updatedClients;
+  //     });
+  //   } catch (error) {
+  //     console.error('Error in fetchJobCounts:', error);
+  //   }
+  // };
+
   // Handle page change
+ 
+ const fetchJobCounts = async (clientsList: Client[]) => {
+  try {
+    const jobCounts = await getJobCountsByClient(); // [{_id, count, clientName}]
+    setClients(prevClients =>
+      prevClients.map(client => {
+        const found = jobCounts.find(jc => jc._id === client.id);
+        return { ...client, jobCount: found ? found.count : 0 };
+      })
+    );
+  } catch (error) {
+    console.error("Error fetching job counts in bulk:", error);
+  }
+};
+ 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
       setCurrentPage(newPage);
@@ -344,9 +335,13 @@ export default function ClientsPage() {
   };
 
   const handleStageChange = (clientId: string, newStage: Client["stage"]) => {
-    console.log(`Stage change requested: Client ${clientId} to stage ${newStage}`);
     setPendingChange({ clientId, stage: newStage });
     setShowConfirmDialog(true);
+  };
+
+  const handleStageStatusChange = (clientId: string, newStatus: ClientStageStatus) => {
+    setPendingStatusChange({ clientId, status: newStatus });
+    setShowStatusConfirmDialog(true);
   };
 
   const filteredAndSortedClients = useMemo(() => {
@@ -398,6 +393,37 @@ export default function ClientsPage() {
 
   const [error, setError] = useState<string | null>(null);
 
+  const handleConfirmStatusChange = async () => {
+    if (!pendingStatusChange) return;
+
+    setIsUpdating(true);
+    setError(null);
+    let isSuccess = false;
+
+    try {
+
+      const updatedClient = await updateClientStageStatus(pendingStatusChange.clientId, pendingStatusChange.status);
+
+      setClients(prevClients =>
+        prevClients.map(client =>
+          client.id === pendingStatusChange.clientId
+            ? { ...client, clientStageStatus: updatedClient?.clientStageStatus! }
+            : client
+        )
+      );
+      isSuccess = true;
+    } catch (err: any) {
+      console.error('Error updating client stage status:', err);
+      setError(err.message || 'An unexpected error occurred.');
+    } finally {
+      setIsUpdating(false);
+      setShowStatusConfirmDialog(false);
+      if (isSuccess) {
+        setPendingStatusChange(null);
+      }
+    }
+  };
+
   const handleConfirmChange = async () => {
     if (!pendingChange) return;
 
@@ -406,7 +432,6 @@ export default function ClientsPage() {
     let isSuccess = false;
 
     try {
-      console.log('Updating client stage:', pendingChange.clientId, 'to', pendingChange.stage);
 
       const updatedClient = await updateClientStage(pendingChange.clientId, pendingChange.stage);
 
@@ -418,7 +443,6 @@ export default function ClientsPage() {
         )
       );
 
-      console.log('Stage update successful for client:', pendingChange.clientId);
 
       isSuccess = true;
       setShowConfirmDialog(false);
@@ -487,89 +511,50 @@ export default function ClientsPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Confirmation Dialog for Stage Status Change */}
+      <AlertDialog open={showStatusConfirmDialog} onOpenChange={setShowStatusConfirmDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will update the client's stage status.
+              {error && (
+                <div className="text-red-600 mt-4 p-3 bg-red-50 rounded-md">
+                  {error}
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => { setShowStatusConfirmDialog(false); setError(null); }}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmStatusChange} disabled={isUpdating}>
+              {isUpdating ? "Updating..." : "Confirm"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <div className="flex flex-col h-full">
         {/* Header */}
-        <div className="border-b">
-          <div className="flex h-16 items-center px-4">
-            <h1 className="text-2xl font-semibold">Clients</h1>
-            <div className="ml-auto flex items-center space-x-2">
-              <Button
-                variant={viewType === "list" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setViewType("list")}
-              >
-                LIST
-              </Button>
-            </div>
-          </div>
-        </div>
 
-        {/* Toolbar */}
-        <div className="flex items-center justify-between p-4">
-          <Button size="sm" onClick={() => setOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Client
-          </Button>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => setFilterOpen(true)}>
-              <SlidersHorizontal className="h-4 w-4 mr-2" />
-              Filters
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => fetchClients(currentPage, pageSize)}
-              disabled={initialLoading}
-            >
-              {initialLoading ? (
-                <>
-                  <RefreshCcw className="h-4 w-4 mr-2 animate-spin" />
-                  Loading...
-                </>
-              ) : (
-                <>
-                  <RefreshCcw className="h-4 w-4 mr-2" />
-                  Refresh
-                </>
-              )}
-            </Button>
-            <Button variant="ghost" size="sm">
-              <MoreVertical className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+        <Dashboardheader
+          setOpen={setOpen}
+          setFilterOpen={setFilterOpen}
+          initialLoading={initialLoading}
+          heading="Clients"
+          buttonText="Create Client"
+        />
 
         {/* Table */}
-        {viewType === "list" && (
+
           <div className="flex-1">
             <Table>
               <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead className="text-xs uppercase text-muted-foreground font-medium">
-                    Client Name
-                  </TableHead>
-                  <TableHead className="text-xs uppercase text-muted-foreground font-medium">
-                    Client Industry
-                  </TableHead>
-                  <TableHead className="text-xs uppercase text-muted-foreground font-medium">
-                    Client Location
-                  </TableHead>
-                  <TableHead className="text-xs uppercase text-muted-foreground font-medium">
-                    Client Stage
-                  </TableHead>
-                  <TableHead className="text-xs uppercase text-muted-foreground font-medium">
-                    Sales RM
-                  </TableHead>
-                  <TableHead className="text-xs uppercase text-muted-foreground font-medium">
-                    Client Team
-                  </TableHead>
-                  <TableHead className="text-xs uppercase text-muted-foreground font-medium">
-                    Client Age
-                  </TableHead>
-                  <TableHead className="text-xs uppercase text-muted-foreground font-medium">
-                    Job Count
-                  </TableHead>
-                </TableRow>
+
+                  <Tableheader
+                    tableHeadArr={columsArr}
+                  />
+                
               </TableHeader>
               <TableBody>
                 {initialLoading ? (
@@ -608,6 +593,14 @@ export default function ClientsPage() {
                           id={client.id}
                           stage={client.stage}
                           onStageChange={handleStageChange}
+                        />
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        <ClientStageStatusBadge 
+                          id={client.id}
+                          status={client.clientStageStatus}
+                          stage={client.stage}
+                          onStatusChange={handleStageStatusChange}
                         />
                       </TableCell>
                       <TableCell className="text-sm">{client.owner}</TableCell>
@@ -675,7 +668,7 @@ export default function ClientsPage() {
               </div>
             </div>
           </div>
-        )}
+        
 
         <CreateClientModal open={open} onOpenChange={setOpen} />
       </div>

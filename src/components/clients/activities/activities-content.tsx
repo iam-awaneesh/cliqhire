@@ -52,7 +52,6 @@ export function ActivitiesContent({ clientId }: ActivitiesContentProps) {
   ])
 
   const handleEdit = (activityId: string) => {
-    console.log('Edit activity:', activityId)
   }
 
   const handleDelete = (activityId: string) => {
@@ -60,7 +59,6 @@ export function ActivitiesContent({ clientId }: ActivitiesContentProps) {
   }
 
   const handleShare = (activityId: string) => {
-    console.log('Share activity:', activityId)
   }
 
   if (activities.length === 0) {

@@ -26,13 +26,11 @@ const fetchClients = async () => {
     // First check if we have clients in localStorage
     const storedClients = getClientsFromLocalStorage();
     if (storedClients && storedClients.length > 0) {
-      console.log('Using clients from localStorage');
       sampleClients = storedClients;
       return sampleClients;
     }
     
     // If not, fetch from API
-    console.log('Fetching clients from API');
     const response = await getClients();
     const clients = Array.isArray(response) ? response : [];
     

@@ -18,6 +18,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import Dashboardheader from "@/components/dashboard-header"
+import Tableheader from "@/components/table-header"
+
+const columsArr =[
+  "Position Name",
+  "Job Department",
+  "Job location",
+  "Headcount",
+  "Job Stage",
+  "Minimum salary",
+  "Maximum salary",
+  "Job Owner"
+]
 
 function ConfirmStageChangeDialog({
   open,
@@ -220,7 +233,7 @@ export default function JobsPage() {
             <h1 className="text-2xl font-semibold flex items-center gap-2">
               Jobs
             </h1>
-            <div className="ml-auto flex items-center space-x-2">
+            {/* <div className="ml-auto flex items-center space-x-2">
               <Button variant="outline" size="sm">
                 <LayoutGrid className="h-4 w-4 mr-2" />
                 BOARD
@@ -229,7 +242,7 @@ export default function JobsPage() {
                 <List className="h-4 w-4 mr-2" />
                 LIST
               </Button>
-            </div>
+            </div> */}
           </div>
         </div>
 
@@ -260,16 +273,9 @@ export default function JobsPage() {
         <div className="flex-1">
           <Table>
             <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead className="text-xs uppercase text-muted-foreground font-medium">Position Name</TableHead>
-                  <TableHead className="text-xs uppercase text-muted-foreground font-medium">Job Department</TableHead>
-                  <TableHead className="text-xs uppercase text-muted-foreground font-medium">Job location</TableHead>
-                  <TableHead className="text-xs uppercase text-muted-foreground font-medium">Headcount</TableHead>
-                  <TableHead className="text-xs uppercase text-muted-foreground font-medium">Job Stage</TableHead>
-                  <TableHead className="text-xs uppercase text-muted-foreground font-medium">Minimum salary</TableHead>
-                  <TableHead className="text-xs uppercase text-muted-foreground font-medium">Maximum salary</TableHead>
-                  <TableHead className="text-xs uppercase text-muted-foreground font-medium">Job Owner</TableHead>
-                </TableRow>
+                  <Tableheader
+                    tableHeadArr={columsArr} 
+                  />                                                                                                  
               </TableHeader>
           </Table>
         </div>
@@ -281,75 +287,31 @@ export default function JobsPage() {
     <>
       <div className="flex flex-col h-full">
         {/* Header */}
-        <div className="border-b">
-          <div className="flex h-16 items-center px-4">
-            <h1 className="text-2xl font-semibold flex items-center gap-2">
-              Jobs
-            </h1>
-            <div className="ml-auto flex items-center space-x-2">
-              <Button variant="outline" size="sm">
-                <LayoutGrid className="h-4 w-4 mr-2" />
-                BOARD
-              </Button>
-              <Button variant="default" size="sm">
-                <List className="h-4 w-4 mr-2" />
-                LIST
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Toolbar */}
-        <div className="flex items-center justify-between p-4">
-          <Button size="sm" onClick={() => setOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Job Requirement
-          </Button>
-            <div className="flex items-center gap-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setFilterOpen(true)}
-              >
-                <SlidersHorizontal className="h-4 w-4 mr-2" />
-                Filters
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={refreshJobs}
-              >
-                <RefreshCcw className="h-4 w-4 mr-2" />
-                Refresh
-              </Button>
-              <Button variant="ghost" size="sm">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </div>
-        </div>
+        <Dashboardheader
+          setOpen={setOpen}
+          setFilterOpen={setFilterOpen}
+          initialLoading={loading}
+          heading="Jobs"
+          buttonText="Create Job Requirement"
+        />
 
         {/* Content */}
         {jobs.length > 0 ? (
           <div className="flex-1 overflow-auto">
             <Table>
               <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead className="text-xs uppercase text-muted-foreground font-medium">Position Name</TableHead>
-                  <TableHead className="text-xs uppercase text-muted-foreground font-medium">Job Department</TableHead>
-                  <TableHead className="text-xs uppercase text-muted-foreground font-medium">Job location</TableHead>
-                  <TableHead className="text-xs uppercase text-muted-foreground font-medium">Headcount</TableHead>
-                  <TableHead className="text-xs uppercase text-muted-foreground font-medium">Job Stage</TableHead>
-                  <TableHead className="text-xs uppercase text-muted-foreground font-medium">Minimum salary</TableHead>
-                  <TableHead className="text-xs uppercase text-muted-foreground font-medium">Maximum salary</TableHead>
-                  <TableHead className="text-xs uppercase text-muted-foreground font-medium">Job Owner</TableHead>
-                </TableRow>
+               
+                  <Tableheader
+                    tableHeadArr={columsArr} 
+                  />
+               
               </TableHeader>
               <TableBody>
                 {jobs.map((job: Job) => (
                   <TableRow 
-                    key={job._id} 
+                    key={job.id} 
                     className="hover:bg-muted/50 cursor-pointer"
-                    onClick={() => router.push(`/jobs/${job._id}`)}
+                    onClick={() => router.push(`/jobs/${job.id}`)}
                   >
                     <TableCell className="text-sm font-medium">{job.positionName}</TableCell>
                     <TableCell className="text-sm">{job.department}</TableCell>

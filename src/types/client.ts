@@ -60,12 +60,17 @@ export interface ClientFormData {
     country: string;
     city: string;
   };
+  country: string;
+  city: string;
   industry: string;
+  salesLead: string;
   contacts: ClientContact[];
   documents: {
     crDocument?: File;
     vatDocument?: File;
   };
+  crDocument?: File;
+  vatDocument?: File;
   origin: ClientOrigin;
   lineOfBusiness: LineOfBusiness[];
 }
