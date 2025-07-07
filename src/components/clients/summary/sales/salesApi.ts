@@ -1,7 +1,7 @@
 import axios from "axios";
 
-// Replace with your real API endpoint
-const BASE_URL = "https://localhost:5000/api";
+// Updated to point directly to the sales API endpoint
+const BASE_URL = "http://localhost:5000/api/sales";
 
 export interface SalesInfo {
   financials: string;
@@ -21,22 +21,37 @@ export async function getSalesInfo(): Promise<SalesInfo> {
   };
   
 
-
-  // Example: GET https://example/api/get.com
-  const response = await axios.get(`${BASE_URL}/sales`); // <-- Replace with your GET endpoint
+  // Example: GET http://localhost:5000/api/sales
+  const response = await axios.get(`${BASE_URL}`); // <-- Now points directly to /sales
   return response.data;
   
 }
 
 // Update all sales info in backend
 export async function updateSalesInfo(data: SalesInfo): Promise<void> {
-  // Example: PUT https://example/api/update.com
-  await axios.put(`${BASE_URL}/sales`, data); // <-- Replace with your PUT endpoint
+  // Ensure all fields are strings (API may expect this)
+  const payload = {
+    financials: String(data.financials),
+    nonFinancials: String(data.nonFinancials),
+    numberOfEmployees: String(data.numberOfEmployees),
+    formationYear: String(data.formationYear),
+  };
+  try {
+    await axios.put(`${BASE_URL}`, payload); // <-- Now points directly to /sales
+  } catch (error: any) {
+    // Log error details for debugging
+    if (error.response) {
+      console.error('API 400 Error:', error.response.data);
+    } else {
+      console.error('API Error:', error.message);
+    }
+    throw error;
+  }
 }
 
 // Update a single field in sales info (partial update)
 export async function patchSalesInfoField(field: keyof SalesInfo, value: string): Promise<void> {
-  // Example: PATCH https://example/api/patch.com
+  // Example: PATCH http://localhost:5000/api/sales
   // Sends { field: value } as the body
-  await axios.patch(`${BASE_URL}/sales`, { [field]: value }); // <-- Replace with your PATCH endpoint
+  await axios.patch(`${BASE_URL}`, { [field]: value }); // <-- Now points directly to /sales
 }
