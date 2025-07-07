@@ -167,6 +167,8 @@ const PercentageCurrencyNotesRow: React.FC<{
   notesValue?: string;
   onNotesChange?: (value: string) => void;
   notesPlaceholder?: string;
+  fullWidth?: boolean;
+  splitNotesBelow?: boolean; // NEW PROP
 }> = ({
   percentageValue,
   onPercentageChange,
@@ -178,11 +180,12 @@ const PercentageCurrencyNotesRow: React.FC<{
   notesValue,
   onNotesChange,
   notesPlaceholder = "Notes",
+  fullWidth = false,
+  splitNotesBelow = false,
 }) => (
-  <div className="w-full">
-    <div className="flex items-center space-x-2 w-full sm:w-auto">
-      <div className={`relative ${!showCurrency ? "w-[22rem]" : "w-40"}`}>
-        {/* 22rem for only Percentage+Notes, 10rem (w-40) for with currency */}
+  <div className={fullWidth ? "w-full" : "w-full"}>
+    <div className={`flex items-center space-x-2 w-full sm:w-auto${fullWidth ? "" : ""}`}>
+      <div className={`relative ${fullWidth ? "flex-1" : !showCurrency ? "w-[22rem]" : "w-40"}`}>
         <Input
           type="number"
           placeholder="Percentage"
@@ -193,18 +196,20 @@ const PercentageCurrencyNotesRow: React.FC<{
             onPercentageChange(isNaN(value) ? 0 : Math.min(100, Math.max(0, value)));
           }}
           value={percentageValue || ""}
-          className="h-8 pl-2 pr-6 text-xs w-full"
+          className={`h-8 pl-2 pr-6 text-xs w-full`}
         />
         <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-muted-foreground">
           %
         </span>
       </div>
       {showCurrency && onCurrencyChange && (
-        <div className="flex items-center space-x-0 border rounded-md overflow-hidden w-48">
-          {/* 12rem: 6rem (currency) + 6rem (amount) */}
+        <div
+          className={`flex items-center space-x-0 border rounded-md overflow-hidden ${fullWidth ? "flex-1" : "w-48"}`}
+        >
           <Select value={currencyValue || "SAR"} onValueChange={onCurrencyChange}>
-            <SelectTrigger className="h-8 text-xs w-24 rounded-r-none border-r-0">
-              {/* 6rem */}
+            <SelectTrigger
+              className={`h-8 text-xs ${fullWidth ? "w-full flex-1 rounded-none border-r-0" : "w-24 rounded-r-none border-r-0"}`}
+            >
               <SelectValue placeholder="Currency" />
             </SelectTrigger>
             <SelectContent>
@@ -224,19 +229,30 @@ const PercentageCurrencyNotesRow: React.FC<{
               onAmountChange && onAmountChange(isNaN(value) ? 0 : value);
             }}
             value={amountValue || ""}
-            className="h-8 text-xs w-24 rounded-l-none border-l-0" // 6rem
+            className={`h-8 text-xs ${fullWidth ? "w-full flex-1 rounded-none border-l-0" : "w-24 rounded-l-none border-l-0"}`}
           />
         </div>
       )}
     </div>
-    {onNotesChange && (
+    {onNotesChange && splitNotesBelow && (
       <div className="mt-2">
-        <Input
-          type="text"
+        <textarea
           placeholder={notesPlaceholder}
           onChange={(e) => onNotesChange(e.target.value)}
           value={notesValue || ""}
-          className={`h-8 text-xs ${!showCurrency ? "w-[22rem]" : "w-[22.5rem] sm:w-[22.5rem]"}`}
+          className="h-16 text-xs w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          rows={3}
+        />
+      </div>
+    )}
+    {onNotesChange && !splitNotesBelow && (
+      <div className={`ml-2 ${fullWidth ? "flex-1" : ""}`}>
+        <textarea
+          placeholder={notesPlaceholder}
+          onChange={(e) => onNotesChange(e.target.value)}
+          value={notesValue || ""}
+          className="h-16 text-xs w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          rows={3}
         />
       </div>
     )}
@@ -427,6 +443,8 @@ const StandardContractForm = ({ formData, setFormData }: StandardContractFormPro
                         fixedPercentageAdvanceNotes: value,
                       }))
                     }
+                    fullWidth
+                    splitNotesBelow // NEW PROP
                   />
                 </div>
               </div>
@@ -462,6 +480,8 @@ const StandardContractForm = ({ formData, setFormData }: StandardContractFormPro
                         fixWithoutAdvanceNotes: value,
                       }))
                     }
+                    fullWidth // Make percentage input fill available width
+                    splitNotesBelow // Move notes below as full-width
                   />
                 </div>
               </div>
@@ -523,6 +543,8 @@ const StandardContractForm = ({ formData, setFormData }: StandardContractFormPro
                               (formData.levelBasedHiring[levelToKey(level)] as LevelValue).notes
                             }
                             onNotesChange={(value) => handleValueChangeFix(level, value, "notes")}
+                            fullWidth
+                            splitNotesBelow
                           />
                         </div>
                       </div>
@@ -619,6 +641,8 @@ const StandardContractForm = ({ formData, setFormData }: StandardContractFormPro
                             onNotesChange={(value) =>
                               handleValueChangeAdvance(level, value, "notes")
                             }
+                            fullWidth
+                            splitNotesBelow
                           />
                         </div>
                       </div>
