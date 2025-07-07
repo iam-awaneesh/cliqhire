@@ -46,6 +46,8 @@ import { Input } from "@/components/ui/input";
 import { differenceInYears } from "date-fns";
 import Dashboardheader from "@/components/dashboard-header";
 import Tableheader from "@/components/table-header";
+import ClientTableRow from "@/components/clients/ClientTableRow";
+import ClientPaginationControls from "@/components/clients/ClientPaginationControls";
 
 const columsArr = [
   "Name",
@@ -59,7 +61,7 @@ const columsArr = [
   "Job Count",
 ];
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://aems-backend.onrender.com/api";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
 interface Client {
   id: string;
@@ -150,7 +152,7 @@ export default function ClientsPage() {
             team: client.clientTeam || "",
             createdAt: client.createdAt,
             incorporationDate: client.incorporationDate || "",
-            jobCount: 0, // Will be updated with actual job counts
+            jobCount: client.jobCount || 0, // Use jobCount from backend
           }));
 
           // Set clients state with all clients (pagination is handled client-side)
@@ -158,9 +160,6 @@ export default function ClientsPage() {
 
           // Reset to first page when fetching new data
           setCurrentPage(1);
-
-          // Fetch job counts in the background
-          fetchJobCounts(mappedClients);
 
           // Save to localStorage as backup
           if (typeof window !== "undefined") {
@@ -203,7 +202,7 @@ export default function ClientsPage() {
           team: client.clientTeam || "",
           createdAt: client.createdAt,
           incorporationDate: client.incorporationDate || "",
-          jobCount: client.jobCount || 0,
+          jobCount: client.jobCount || 0, // Use jobCount from backend
         }));
 
         // Set clients state with all clients (pagination is handled client-side)
@@ -261,20 +260,6 @@ export default function ClientsPage() {
   };
 
   // Handle page change
-
-  const fetchJobCounts = async (clientsList: Client[]) => {
-    try {
-      const jobCounts = await getJobCountsByClient(); // [{_id, count, clientName}]
-      setClients((prevClients) =>
-        prevClients.map((client) => {
-          const found = jobCounts.find((jc) => jc._id === client.id);
-          return { ...client, jobCount: found ? found.count : 0 };
-        }),
-      );
-    } catch (error) {
-      console.error("Error fetching job counts in bulk:", error);
-    }
-  };
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
@@ -536,124 +521,53 @@ export default function ClientsPage() {
 
         {/* Table */}
 
-        <div className="flex-1">
-          <Table>
-            <TableHeader>
-              <Tableheader tableHeadArr={columsArr} />
-            </TableHeader>
-            <TableBody>
-              {initialLoading ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="h-[calc(100vh-240px)] text-center">
-                    <div className="py-24">
-                      <div className="text-center">Loading clients...</div>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : filteredAndSortedClients.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="h-[calc(100vh-240px)] text-center">
-                    <div className="py-24">
-                      <div className="text-center">No clients found</div>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredAndSortedClients.map((client) => (
-                  <TableRow
-                    key={client.id}
-                    className="hover:bg-muted/50 cursor-pointer"
-                    onClick={(e) => {
-                      if (!(e.target as HTMLElement).closest(".client-stage-badge")) {
-                        router.push(`/clients/${client.id}`);
-                        <>asd</>;
-                      }
-                    }}
-                  >
-                    <TableCell className="text-sm font-medium">{client.name}</TableCell>
-                    <TableCell className="text-sm">{client.industry}</TableCell>
-                    <TableCell className="text-sm">{client.location}</TableCell>
-                    <TableCell className="text-sm">
-                      <ClientStageBadge
-                        id={client.id}
-                        stage={client.stage}
-                        onStageChange={handleStageChange}
-                      />
+        <div className="flex-1 flex flex-col min-h-0">
+          <div className="flex-1 overflow-auto">
+            <Table>
+              <TableHeader>
+                <Tableheader tableHeadArr={columsArr} />
+              </TableHeader>
+              <TableBody>
+                {initialLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="h-[calc(100vh-240px)] text-center">
+                      <div className="py-24">
+                        <div className="text-center">Loading clients...</div>
+                      </div>
                     </TableCell>
-                    <TableCell className="text-sm">
-                      <ClientStageStatusBadge
-                        id={client.id}
-                        status={client.clientStageStatus}
-                        stage={client.stage}
-                        onStatusChange={handleStageStatusChange}
-                      />
-                    </TableCell>
-                    <TableCell className="text-sm">{client.owner}</TableCell>
-                    <TableCell className="text-sm">{client.team}</TableCell>
-                    <TableCell className="text-sm">
-                      {client.incorporationDate
-                        ? `${getYearDifference(client.incorporationDate)} years`
-                        : "0 years"}
-                    </TableCell>
-                    <TableCell className="text-sm">{client.jobCount}</TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-
-          {/* Pagination Controls */}
-          <div className="flex items-center justify-between p-4 border-t">
-            <div className="flex items-center space-x-4">
-              <div className="text-sm text-muted-foreground">
-                Showing {clients.length > 0 ? (currentPage - 1) * pageSize + 1 : 0} to{" "}
-                {Math.min(currentPage * pageSize, totalClients)} of {totalClients} clients
-              </div>
-              <div className="flex items-center space-x-2">
-                <span className="text-sm">Show</span>
-                <select
-                  className="h-8 w-16 rounded-md border border-input bg-background px-2 text-sm"
-                  value={pageSize}
-                  onChange={(e) => {
-                    const newSize = parseInt(e.target.value);
-                    setPageSize(newSize);
-                    // Reset to page 1 when changing page size
-                    setCurrentPage(1);
-                    // Fetch clients with the new page size
-                    fetchClients(1, newSize);
-                  }}
-                >
-                  <option value="1000">All</option>
-                  <option value="10">10</option>
-                  <option value="25">25</option>
-                  <option value="50">50</option>
-                  <option value="100">100</option>
-                  <option value="200">200</option>
-                </select>
-                <span className="text-sm">per page</span>
-              </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage <= 1 || initialLoading}
-              >
-                Previous
-              </Button>
-              <div className="text-sm">
-                Page {currentPage} of {totalPages}
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage >= totalPages || initialLoading}
-              >
-                Next
-              </Button>
-            </div>
+                ) : filteredAndSortedClients.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="h-[calc(100vh-240px)] text-center">
+                      <div className="py-24">
+                        <div className="text-center">No clients found</div>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredAndSortedClients.map((client) => (
+                    <ClientTableRow
+                      key={client.id}
+                      client={client}
+                      onStageChange={handleStageChange}
+                      onStatusChange={handleStageStatusChange}
+                      getYearDifference={getYearDifference}
+                    />
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+          <div className="sticky bottom-0 bg-white z-10 border-t">
+            <ClientPaginationControls
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalClients={totalClients}
+              pageSize={pageSize}
+              setPageSize={setPageSize}
+              handlePageChange={handlePageChange}
+              clientsLength={clients.length}
+            />
           </div>
         </div>
 
