@@ -279,7 +279,7 @@ export default function ClientsPage() {
     if (!initialLoading) {
       fetchClients(1); // Reset to first page when filters change
     }
-  }, [filters , fetchClients , initialLoading]);
+  }, [filters]);
 
   function getYearDifference(createdAt: string) {
     const createdDate = new Date(createdAt);
