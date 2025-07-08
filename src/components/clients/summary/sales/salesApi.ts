@@ -1,7 +1,7 @@
 import axios from "axios";
 
 // Updated to point directly to the sales API endpoint
-const BASE_URL = "http://localhost:5000/api/sales";
+const BASE_URL = "http://localhost:5000/api";
 
 export interface SalesInfo {
   financials: string;
@@ -37,7 +37,7 @@ export async function updateSalesInfo(data: SalesInfo): Promise<void> {
     formationYear: String(data.formationYear),
   };
   try {
-    await axios.put(`${BASE_URL}`, payload); // <-- Now points directly to /sales
+    await axios.put(`${BASE_URL}/sales`, payload); // <-- Now points directly to /sales
   } catch (error: any) {
     // Log error details for debugging
     if (error.response) {
@@ -53,5 +53,5 @@ export async function updateSalesInfo(data: SalesInfo): Promise<void> {
 export async function patchSalesInfoField(field: keyof SalesInfo, value: string): Promise<void> {
   // Example: PATCH http://localhost:5000/api/sales
   // Sends { field: value } as the body
-  await axios.patch(`${BASE_URL}`, { [field]: value }); // <-- Now points directly to /sales
+  await axios.patch(`${BASE_URL}/sales`, { [field]: value }); // <-- Now points directly to /sales
 }

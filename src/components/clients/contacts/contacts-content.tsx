@@ -3,24 +3,14 @@
 import { Button } from "@/components/ui/button"
 import { Plus, Pencil } from "lucide-react"
 import { useState, useEffect } from "react"
-import { CreateContactDialog } from "./create-contact-dialog"
-import { getClientById, PrimaryContact, ClientResponse } from "@/services/clientService"
+import { AddContactModal } from "../modals/add-contact-modal";
+import { getClientById, PrimaryContact, ClientResponse, updateClient } from "@/services/clientService"
 import { EditFieldModal } from "../summary/edit-field-modal"
 import { parsePhoneNumberFromString } from 'libphonenumber-js'
 import { EditPrimaryContactDialog } from "./EditPrimaryContactDialog"
 
 interface ContactsContentProps {
   clientId: string;
-}
-
-interface Contact {
-  id: string;
-  fullName: string;
-  displayName: string;
-  email: string;
-  phoneNumber: string;
-  location: string;
-  description: string;
 }
 
 interface ExtendedPrimaryContact extends PrimaryContact {
@@ -31,7 +21,6 @@ interface ExtendedPrimaryContact extends PrimaryContact {
 
 export function ContactsContent({ clientId }: ContactsContentProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [contacts, setContacts] = useState<Contact[]>([]);
   const [primaryContacts, setPrimaryContacts] = useState<ExtendedPrimaryContact[]>([]);
   const [clientPhoneNumber, setClientPhoneNumber] = useState<string>("");
   const [clientWebsite, setClientWebsite] = useState<string>("");
@@ -86,7 +75,7 @@ export function ContactsContent({ clientId }: ContactsContentProps) {
           gender: c.gender || '',
         }));
 
-        setPrimaryContacts(mappedContacts);
+        setPrimaryContacts(mappedContacts || []);
         setClientPhoneNumber(clientData.phoneNumber || "");
         setClientWebsite(clientData.website || "");
         setClientEmails(clientData.emails || []);
@@ -107,14 +96,6 @@ export function ContactsContent({ clientId }: ContactsContentProps) {
     }
   }, [clientId]);
 
-  const handleAddContact = (contactData: any) => {
-    const newContact = {
-      id: Date.now().toString(),
-      ...contactData
-    };
-    setContacts(prev => [...prev, newContact]);
-  };
-
   const countryCodes = [
     { code: "+966", label: "+966 (Saudi Arabia)" },
     { code: "+1", label: "+1 (USA)" },
@@ -123,34 +104,102 @@ export function ContactsContent({ clientId }: ContactsContentProps) {
     { code: "+86", label: "+86 (China)" },
     { code: "+81", label: "+81 (Japan)" },
   ];
+  const positionOptions = [
+    { value: "HR", label: "HR" },
+    { value: "Senior HR", label: "Senior HR" },
+    { value: "Manager", label: "Manager" },
+    { value: "Director", label: "Director" },
+    { value: "Executive", label: "Executive" },
+  ];
 
   const getCountryCodeLabel = (code: string) => {
     const country = countryCodes.find((option) => option.code === code);
     return country ? country.label : code;
   };
 
-  const handlePhoneNumberUpdate = (newPhoneNumber: string) => {
-    setClientPhoneNumber(newPhoneNumber);
-    setIsPhoneEditOpen(false);
-    // TODO: Optionally, call an API to persist the change
+  const handlePhoneNumberUpdate = async (newPhoneNumber: string) => {
+    setLoading(true);
+    setError("");
+    try {
+      // Fetch the latest client data to avoid overwriting other fields
+      const clientData: ClientResponse = await getClientById(clientId);
+      // Prepare the update payload (omit _id, createdAt, updatedAt)
+      const { _id, createdAt, updatedAt, ...updatePayload } = clientData;
+      // Update only the phoneNumber field
+      const updatedClient = await updateClient(clientId, {
+        ...updatePayload,
+        phoneNumber: newPhoneNumber,
+      });
+      console.log('Updated client response:', updatedClient);
+      setClientPhoneNumber((updatedClient && updatedClient.phoneNumber) ? updatedClient.phoneNumber : newPhoneNumber);
+      setIsPhoneEditOpen(false);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to update phone number";
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleWebsiteUpdate = (newWebsite: string) => {
-    setClientWebsite(newWebsite);
-    setIsWebsiteEditOpen(false);
-    // TODO: Optionally, call an API to persist the change
+  const handleWebsiteUpdate = async (newWebsite: string) => {
+    setLoading(true);
+    setError("");
+    try {
+      const clientData: ClientResponse = await getClientById(clientId);
+      const { _id, createdAt, updatedAt, ...updatePayload } = clientData;
+      const updatedClient = await updateClient(clientId, {
+        ...updatePayload,
+        website: newWebsite,
+      });
+      setClientWebsite((updatedClient && updatedClient.website) ? updatedClient.website : newWebsite);
+      setIsWebsiteEditOpen(false);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to update website";
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleEmailsUpdate = (newEmails: string) => {
-    setClientEmails(newEmails.split(',').map(e => e.trim()).filter(Boolean));
-    setIsEmailsEditOpen(false);
-    // TODO: Optionally, call an API to persist the change
+  const handleEmailsUpdate = async (newEmails: string) => {
+    setLoading(true);
+    setError("");
+    const emailsArray = newEmails.split(',').map(e => e.trim()).filter(Boolean);
+    try {
+      const clientData: ClientResponse = await getClientById(clientId);
+      const { _id, createdAt, updatedAt, ...updatePayload } = clientData;
+      const updatedClient = await updateClient(clientId, {
+        ...updatePayload,
+        emails: emailsArray,
+      });
+      setClientEmails((updatedClient && updatedClient.emails) ? updatedClient.emails : emailsArray);
+      setIsEmailsEditOpen(false);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to update emails";
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleLinkedInUpdate = (newLinkedIn: string) => {
-    setClientLinkedIn(newLinkedIn);
-    setIsLinkedInEditOpen(false);
-    // TODO: Optionally, call an API to persist the change
+  const handleLinkedInUpdate = async (newLinkedIn: string) => {
+    setLoading(true);
+    setError("");
+    try {
+      const clientData: ClientResponse = await getClientById(clientId);
+      const { _id, createdAt, updatedAt, ...updatePayload } = clientData;
+      const updatedClient = await updateClient(clientId, {
+        ...updatePayload,
+        linkedInProfile: newLinkedIn,
+      });
+      setClientLinkedIn((updatedClient && updatedClient.linkedInProfile) ? updatedClient.linkedInProfile : newLinkedIn);
+      setIsLinkedInEditOpen(false);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to update LinkedIn profile";
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Handler for editing a primary contact
@@ -300,11 +349,11 @@ export function ContactsContent({ clientId }: ContactsContentProps) {
                   <Plus className="h-4 w-4 mr-2" />Add
                 </Button>
               </div>
-              {primaryContacts.length === 0 ? (
+              {(primaryContacts || []).length === 0 ? (
                 <div className="text-sm text-muted-foreground text-center py-4">No primary contacts</div>
               ) : (
                 <div className="space-y-3">
-                  {primaryContacts.map((contact, index) => (
+                  {(primaryContacts || []).map((contact, index) => (
                     <div key={index} className="p-3 rounded-md border">
                       {/* Buttons row */}
                       <div className="flex justify-end gap-2 mb-2">
@@ -357,19 +406,40 @@ export function ContactsContent({ clientId }: ContactsContentProps) {
             </div>
           </div>
         </div>
-        <CreateContactDialog 
+        <AddContactModal
           open={isDialogOpen}
           onOpenChange={setIsDialogOpen}
-          onSubmit={handleAddContact}
+          onAdd={(contact) => setPrimaryContacts(prev => [...prev, contact])}
+          countryCodes={countryCodes}
+          positionOptions={positionOptions}
         />
         {/* Edit modal for primary contact (placeholder, can be replaced with a full modal) */}
         <EditPrimaryContactDialog
           open={editContactIndex !== null}
           onOpenChange={() => setEditContactIndex(null)}
-          contact={editContactIndex !== null ? primaryContacts[editContactIndex] : null}
-          onSave={(updatedContact) => {
-            setPrimaryContacts(prev => prev.map((c, i) => i === editContactIndex ? updatedContact : c));
-            setEditContactIndex(null);
+          contact={editContactIndex !== null ? (primaryContacts || [])[editContactIndex] : null}
+          onSave={async (updatedContact) => {
+            setLoading(true);
+            setError("");
+            try {
+              // Fetch latest client data
+              const clientData: ClientResponse = await getClientById(clientId);
+              const { _id, createdAt, updatedAt, ...updatePayload } = clientData;
+              // Update the primaryContacts array, defaulting to [] if undefined
+              const updatedPrimaryContacts = (primaryContacts || []).map((c, i) => i === editContactIndex ? updatedContact : c);
+              const updatedClient = await updateClient(clientId, {
+                ...updatePayload,
+                primaryContacts: updatedPrimaryContacts,
+              });
+              setPrimaryContacts((updatedClient.primaryContacts || updatedPrimaryContacts || []));
+              setEditContactIndex(null);
+              // Optionally, trigger a custom event or callback to refresh summary page if needed
+            } catch (err) {
+              const errorMessage = err instanceof Error ? err.message : "Failed to update primary contact";
+              setError(errorMessage);
+            } finally {
+              setLoading(false);
+            }
           }}
         />
         {/* Delete confirmation (simple, can be replaced with a dialog) */}
@@ -412,10 +482,12 @@ export function ContactsContent({ clientId }: ContactsContentProps) {
         Create contact
       </Button>
 
-      <CreateContactDialog 
+      <AddContactModal
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
-        onSubmit={handleAddContact}
+        onAdd={(contact) => setPrimaryContacts(prev => [...prev, contact])}
+        countryCodes={countryCodes}
+        positionOptions={positionOptions}
       />
     </div>
   )

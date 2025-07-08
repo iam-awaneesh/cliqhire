@@ -31,6 +31,7 @@ export function EditPrimaryContactDialog({ open, onOpenChange, contact, onSave }
   const [phone, setPhone] = useState('');
   const [countryCode, setCountryCode] = useState('');
   const [linkedin, setLinkedin] = useState('');
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (contact) {
@@ -44,12 +45,17 @@ export function EditPrimaryContactDialog({ open, onOpenChange, contact, onSave }
   }, [contact, open]);
 
   const handlePhoneChange = (value: string, data: any) => {
-    setPhone(value.replace(/^\d+/, ''));
+    setPhone(value);
     setCountryCode(data.dialCode);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!phone || phone.trim() === "") {
+      setError("Phone number is required");
+      return;
+    }
+    setError("");
     onSave({
       ...contact,
       firstName,
@@ -73,31 +79,32 @@ export function EditPrimaryContactDialog({ open, onOpenChange, contact, onSave }
           <div className="flex gap-2">
             <div className="flex-1">
               <Label htmlFor="firstName">First Name</Label>
-              <Input id="firstName" value={firstName} onChange={e => setFirstName(e.target.value)} required />
+              <Input id="firstName" value={firstName} onChange={e => setFirstName(e.target.value)} placeholder='Enter Your First Name'/>
             </div>
             <div className="flex-1">
               <Label htmlFor="lastName">Last Name</Label>
-              <Input id="lastName" value={lastName} onChange={e => setLastName(e.target.value)} />
+              <Input id="lastName" value={lastName} onChange={e => setLastName(e.target.value)} placeholder='Enter Your Last Name' />
             </div>
           </div>
           <div>
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} required />
+            <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder='xyz@example.com'/>
           </div>
           <div>
             <Label htmlFor="phone">Phone</Label>
             <PhoneInput
               country={countryCode || "sa"}
-              value={countryCode + phone}
+              value={phone}
               onChange={handlePhoneChange}
               inputClass="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm w-full"
-              inputProps={{ id: 'phone', required: false }}
+              inputProps={{ id: 'phone', required: true }}
               enableSearch={true}
             />
+            {error && <div className="text-xs text-red-500 mt-1">{error}</div>}
           </div>
           <div>
             <Label htmlFor="linkedin">LinkedIn</Label>
-            <Input id="linkedin" value={linkedin} onChange={e => setLinkedin(e.target.value)} />
+            <Input id="linkedin" value={linkedin} onChange={e => setLinkedin(e.target.value)} placeholder='https://linkedin.in'/>
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>

@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
+import PhoneInput from 'react-phone-input-2';
+import 'react-phone-input-2/lib/style.css';
+import '@/styles/phone-input-override.css';
 
 interface AddContactModalProps {
   open: boolean;
@@ -107,27 +110,15 @@ export function AddContactModal({ open, onOpenChange, onAdd, countryCodes, posit
             </div>
             <div className="space-y-2">
               <Label htmlFor="phone">Phone</Label>
-              <div className="flex gap-2">
-                <select
-                  id="countryCode"
-                  value={formData.countryCode}
-                  onChange={(e) => setFormData(prev => ({ ...prev, countryCode: e.target.value }))}
-                  className="border rounded p-2"
-                >
-                  {countryCodes.map((option) => (
-                    <option key={option.code} value={option.code}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                  required
-                />
-              </div>
+              <PhoneInput
+                country="sa"
+                preferredCountries={['sa']}
+                value={formData.phone}
+                onChange={(value, data) => setFormData(prev => ({ ...prev, phone: value, countryCode: `+${data.dialCode}` }))}
+                inputClass="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm w-full"
+                inputProps={{ id: 'phone', required: true }}
+                enableSearch={true}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="position">Position</Label>

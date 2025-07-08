@@ -271,7 +271,7 @@ export default function ClientsPage() {
 
   useEffect(() => {
     fetchClients(currentPage);
-  }, []);
+  }, [currentPage]);
 
   // Refresh data when filters change
   useEffect(() => {
@@ -279,7 +279,7 @@ export default function ClientsPage() {
     if (!initialLoading) {
       fetchClients(1); // Reset to first page when filters change
     }
-  }, [filters]);
+  }, [filters , fetchClients , initialLoading]);
 
   function getYearDifference(createdAt: string) {
     const createdDate = new Date(createdAt);
@@ -481,7 +481,7 @@ export default function ClientsPage() {
             <DialogTitle>Are you sure?</DialogTitle>
           </DialogHeader>
           <DialogDescription>
-            This will update the client's stage status.
+            This will update the client&apos;s stage status.
             {error && <div className="text-red-600 mt-4 p-3 bg-red-50 rounded-md">{error}</div>}
           </DialogDescription>
           <DialogFooter>
@@ -522,10 +522,10 @@ export default function ClientsPage() {
         {/* Table */}
 
         <div className="flex-1 flex flex-col min-h-0">
-          <div className="flex-1 overflow-auto">
+          <div className="flex-1 overflow-auto" style={{ maxHeight: "calc(100vh - 300px)" }}>
             <Table>
               <TableHeader>
-                <Tableheader tableHeadArr={columsArr} />
+                <Tableheader tableHeadArr={columsArr} className="sticky top-0 z-20 bg-white" />
               </TableHeader>
               <TableBody>
                 {initialLoading ? (
