@@ -146,7 +146,7 @@ export default function CandidatesPage() {
                     <TableCell className="text-sm">{candidate.skills}</TableCell>
                     <TableCell className="text-sm">{candidate.resume}</TableCell>
                     <TableCell className="text-sm">{candidate.status}</TableCell>
-                    <TableCell className="text-sm">{candidate.actions}</TableCell>
+                    {/* <TableCell className="text-sm">{candidate.actions}</TableCell> */}
                   </TableRow>
                 ))
               )}

@@ -143,7 +143,7 @@ export default function RecruiterDetailPage() {
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Status</label>
                   <div className="mt-1">
-                    <Badge variant={recruiter.status === 'active' ? 'default' : 'secondary'}>
+                    <Badge variant={recruiter.status === 'Active' ? 'default' : 'secondary'}>
                       {recruiter.status}
                     </Badge>
                   </div>

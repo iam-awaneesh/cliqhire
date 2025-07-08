@@ -15,6 +15,7 @@ export function DocumentsTab({
   handlePreview,
   handleDownload,
 }: DocumentsTabProps) {
+  
   const documentFields = [
     { key: "crCopy", label: "CR Copy" },
     { key: "vatCopy", label: "VAT Copy" },

@@ -1,97 +1,98 @@
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { format } from "date-fns";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { Upload, Eye, Download, CalendarIcon } from "lucide-react";
-import { ClientForm } from "@/components/create-client-modal/type";
-import { levelFieldMap } from "./constants";
-import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import StandardContractForm from "./standard-contract-form";
+import ConsultingContractForm from "./consulting-contract-form";
+import OutsourcingContractForm from "./outsourcing-contract-form";
+
+import { 
+  businessInitialState,
+  outsourcingInitialState,
+  consultingInitialState,
+} from "./constants";
+import { ClientContractInfo } from "./type";
+import { Pencil } from "lucide-react";
 
 interface ContractInformationTabProps {
-  formData: ClientForm;
-  setFormData: React.Dispatch<React.SetStateAction<ClientForm>>;
-  selectedLevels: string[];
-  setSelectedLevels: React.Dispatch<React.SetStateAction<string[]>>;
-  activeLevel: string | null;
-  setActiveLevel: React.Dispatch<React.SetStateAction<string | null>>;
-  uploadedFiles: { [key: string]: File | null };
-  handleFileChange: (field: any) => (e: React.ChangeEvent<HTMLInputElement>) => void;
-  handlePreview: (file: File | string | null) => void;
-  handleDownload: (file: File | null) => void;
-  handleInputChange: (
-    field: keyof ClientForm,
-  ) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
-  technicalProposalOptionInputRef: React.RefObject<HTMLInputElement>;
-  financialProposalOptionInputRef: React.RefObject<HTMLInputElement>;
+  formData: ClientContractInfo;
+  setFormData: React.Dispatch<React.SetStateAction<ClientContractInfo>>;
 }
 
 export function ContractInformationTab({
   formData,
   setFormData,
-  selectedLevels,
-  setSelectedLevels,
-  activeLevel,
-  setActiveLevel,
-  uploadedFiles,
-  handleFileChange,
-  handlePreview,
-  handleDownload,
-  technicalProposalOptionInputRef,
-  financialProposalOptionInputRef,
-  handleInputChange,
 }: ContractInformationTabProps) {
-  const [openStart, setOpenStart] = useState(false);
-  const [openEnd, setOpenEnd] = useState(false);
-  const handleLevelChange = (level: string) => {
-    setSelectedLevels((prev) =>
-      prev.includes(level) ? prev.filter((l) => l !== level) : [...prev, level],
-    );
-    setActiveLevel(level);
+
+  // Business tabs
+  const [activeBusinessTab, setActiveBusinessTab] = useState<string | null>(null);
+  const [previewBusinessTab, setPreviewBusinessTab] = useState<string | null>(null);
+
+  const [standardContractFormData, setStandardContractFormData] = useState(businessInitialState);
+  const [consultingContractFormData, setConsultingContractFormData] = useState(consultingInitialState);
+  const [outsourcingContractFormData, setOutsourcingContractFormData] = useState(outsourcingInitialState);
+
+  // Modal
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalBusiness, setModalBusiness] = useState<string | null>(null);
+ 
+
+
+  const handleSaveContract = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (modalBusiness === "Recruitment" || modalBusiness === "HR Managed Services" || modalBusiness === "IT & Technology") {
+      const clonedFormData = structuredClone(formData);
+      clonedFormData.contractForms[modalBusiness!] = standardContractFormData;
+      setFormData(clonedFormData);
+    } else if (modalBusiness === "HR Consulting" || modalBusiness === "Mgt Consulting") {
+      const clonedFormData = structuredClone(formData);
+      clonedFormData.contractForms[modalBusiness!] = consultingContractFormData;
+      setFormData(clonedFormData);
+    } else if (modalBusiness === "Outsourcing") {
+      const clonedFormData = structuredClone(formData);
+      clonedFormData.contractForms[modalBusiness!] = outsourcingContractFormData;
+      setFormData(clonedFormData);
+    }
+    setStandardContractFormData(businessInitialState);
+    setConsultingContractFormData(consultingInitialState);
+    setOutsourcingContractFormData(outsourcingInitialState);
+  
+    setModalOpen(false);
   };
 
-  const handleSelectDate = (date: Date | undefined, type: "start" | "end") => {
-    if (type === "start") {
-      setFormData((prev) => ({ ...prev, contractStartDate: date || null }));
-      setOpenStart(false);
-    } else {
-      setFormData((prev) => ({ ...prev, contractEndDate: date || null }));
-      setOpenEnd(false);
-    }
-  };
+  // console.log(formData);
+
+  const businessOptions = [
+    "Recruitment",
+    "HR Consulting",
+    "Mgt Consulting",
+    "Outsourcing",
+    "HR Managed Services",
+    "IT & Technology",
+  ];
 
   return (
     <div className="space-y-6 pt-4 pb-2">
-      {/* Line of Business in its own row */}
       <div className="space-y-1">
         <Label htmlFor="lineOfBusiness">
-          Line of Business *
+          Line of Business<span className="text-red-700">*</span>
         </Label>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 border rounded-md p-2">
-          {[
-            "Recruitment",
-            "HR Consulting",
-            "Mgt Consulting",
-            "Outsourcing",
-            "HR Managed Services",
-            "IT & Technology",
-          ].map((option) => (
+          {businessOptions.map((option) => (
             <div key={option} className="flex items-center space-x-2">
               <Checkbox
                 id={`lob-${option}`}
                 checked={formData.lineOfBusiness?.includes(option)}
                 onCheckedChange={(checked) => {
-                  setFormData((prev) => {
+                  setFormData((prev: ClientContractInfo) => {
                     const current = Array.isArray(prev.lineOfBusiness)
                       ? prev.lineOfBusiness
                       : prev.lineOfBusiness
@@ -104,6 +105,10 @@ export function ContractInformationTab({
                         : current.filter((item: string) => item !== option),
                     };
                   });
+                  if (!formData.lineOfBusiness?.includes(option) && activeBusinessTab === option) {
+                    setActiveBusinessTab(null);
+                    setPreviewBusinessTab(null);
+                  }
                 }}
               />
               <label
@@ -113,7 +118,7 @@ export function ContractInformationTab({
                 }`}
                 onClick={() =>
                   formData.lineOfBusiness?.includes(option) &&
-                  setFormData((prev) => ({ ...prev, lineOfBusiness: [option] }))
+                  setFormData((prev: ClientContractInfo) => ({ ...prev, lineOfBusiness: [option] }))
                 }
               >
                 {option
@@ -124,618 +129,93 @@ export function ContractInformationTab({
             </div>
           ))}
         </div>
-        {(formData.lineOfBusiness?.includes("HR Consulting") ||
-          formData.lineOfBusiness?.includes("Mgt Consulting")) && (
-          <div className="mt-4 space-y-4">
-            <h4 className="text-sm font-medium">Proposal Options</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {["Technical Proposal", "Financial Proposal"].map((type) => (
-                <div key={type} className="border rounded-lg p-4 space-y-3">
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`proposal-${type}`}
-                        checked={formData.proposalOptions?.includes(type)}
-                        onCheckedChange={(checked) => {
-                          setFormData((prev) => ({
-                            ...prev,
-                            proposalOptions: checked
-                              ? [...(prev.proposalOptions || []), type]
-                              : (prev.proposalOptions || []).filter((opt) => opt !== type),
-                          }));
-                        }}
-                      />
-                      <h5 className="font-medium">{type}</h5>
-                    </div>
-                    <div className="flex space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          const fileField = type.toLowerCase().includes("technical")
-                            ? "technicalProposal"
-                            : type.toLowerCase().includes("financial")
-                              ? "financialProposal"
-                              : null;
-                          const file = fileField
-                            ? uploadedFiles[fileField as keyof typeof uploadedFiles]
-                            : null;
-                          handlePreview(file as File | string | null);
-                        }}
-                        disabled={!formData.proposalOptions?.includes(type)}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          const fileField = type.toLowerCase().includes("technical")
-                            ? "technicalProposal"
-                            : type.toLowerCase().includes("financial")
-                              ? "financialProposal"
-                              : null;
-                          const file = fileField
-                            ? uploadedFiles[fileField as keyof typeof uploadedFiles]
-                            : null;
-                          if (file) {
-                            handleDownload(file as File);
-                          }
-                        }}
-                        disabled={!formData.proposalOptions?.includes(type)}
-                      >
-                        <Download className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  {formData.proposalOptions?.includes(type) && (
-                    <>
-                      <Textarea
-                        value={
-                          type === "Technical Proposal"
-                            ? formData.technicalProposalNotes || ""
-                            : formData.financialProposalNotes || ""
-                        }
-                        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                          handleInputChange(
-                            type === "Technical Proposal"
-                              ? "technicalProposalNotes"
-                              : "financialProposalNotes",
-                          )(e)
-                        }
-                        placeholder={`Enter ${type} notes...`}
-                        className="min-h-[100px]"
-                      />
-                      <div className="flex justify-end">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="gap-2"
-                          type="button"
-                          onClick={() => {
-                            if (type === "Technical Proposal") {
-                              technicalProposalOptionInputRef.current?.click();
-                            } else if (type === "Financial Proposal") {
-                              financialProposalOptionInputRef.current?.click();
-                            }
-                          }}
-                        >
-                          <Upload className="h-4 w-4" />
-                          Upload File
-                        </Button>
-                        {type === "Technical Proposal" && (
-                          <input
-                            ref={technicalProposalOptionInputRef}
-                            type="file"
-                            accept=".pdf,.jpg,.jpeg,.png"
-                            className="hidden"
-                            onChange={handleFileChange("technicalProposal")}
-                          />
-                        )}
-                        {type === "Financial Proposal" && (
-                          <input
-                            ref={financialProposalOptionInputRef}
-                            type="file"
-                            accept=".pdf,.jpg,.jpeg,.png"
-                            className="hidden"
-                            onChange={handleFileChange("financialProposal")}
-                          />
-                        )}
-                      </div>
-                      {type === "Technical Proposal" && uploadedFiles.technicalProposal && (
-                        <p className="text-xs text-muted-foreground truncate">
-                          Selected file: {uploadedFiles.technicalProposal.name}
-                        </p>
-                      )}
-                      {type === "Financial Proposal" && uploadedFiles.financialProposal && (
-                        <p className="text-xs text-muted-foreground truncate">
-                          Selected file: {uploadedFiles.financialProposal.name}
-                        </p>
-                      )}
-                    </>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
-      {/* Grouped row for contract fields */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        {/* Contract Start Date */}
-        <div className="flex-1 space-y-2">
-          <Label htmlFor="contractStartDate">Contract Start Date</Label>
-          <div className="grid gap-2">
-            <Popover open={openStart} onOpenChange={setOpenStart} modal>
-              <PopoverTrigger asChild>
-                <Button
-                  id="date-picker"
-                  variant="outline"
-                  className="w-full justify-start text-left font-normal"
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {formData.contractStartDate
-                    ? format(formData.contractStartDate, "PPP")
-                    : "Pick a date"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  captionLayout="dropdown"
-                  selected={formData.contractStartDate!}
-                  onSelect={(date) => handleSelectDate(date, "start")}
-                  fromDate={new Date()}
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-        </div>
-
-        {/* Contract End Date */}
-        <div className="flex-1 space-y-1">
-          <Label htmlFor="contractEndDate" >
-            Contract End Date
-          </Label>
-          <div className="grid gap-2">
-            <Popover open={openEnd} onOpenChange={setOpenEnd} modal={true}>
-              <PopoverTrigger asChild>
-                <Button
-                  id="date-picker"
-                  variant="outline"
-                  className="w-full justify-start text-left font-normal"
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {formData.contractEndDate
-                    ? format(formData.contractEndDate, "PPP")
-                    : "Pick a date"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={formData.contractEndDate!}
-                  onSelect={(date) => handleSelectDate(date, "end")}
-                  fromDate={new Date()}
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-        </div>
-
-        {/* Contract Type */}
-        <div className="flex-1 space-y-1">
-          <Label htmlFor="contractType">
-            Contract Type
-          </Label>
-          <Select
-            value={formData.contractType}
-            onValueChange={(value) => {
-              const isOldLevelBased =
-                formData.contractType === "Level Based (Hiring)" ||
-                formData.contractType === "Level Based With Advance";
-              const isNewLevelBased =
-                value === "Level Based (Hiring)" || value === "Level Based With Advance";
-              setFormData((prev) => ({ ...prev, contractType: value }));
-              if (isOldLevelBased !== isNewLevelBased) {
-                setSelectedLevels([]);
-                setActiveLevel(null);
-              }
-            }}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select contract type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Fix with Advance">Fix with Advance</SelectItem>
-              <SelectItem value="Fix without Advance">Fix without Advance</SelectItem>
-              <SelectItem value="Level Based (Hiring)">Level Based (Hiring)</SelectItem>
-              <SelectItem value="Level Based With Advance">Level Based With Advance</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {formData.contractType === "Fix with Advance" && (
-        <div className="space-y-4 col-span-1 sm:col-span-2 border rounded-lg p-4">
-          <div className="border-2 shadow-sm rounded-lg p-2 cursor-pointer transition-colors w-full border-primary bg-primary/5">
-            <div className="flex flex-col sm:flex-row items-center sm:space-x-4 space-y-2 sm:space-y-0">
-              <h4 className="font-medium text-xs sm:text-sm w-28">Fix with Advance</h4>
-              <div className="flex items-center space-x-2 w-full sm:w-auto">
-                <div className="relative w-24">
-                  <Input
-                    type="number"
-                    placeholder="0"
-                    min="0"
-                    max="100"
-                    onChange={(e) => {
-                      const value = e.target.value ? parseFloat(e.target.value) : 0;
-                      setFormData((prev) => ({
-                        ...prev,
-                        fixedPercentage: isNaN(value) ? 0 : Math.min(100, Math.max(0, value)),
-                      }));
-                    }}
-                    value={formData.fixedPercentage || ""}
-                    className="h-8 pl-2 pr-6 text-xs"
-                  />
-                  <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-muted-foreground">
-                    %
-                  </span>
-                </div>
-                <div className="flex items-center space-x-0 border rounded-md overflow-hidden w-48">
-                  <Select
-                    value={formData.advanceMoneyCurrency || "SAR"}
-                    onValueChange={(value) =>
-                      setFormData((prev) => ({ ...prev, advanceMoneyCurrency: value }))
-                    }
-                  >
-                    <SelectTrigger className="h-8 text-xs w-20 rounded-r-none border-r-0">
-                      <SelectValue placeholder="Currency" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="USD">USD</SelectItem>
-                      <SelectItem value="EUR">EUR</SelectItem>
-                      <SelectItem value="GBP">GBP</SelectItem>
-                      <SelectItem value="SAR">SAR</SelectItem>
-                      <SelectItem value="AED">AED</SelectItem>
-                      <SelectItem value="INR">INR</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Input
-                    type="number"
-                    placeholder="Amount"
-                    min="0"
-                    onChange={(e) => {
-                      const value = e.target.value ? parseFloat(e.target.value) : 0;
-                      setFormData((prev) => ({
-                        ...prev,
-                        advanceMoneyAmount: isNaN(value) ? 0 : value,
-                      }));
-                    }}
-                    value={formData.advanceMoneyAmount || ""}
-                    className="h-8 text-xs w-28 rounded-l-none border-l-0"
-                  />
-                </div>
-                <Input
-                  type="text"
-                  placeholder="Notes"
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      fixedPercentageAdvanceNotes: e.target.value,
-                    }))
-                  }
-                  value={formData.fixedPercentageAdvanceNotes || ""}
-                  className="h-8 text-xs flex-1"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-sm sm:text-base font-semibold">Contract Document</Label>
-            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 items-center">
+      {formData.lineOfBusiness &&
+        Array.isArray(formData.lineOfBusiness) &&
+        formData.lineOfBusiness.length > 0 && (
+          <div className="w-full">
+            {formData.lineOfBusiness.map((business: string) => (
               <div
-                className="border-2 border-dashed rounded-lg p-2 text-center cursor-pointer hover:bg-muted/50 flex-1 w-full"
-                onClick={() => document.getElementById("fixedPercentageAdvanceInput")?.click()}
+                key={business}
+                className="rounded border bg-white py-4 px-6 mb-4 flex items-center justify-between w-full"
               >
-                <Upload className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
-                <p className="text-xs text-muted-foreground">Upload (PDF, JPEG, PNG)</p>
-              </div>
-              <input
-                id="fixedPercentageAdvanceInput"
-                type="file"
-                accept=".pdf,.jpg,.jpeg,.png"
-                className="hidden"
-                onChange={handleFileChange("fixedPercentageAdvance")}
-              />
-              <div className="flex flex-col gap-1">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-7 text-xs px-2 gap-1"
-                  onClick={() => handlePreview(uploadedFiles.fixedPercentageAdvance)}
-                  disabled={!uploadedFiles.fixedPercentageAdvance}
-                >
-                  <Eye className="h-3 w-3" />
-                  Preview
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-7 text-xs  gap-0.5"
-                  onClick={() => handleDownload(uploadedFiles.fixedPercentageAdvance)}
-                  disabled={!uploadedFiles.fixedPercentageAdvance}
-                >
-                  <Download className="h-3 w-3" />
-                  Download
-                </Button>
-              </div>
-            </div>
-            {uploadedFiles.fixedPercentageAdvance && (
-              <p className="text-xs text-muted-foreground truncate">
-                Selected file: {uploadedFiles.fixedPercentageAdvance.name}
-              </p>
-            )}
-          </div>
-        </div>
-      )}
-
-      {formData.contractType === "Fix without Advance" && (
-        <div className="space-y-4 col-span-1 sm:col-span-2 border rounded-lg p-4">
-          <div className="border-2 shadow-sm rounded-lg p-2 cursor-pointer transition-colors w-full border-primary bg-primary/5">
-            <div className="flex flex-col sm:flex-row items-center sm:space-x-4 space-y-2 sm:space-y-0">
-              <h4 className="font-medium text-xs sm:text-sm w-28">Fix without Advance</h4>
-              <div className="flex items-center space-x-2 w-full sm:w-auto">
-                <div className="relative w-24">
-                  <Input
-                    type="number"
-                    placeholder="0"
-                    min="0"
-                    max="100"
-                    onChange={(e) => {
-                      const value = e.target.value ? parseFloat(e.target.value) : 0;
-                      setFormData((prev) => ({
-                        ...prev,
-                        fixWithoutAdvanceValue: isNaN(value)
-                          ? 0
-                          : Math.min(100, Math.max(0, value)),
-                      }));
+                <span className="font-medium text-xs sm:text-sm">{business} contract form</span>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    type="button"
+                    className="w-24"
+                    variant="outline"
+                    onClick={() => {
+                      setActiveBusinessTab(business);
+                      setPreviewBusinessTab(null);
+                      setModalBusiness(business);
+                      setModalOpen(true);
                     }}
-                    value={formData.fixWithoutAdvanceValue || ""}
-                    className="h-8 pl-2 pr-6 text-xs"
-                  />
-                  <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-muted-foreground">
-                    %
-                  </span>
-                </div>
-                <Input
-                  type="text"
-                  placeholder="Notes"
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, fixWithoutAdvanceNotes: e.target.value }))
-                  }
-                  value={formData.fixWithoutAdvanceNotes || ""}
-                  className="h-8 text-xs flex-1"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-sm sm:text-base font-semibold">Contract Document</Label>
-            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 items-center">
-              <div
-                className="border-2 border-dashed rounded-lg p-2 text-center cursor-pointer hover:bg-muted/50 flex-1 w-full"
-                onClick={() => document.getElementById("fixWithoutAdvanceInput")?.click()}
-              >
-                <Upload className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
-                <p className="text-xs text-muted-foreground">Upload (PDF, JPEG, PNG)</p>
-              </div>
-              <input
-                id="fixWithoutAdvanceInput"
-                type="file"
-                accept=".pdf,.jpg,.jpeg,.png"
-                className="hidden"
-                onChange={handleFileChange("fixWithoutAdvance")}
-              />
-              <div className="flex flex-col gap-1">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-7 text-xs px-2 gap-1"
-                  onClick={() => handlePreview(uploadedFiles.fixWithoutAdvance)}
-                  disabled={!uploadedFiles.fixWithoutAdvance}
-                >
-                  <Eye className="h-3 w-3" />
-                  Preview
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-7 text-xs px-2 gap-1"
-                  onClick={() => handleDownload(uploadedFiles.fixWithoutAdvance)}
-                  disabled={!uploadedFiles.fixWithoutAdvance}
-                >
-                  <Download className="h-3 w-3" />
-                  Download
-                </Button>
-              </div>
-            </div>
-            {uploadedFiles.fixWithoutAdvance && (
-              <p className="text-xs text-muted-foreground truncate">
-                Selected file: {uploadedFiles.fixWithoutAdvance.name}
-              </p>
-            )}
-          </div>
-        </div>
-      )}
-
-      {(formData.contractType === "Level Based (Hiring)" ||
-        formData.contractType === "Level Based With Advance") && (
-        <div className="space-y-4 col-span-1 sm:col-span-2 border rounded-lg p-4">
-          <div className="space-y-2">
-            <Label className="text-sm sm:text-base font-semibold">Select Levels</Label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {["Senior Level", "Executives", "Non-Executives", "Other"].map((level) => (
-                <div key={level} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`level-${level}`}
-                    checked={selectedLevels.includes(level)}
-                    onCheckedChange={() => handleLevelChange(level)}
-                  />
-                  <label
-                    htmlFor={`level-${level}`}
-                    className="text-xs sm:text-sm font-medium leading-none cursor-pointer"
                   >
-                    {level}
-                  </label>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {selectedLevels.length > 0 && (
-            <div className="space-y-4">
-              {selectedLevels.map((level) => {
-                const fieldKeys = levelFieldMap[level];
-                return (
-                  <div
-                    key={level}
-                    className={`border-2 shadow-sm rounded-lg p-2 cursor-pointer transition-colors w-full ${
-                      activeLevel === level ? "border-primary bg-primary/5" : "border-muted"
-                    }`}
-                    onClick={() => setActiveLevel(level)}
-                  >
-                    <div className="flex flex-col sm:flex-row items-center sm:space-x-4 space-y-2 sm:space-y-0">
-                      <h4 className="font-medium text-xs sm:text-sm w-28">{level}</h4>
-                      <div className="flex items-center space-x-2 w-full sm:w-auto">
-                        <div className="relative w-24">
-                          <Input
-                            type="number"
-                            placeholder="0"
-                            min="0"
-                            max="100"
-                            onChange={(e) => {
-                              const value = e.target.value ? parseFloat(e.target.value) : 0;
-                              setFormData((prev) => ({
-                                ...prev,
-                                [fieldKeys.percentage]: isNaN(value)
-                                  ? 0
-                                  : Math.min(100, Math.max(0, value)),
-                              }));
-                            }}
-                            value={formData[fieldKeys.percentage] || ""}
-                            className="h-8 pl-2 pr-6 text-xs"
-                          />
-                          <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-muted-foreground">
-                            %
-                          </span>
-                        </div>
-                        {formData.contractType === "Level Based With Advance" && (
-                          <div className="flex items-center space-x-0 border rounded-md overflow-hidden w-48">
-                            <Select
-                              value={formData[fieldKeys.currency] || "SAR"}
-                              onValueChange={(value) =>
-                                setFormData((prev) => ({ ...prev, [fieldKeys.currency]: value }))
-                              }
-                            >
-                              <SelectTrigger className="h-8 text-xs w-20 rounded-r-none border-r-0">
-                                <SelectValue placeholder="Currency" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="USD">USD</SelectItem>
-                                <SelectItem value="EUR">EUR</SelectItem>
-                                <SelectItem value="GBP">GBP</SelectItem>
-                                <SelectItem value="SAR">SAR</SelectItem>
-                                <SelectItem value="AED">AED</SelectItem>
-                                <SelectItem value="INR">INR</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <Input
-                              type="number"
-                              placeholder="Amount"
-                              min="0"
-                              onChange={(e) => {
-                                const value = e.target.value ? parseFloat(e.target.value) : 0;
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  [fieldKeys.money]: isNaN(value) ? 0 : value,
-                                }));
-                              }}
-                              value={formData[fieldKeys.money] || ""}
-                              className="h-8 text-xs w-28 rounded-l-none border-l-0"
-                            />
-                          </div>
-                        )}
-                        <Input
-                          type="text"
-                          placeholder="Notes"
-                          onChange={(e) =>
-                            setFormData((prev) => ({ ...prev, [fieldKeys.notes]: e.target.value }))
-                          }
-                          value={formData[fieldKeys.notes] || ""}
-                          className="h-8 text-xs flex-1"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-
-              <div className="space-y-2">
-                <Label className="text-sm sm:text-base font-semibold">Contract Documents</Label>
-                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 items-center mb-2">
-                  <div
-                    className="border-2 border-dashed rounded-lg p-2 text-center cursor-pointer hover:bg-muted/50 flex-1 w-full"
-                    onClick={() =>
-                      document.getElementById("fileInput-levelBasedContractDocument")?.click()
-                    }
-                  >
-                    <Upload className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
-                    <p className="text-xs text-muted-foreground">Upload (PDF, JPEG, PNG)</p>
-                  </div>
-                  <input
-                    id="fileInput-levelBasedContractDocument"
-                    type="file"
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    className="hidden"
-                    onChange={handleFileChange("levelBasedContractDocument")}
-                  />
-                  <div className="flex flex-col gap-1">
+                    <Pencil className="size-4" />
+                    Fill Form
+                  </Button>
+                  {formData.contractForms[business] && (
                     <Button
-                      variant="outline"
                       size="sm"
-                      className="h-7 text-xs px-2 gap-1"
-                      onClick={() => handlePreview(uploadedFiles.levelBasedContractDocument)}
-                      disabled={!uploadedFiles.levelBasedContractDocument}
+                      type="button"
+                      className="w-24"
+                      onClick={() => {
+                        setPreviewBusinessTab(business);
+                      }}
                     >
-                      <Eye className="h-3 w-3" />
                       Preview
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-7 text-xs px-2 gap-1"
-                      onClick={() => handleDownload(uploadedFiles.levelBasedContractDocument)}
-                      disabled={!uploadedFiles.levelBasedContractDocument}
-                    >
-                      <Download className="h-3 w-3" />
-                      Download
-                    </Button>
-                  </div>
-                  {uploadedFiles.levelBasedContractDocument && (
-                    <p className="text-xs text-muted-foreground truncate w-full sm:w-auto">
-                      Selected file: {uploadedFiles.levelBasedContractDocument.name}
-                    </p>
                   )}
                 </div>
               </div>
+            ))}
+          </div>
+        )}
+
+      {/* Modal for contract form */}
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent className="max-w-2xl w-full h-[400px] p-4 gap-0 flex flex-col">
+          <DialogHeader className="mb-0 pb-0">
+            <DialogTitle className="text-base leading-tight m-0 p-0">
+              {modalBusiness} Contract Form
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 min-h-0">
+            <div className="overflow-y-auto overflow-x-hidden h-full pr-1 flex flex-col gap-1">
+              {modalBusiness &&
+                ["Recruitment", "HR Managed Services", "IT & Technology"].includes(modalBusiness) &&
+                <StandardContractForm 
+                  formData={standardContractFormData}
+                  setFormData={setStandardContractFormData}
+                />}
+              {modalBusiness &&
+                ["HR Consulting", "Mgt Consulting"].includes(modalBusiness) &&
+                <ConsultingContractForm 
+                  formData={consultingContractFormData}
+                  setFormData={setConsultingContractFormData}
+                />}
+              {modalBusiness === "Outsourcing" && (
+                <OutsourcingContractForm 
+                  formData={outsourcingContractFormData}
+                  setFormData={setOutsourcingContractFormData}
+                />
+              )}
             </div>
-          )}
-        </div>
-      )}
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              className="ml-auto "
+              onClick={(e) => handleSaveContract(e)}
+            >
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

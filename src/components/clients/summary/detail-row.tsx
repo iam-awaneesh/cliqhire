@@ -19,6 +19,7 @@ interface DetailRowProps {
   suffix?: string
   options?: { value: string; label: string }[];
   isSelect?: boolean;
+  alwaysShowEdit?: boolean;
 }
 
 export function DetailRow({ 
@@ -32,7 +33,8 @@ export function DetailRow({
   max, 
   suffix,
   options,
-  isSelect
+  isSelect,
+  alwaysShowEdit
 }: DetailRowProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [showDatePicker, setShowDatePicker] = useState(false)
@@ -104,7 +106,7 @@ export function DetailRow({
               className="h-8"
               onClick={() => isDate ? setShowDatePicker(!showDatePicker) : setIsEditing(true)}
             >
-              {value ? (
+              {alwaysShowEdit || value ? (
                 <>
                   <Pencil className="h-4 w-4 mr-2" />
                   Edit

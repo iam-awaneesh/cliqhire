@@ -556,7 +556,7 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
                               if (filteredClients.length === 0 && searchClient.trim()) {
                                 return (
                                   <div className="px-4 py-2 text-gray-500">
-                                    No clients found matching "{searchClient}"
+                                    No clients found matching &quot{searchClient}&quot
                                   </div>
                                 );
                               }
@@ -570,10 +570,8 @@ export function CreateJobModal({ open, onOpenChange }: CreateJobModalProps) {
                                   onMouseDown={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
-                                    console.log('Selecting client:', client.name, client._id);
                                     setFormData(prev => {
                                       const newData = { ...prev, client: client._id };
-                                      console.log('Updated form data:', newData);
                                       return newData;
                                     });
                                     setSearchClient(client.name || '');

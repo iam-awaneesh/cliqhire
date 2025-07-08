@@ -24,6 +24,15 @@ export default function CandidatePage() {
   // Find candidate by email from shared data
   const candidate = mockCandidates.find((c: Candidate) => c.email === email);
   const [activeTab, setActiveTab] = useState("Jobs");
+
+  if (!candidate) {
+    return (
+      <div className="min-h-[300px] font-sans w-full flex items-center justify-center">
+        <div className="text-gray-500 text-lg">Candidate not found.</div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-[300px] font-sans w-full">
       {/* Header */}

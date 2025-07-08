@@ -1,7 +1,6 @@
 import { NestedSelect } from "@/components/ui/nested-select";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
-import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import "@/styles/phone-input-override.css";
 import { Label } from "@/components/ui/label";
@@ -15,38 +14,23 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Info } from "lucide-react";
-import { ClientForm, LocationSuggestion } from "@/components/create-client-modal/type";
-import { optionsForClient, countryCodes } from "./constants";
+import { optionsForClient } from "./constants";
 import { INDUSTRIES } from "@/lib/constants";
+import { ClientGeneralInfo } from "./type";
 
 interface ClientInformationTabProps {
-  formData: ClientForm;
-  setFormData: React.Dispatch<React.SetStateAction<ClientForm>>;
-  emailInput: string;
-  handleInputChange: (
-    field: keyof ClientForm,
-  ) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
-  handleUrlBlur: (field: keyof ClientForm) => (e: React.FocusEvent<HTMLInputElement>) => void;
-  handleEmailBlur: () => void;
-  locationSuggestions: LocationSuggestion[];
-  showLocationSuggestions: boolean;
-  handleLocationSelect: (suggestion: LocationSuggestion) => void;
+  formData: ClientGeneralInfo;
+  setFormData: React.Dispatch<React.SetStateAction<ClientGeneralInfo>>;
 }
 
 export function ClientInformationTab({
   formData,
   setFormData,
-  emailInput,
-  handleInputChange,
-  handleUrlBlur,
-  handleEmailBlur,
-  locationSuggestions,
-  showLocationSuggestions,
-  handleLocationSelect,
 }: ClientInformationTabProps) {
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 pt-4 pb-2">
-      <div className="space-y-1">
+      <div className="space-y-1 ml-2">
         <div className="flex items-center mb-1">
           <Popover>
             <PopoverTrigger asChild>
@@ -76,7 +60,7 @@ export function ClientInformationTab({
               </div>
             </PopoverContent>
           </Popover>
-          <Label htmlFor="clientStage">Client Stage *</Label>
+          <Label htmlFor="clientStage">Client Stage</Label>
         </div>
         <NestedSelect
           options={optionsForClient}
@@ -96,7 +80,7 @@ export function ClientInformationTab({
       </div>
 
       <div className="space-y-1">
-        <Label htmlFor="salesLead">Sales Lead (Internal) *</Label>
+        <Label htmlFor="salesLead">Sales Lead (Internal)</Label>
         <Select
           value={formData.salesLead || ""}
           onValueChange={(value) => setFormData((prev) => ({ ...prev, salesLead: value }))}
@@ -113,12 +97,12 @@ export function ClientInformationTab({
         </Select>
       </div>
 
-      <div className="space-y-1">
-        <Label htmlFor="referredBy">Referred By (External) *</Label>
+      <div className="space-y-1 ml-2">
+        <Label htmlFor="referredBy">Referred By (External)</Label>
         <Input
           id="referredBy"
           value={formData.referredBy}
-          onChange={handleInputChange("referredBy")}
+          onChange={(e) => setFormData((prev) => ({ ...prev, referredBy: e.target.value }))}
           className="w-full"
           placeholder="Enter the name of the person who referred"
         />
@@ -148,7 +132,7 @@ export function ClientInformationTab({
         </Select>
       </div>
 
-      <div className="space-y-1">
+      <div className="space-y-1 ml-2">
         <Label htmlFor="clientSegment">Client Segment</Label>
         <Select
           onValueChange={(value) => setFormData((prev) => ({ ...prev, clientSegment: value }))}
@@ -169,7 +153,7 @@ export function ClientInformationTab({
       </div>
 
       <div className="space-y-1">
-        <Label htmlFor="clientSource">Client Source *</Label>
+        <Label htmlFor="clientSource">Client Source</Label>
         <Select
           onValueChange={(value) =>
             setFormData((prev) => ({
@@ -201,8 +185,8 @@ export function ClientInformationTab({
         </Select>
       </div>
 
-      <div className="space-y-1">
-        <Label htmlFor="industry">Client Industry *</Label>
+      <div className="space-y-1 ml-2">
+        <Label htmlFor="industry">Client Industry</Label>
         <Select
           value={formData.industry}
           onValueChange={(value) => setFormData((prev) => ({ ...prev, industry: value }))}
@@ -224,103 +208,6 @@ export function ClientInformationTab({
           </SelectContent>
         </Select>
       </div>
-
-      {/* <div className="space-y-2">
-        <Label htmlFor="phoneNumber" className="text-sm sm:text-base">
-          Client LandLine Number *
-        </Label>
-        <PhoneInput
-          country={"sa"}
-          value={formData.phoneNumber || "966"}
-          onChange={value => setFormData(prev => ({ ...prev, phoneNumber: value || '' }))}
-          inputClass="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm w-full"
-          inputProps={{ id: 'phoneNumber', required: true }}
-          enableSearch={true}
-        />
-      </div> */}
-
-      {/* <div className="space-y-2">
-        <Label htmlFor="address" className="text-sm sm:text-base">
-          Client Address *
-        </Label>
-        <Input
-          id="address"
-          value={formData.address}
-          onChange={handleInputChange("address")}
-          placeholder="Enter detailed address"
-          required
-          className="w-full"
-        />
-      </div> */}
-
-      {/* <div className="space-y-2">
-        <Label htmlFor="website" className="text-sm sm:text-base">
-          Client Website
-        </Label>
-        <Input
-          id="website"
-          type="url"
-          value={formData.website}
-          onChange={handleInputChange("website")}
-          onBlur={handleUrlBlur("website")}
-          placeholder="https://www.example.com"
-          className="w-full"
-        />
-      </div> */}
-
-      {/* <div className="space-y-2">
-        <Label htmlFor="linkedInProfile" className="text-sm sm:text-base">
-          Client LinkedIn Profile
-        </Label>
-        <Input
-          id="linkedInProfile"
-          value={formData.linkedInProfile}
-          onChange={handleInputChange("linkedInProfile")}
-          onBlur={handleUrlBlur("linkedInProfile")}
-          placeholder="https://www.linkedin.com/in/..."
-          className="w-full"
-        />
-      </div> */}
-
-      {/* <div className="space-y-2">
-        <Label htmlFor="googleMapsLink" className="text-sm sm:text-base">
-          Google Maps Link
-        </Label>
-        <Input
-          id="googleMapsLink"
-          value={formData.googleMapsLink}
-          onChange={handleInputChange("googleMapsLink")}
-          onBlur={handleUrlBlur("googleMapsLink")}
-          placeholder="https://maps.google.com/..."
-          className="w-full"
-        />
-        {showLocationSuggestions && locationSuggestions.length > 0 && (
-          <div className="border rounded-md max-h-40 overflow-y-auto">
-            {locationSuggestions.map((suggestion) => (
-              <div
-                key={suggestion.display_name}
-                className="p-2 hover:bg-muted cursor-pointer"
-                onClick={() => handleLocationSelect(suggestion)}
-              >
-                {suggestion.display_name}
-              </div>
-            ))}
-          </div>
-        )}
-      </div> */}
-
-      {/* <div className="space-y-2">
-        <Label htmlFor="countryOfBusiness" className="text-sm sm:text-base">
-          Country of Business
-        </Label>
-        <Input
-          id="countryOfBusiness"
-          value={formData.countryOfBusiness}
-          onChange={handleInputChange("countryOfBusiness")}
-          placeholder="Enter country of business"
-          className="w-full"
-        />
-      </div> */}
     </div>
   );
 }

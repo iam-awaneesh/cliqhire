@@ -40,7 +40,7 @@ export function ContactModal({
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="firstName">
-                First Name *
+                First Name<span className="text-red-700">*</span>
               </Label>
               <Input
                 id="firstName"
@@ -102,7 +102,7 @@ export function ContactModal({
           </div>
           <div className="grid gap-2">
             <Label htmlFor="phone">
-              Phone *
+              Phone<span className="text-red-700">*</span>
             </Label>
             <PhoneInput
               country={"sa"}

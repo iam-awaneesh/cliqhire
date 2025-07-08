@@ -5,12 +5,16 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
+import PhoneInput from 'react-phone-input-2';
+import 'react-phone-input-2/lib/style.css';
+import '@/styles/phone-input-override.css';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
 interface AddContactModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAdd: (contact: { firstName: string; lastName: string; gender: string; email: string; phone: string; countryCode: string; position: string; linkedin: string }) => void;
-  countryCodes: { code: string; label: string }[];
+  countryCodes?: { code: string; label: string }[];
   positionOptions: { value: string; label: string }[];
 }
 
@@ -18,11 +22,11 @@ export function AddContactModal({ open, onOpenChange, onAdd, countryCodes, posit
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
-    gender: "Other",
+    gender: "",
     email: "",
     phone: "",
     countryCode: "+966",
-    position: positionOptions[0]?.value || "HR",
+    position: "",
     linkedin: "",
   });
 
@@ -46,11 +50,11 @@ export function AddContactModal({ open, onOpenChange, onAdd, countryCodes, posit
     setFormData({
       firstName: "",
       lastName: "",
-      gender: "Other",
+      gender: "",
       email: "",
       phone: "",
       countryCode: "+966",
-      position: positionOptions[0]?.value || "HR",
+      position: "",
       linkedin: "",
     });
   };
@@ -71,6 +75,7 @@ export function AddContactModal({ open, onOpenChange, onAdd, countryCodes, posit
                   value={formData.firstName}
                   onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
                   required
+                  placeholder="Enter first name"
                 />
               </div>
               <div className="space-y-2">
@@ -79,21 +84,25 @@ export function AddContactModal({ open, onOpenChange, onAdd, countryCodes, posit
                   id="lastName"
                   value={formData.lastName}
                   onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
+                  placeholder="Enter last name"
                 />
               </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="gender">Gender</Label>
-              <select
-                id="gender"
+              <Select
                 value={formData.gender}
-                onChange={(e) => setFormData(prev => ({ ...prev, gender: e.target.value }))}
-                className="w-full border rounded p-2"
+                onValueChange={(value) => setFormData(prev => ({ ...prev, gender: value }))}
               >
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Other">Other</option>
-              </select>
+                <SelectTrigger id="gender">
+                  <SelectValue placeholder="Select gender" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Male">Male</SelectItem>
+                  <SelectItem value="Female">Female</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -103,47 +112,38 @@ export function AddContactModal({ open, onOpenChange, onAdd, countryCodes, posit
                 value={formData.email}
                 onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                 required
+                placeholder="Enter email address"
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="phone">Phone</Label>
-              <div className="flex gap-2">
-                <select
-                  id="countryCode"
-                  value={formData.countryCode}
-                  onChange={(e) => setFormData(prev => ({ ...prev, countryCode: e.target.value }))}
-                  className="border rounded p-2"
-                >
-                  {countryCodes.map((option) => (
-                    <option key={option.code} value={option.code}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                  required
-                />
-              </div>
+              <PhoneInput
+                country="sa"
+                preferredCountries={['sa']}
+                value={formData.phone}
+                onChange={(value, data: { name: string; dialCode: string; countryCode: string }) => setFormData(prev => ({ ...prev, phone: value, countryCode: `+${data.dialCode}` }))}
+                inputClass="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm w-full"
+                inputProps={{ id: 'phone', required: true }}
+                enableSearch={true}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="position">Position</Label>
-              <select
-                id="position"
+              <Select
                 value={formData.position}
-                onChange={(e) => setFormData(prev => ({ ...prev, position: e.target.value }))}
-                className="w-full border rounded p-2"
-                required
+                onValueChange={(value) => setFormData(prev => ({ ...prev, position: value }))}
               >
-                {positionOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger id="position">
+                  <SelectValue placeholder="Select position" />
+                </SelectTrigger>
+                <SelectContent>
+                  {positionOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="linkedin">LinkedIn</Label>

@@ -15,6 +15,7 @@ import { ContractSection } from "./contract-section";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SalesInfo } from "./sales/salesInfo";
 
 interface SummaryContentProps {
   clientId: string;
@@ -68,6 +69,7 @@ interface ClientDetails {
   other?: string;
   contractStartDate?: string;
   contractEndDate?: string;
+  emails?: string[];
 }
 
 interface PrimaryContact {
@@ -101,6 +103,7 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
     clientPriority: "1",
     clientSegment: "A",
     name: "",
+    emails: [],
   });
   const [teamMembers, setTeamMembers] = useState<TeamMemberType[]>([
     { name: "Shaswat singh", role: "Admin", email: "shaswat@example.com", isActive: true },
@@ -182,7 +185,8 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
             other: clientData.other || ""
           },
           contractStartDate: clientData.contractStartDate || "",
-          contractEndDate: clientData.contractEndDate || ""
+          contractEndDate: clientData.contractEndDate || "",
+          emails: clientData.emails || [],
         });
 
         setLoading(false);
@@ -202,7 +206,7 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
   }, [clientId]);
 
 
-  const updateClientDetails = async (fieldName: string, value: string) => {
+  const updateClientDetails = async (fieldName: string, value: string | string[]) => {
     try {
       const response = await fetch(`https://aems-backend.onrender.com/api/clients/${clientId}`, {
         method: "PATCH",
@@ -281,6 +285,8 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
       ...prev,
       primaryContacts: [...(prev.primaryContacts || []), contact],
     }));
+
+    
   };
 
   const handleUpdateDescription = (description: string) => {
@@ -330,6 +336,12 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
     }
   };
 
+  const handleUpdateEmails = (emailsString: string) => {
+    const emailsArray = emailsString.split(',').map(e => e.trim()).filter(Boolean);
+    updateClientDetails('emails', emailsArray);
+    setClientDetails((prev) => ({ ...prev, emails: emailsArray }));
+  };
+
   if (loading) {
     return <div className="p-8 text-center">Loading client details...</div>;
   }
@@ -345,15 +357,6 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
     );
   }
 
-  const countryCodes = [
-    { code: "+966", label: "+966 (Saudi Arabia)" },
-    { code: "+1", label: "+1 (USA)" },
-    { code: "+91", label: "+91 (India)" },
-    { code: "+44", label: "+44 (UK)" },
-    { code: "+86", label: "+86 (China)" },
-    { code: "+81", label: "+81 (Japan)" },
-  ];
-
   const positionOptions = [
     { value: "HR", label: "HR" },
     { value: "Senior HR", label: "Senior HR" },
@@ -362,17 +365,24 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
     { value: "Executive", label: "Executive" },
   ];
 
-  const getCountryCodeLabel = (code: string) => {
-    const country = countryCodes.find((option) => option.code === code);
-    return country ? country.label : code;
-  };
-
   return (
     <div className="grid grid-cols-2 gap-6 p-4">
       <div className="space-y-6">
         <div className="bg-white rounded-lg border shadow-sm p-4">
           <h2 className="text-sm font-semibold">Details</h2>
           <div className="space-y-3 mt-4">
+              
+          <DetailRow
+              label="Sales Lead (Internal)"
+              value={clientDetails.salesLead}
+              onUpdate={handleUpdateField("salesLead")}
+            />
+            <DetailRow
+              label="Referred By (External)"
+              value={clientDetails.referredBy}
+              onUpdate={handleUpdateField("referredBy")}
+            />
+
             <DetailRow
               label="Client Priority"
               value={clientDetails.clientPriority}
@@ -407,9 +417,12 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
               value={clientDetails.phoneNumber}
               onUpdate={handleUpdateField("phoneNumber")}
             />
-              
-
-
+            <DetailRow
+              label="Client Email(s)"
+              value={clientDetails.emails?.join(", ") || ""}
+              onUpdate={handleUpdateEmails}
+              alwaysShowEdit={true}
+            />
             <div className="bg-white rounded-lg border shadow-sm p-2">
               <div className="flex items-center justify-between mb-1">
                 <Label>Primary Contacts</Label>
@@ -428,15 +441,37 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
                 <div className="space-y-3">
                   {clientDetails.primaryContacts?.map((contact, index) => (
                     <div key={index} className="p-3 bg-muted/30 rounded-lg">
-                      <div key={index} className="p-3 rounded-md border">
-                        <div className="font-medium">{`${contact.firstName} ${contact.lastName}` || "Unnamed Contact"}</div>
-                        {contact.gender && <div className="text-sm text-muted-foreground">{contact.gender}</div>}
-                        <p className="text-sm text-muted-foreground">{contact.position}</p>
-                        <p className="text-sm text-muted-foreground">{contact.email}</p>
+                      <div key={index} className="p-3 rounded-md border space-y-1">
                         <div className="text-sm text-muted-foreground">
-                          {getCountryCodeLabel(contact.countryCode)} {contact.phone || "No phone"}
+                          <span className="text-xs font-semibold text-gray-500 mr-1">Name:</span>
+                          {`${contact.firstName} ${contact.lastName}`.trim() || "Unnamed Contact"}
                         </div>
+                        {contact.gender && (
+                          <div className="text-sm text-muted-foreground">
+                            <span className="text-xs font-semibold text-gray-500 mr-1">Gender:</span>
+                            {contact.gender}
+                          </div>
+                        )}
+                        {contact.position && (
+                          <div className="text-sm text-muted-foreground">
+                            <span className="text-xs font-semibold text-gray-500 mr-1">Position:</span>
+                            {contact.position}
+                          </div>
+                        )}
+                        {contact.email && (
+                          <div className="text-sm text-muted-foreground">
+                            <span className="text-xs font-semibold text-gray-500 mr-1">Email:</span>
+                            {contact.email}
+                          </div>
+                        )}
+                        {(contact.countryCode || contact.phone) && (
+                          <div className="text-sm text-muted-foreground">
+                            <span className="text-xs font-semibold text-gray-500 mr-1">Phone Number:</span>
+                            {contact.countryCode ? `${contact.countryCode} ` : ""}{contact.phone || "No phone"}
+                          </div>
+                        )}
                         <div className="text-sm text-muted-foreground">
+                          <span className="text-xs font-semibold text-gray-500 mr-1">LinkedIn:</span>
                           {contact.linkedin ? (
                             <a
                               href={contact.linkedin}
@@ -444,7 +479,7 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
                               rel="noopener noreferrer"
                               className="text-blue-600 hover:underline"
                             >
-                              LinkedIn
+                              {contact.linkedin}
                             </a>
                           ) : (
                             "No LinkedIn"
@@ -456,16 +491,6 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
                 </div>
               )}
             </div>
-            <DetailRow
-              label="Sales Lead (Internal)"
-              value={clientDetails.salesLead}
-              onUpdate={handleUpdateField("salesLead")}
-            />
-            <DetailRow
-              label="Referred By (External)"
-              value={clientDetails.referredBy}
-              onUpdate={handleUpdateField("referredBy")}
-            />
             <DetailRow
               label="Client Industry"
               value={clientDetails.industry}
@@ -491,11 +516,11 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
               value={clientDetails.address}
               onUpdate={handleUpdateField("address")}
             />
-            <DetailRow
+            {/* <DetailRow
               label="Registration Number"
               value={clientDetails.registrationNumber}
               onUpdate={handleUpdateField("registrationNumber")}
-            />
+            /> */}
             <DetailRow
               label="Country of Business"
               value={clientDetails.countryOfBusiness}
@@ -507,11 +532,11 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
               onUpdate={handleUpdateField("linkedInProfile")}
               optional
             />
-            <DetailRow
+            {/* <DetailRow
               label="Client LinkedIn Page"
               value={clientDetails.clientLinkedInPage || clientDetails.linkedInPage}
               onUpdate={handleUpdateField(clientDetails.linkedInPage ? "linkedInPage" : "clientLinkedInPage")}
-            />
+            /> */}
             <FileUploadRow
               id="vat-copy-upload"
               label="VAT Copy"
@@ -538,11 +563,13 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
         <ContractSection 
           clientId={clientId} 
           clientData={{
-            contractStartDate: clientDetails.contractStartDate,
-            contractEndDate: clientDetails.contractEndDate,
-            labelType: clientDetails.labelType
+          contractStartDate: clientDetails.contractStartDate,
+          contractEndDate: clientDetails.contractEndDate,
+          labelType: clientDetails.labelType
           }} 
         />
+        <SalesInfo />
+        
         <div className="bg-white rounded-lg border shadow-sm p-4">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold">Team</h2>
@@ -559,6 +586,7 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
             ))}
           </div>
         </div>
+
         <div className="bg-white rounded-lg border shadow-sm p-4">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold">Description</h2>
@@ -588,6 +616,10 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
             )}
           </div>
         </div>
+        
+
+
+
       </div>
       <AddTeamMemberModal
         open={isTeamModalOpen}
@@ -598,7 +630,6 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
         open={isContactModalOpen}
         onOpenChange={setIsContactModalOpen}
         onAdd={handleAddContact}
-        countryCodes={countryCodes}
         positionOptions={positionOptions}
       />
       <EditDescriptionModal
