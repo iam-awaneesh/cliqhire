@@ -6,7 +6,7 @@ import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/style.css';
 import '@/styles/phone-input-override.css';
 
-export default function CreateCandidateform() {
+export default function CreateCandidateform({ onCandidateCreated }: { onCandidateCreated?: (candidate: any) => void }) {
   const [activeTab, setActiveTab] = useState<'basic' | 'job'>('basic');
   const [form, setForm] = useState({
     name: '',
@@ -38,6 +38,7 @@ export default function CreateCandidateform() {
       .then(data => {
         // Optionally, show a success message or handle response
         alert('Candidate created! Check the Network tab for payload.');
+        if (onCandidateCreated) onCandidateCreated(form);
       })
       .catch(error => {
         alert('Error submitting form');

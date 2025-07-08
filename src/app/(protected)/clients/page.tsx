@@ -271,7 +271,7 @@ export default function ClientsPage() {
 
   useEffect(() => {
     fetchClients(currentPage);
-  }, [currentPage]);
+  }, []);
 
   // Refresh data when filters change
   useEffect(() => {
@@ -522,7 +522,7 @@ export default function ClientsPage() {
         {/* Table */}
 
         <div className="flex-1 flex flex-col min-h-0">
-          <div className="flex-1 overflow-auto" style={{ maxHeight: "calc(100vh - 300px)" }}>
+          <div className="flex-1 overflow-auto" style={{ maxHeight: "calc(100vh - 30px)" }}>
             <Table>
               <TableHeader>
                 <Tableheader tableHeadArr={columsArr} className="sticky top-0 z-20 bg-white" />

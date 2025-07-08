@@ -1,13 +1,15 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Plus, Pencil } from "lucide-react"
+import { Plus, Pencil, Trash2 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { AddContactModal } from "../modals/add-contact-modal";
 import { getClientById, PrimaryContact, ClientResponse, updateClient } from "@/services/clientService"
 import { EditFieldModal } from "../summary/edit-field-modal"
 import { parsePhoneNumberFromString } from 'libphonenumber-js'
 import { EditPrimaryContactDialog } from "./EditPrimaryContactDialog"
+import EditContactDetailsModal from "./EditContactDetailsModal";
+import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 interface ContactsContentProps {
   clientId: string;
@@ -28,12 +30,9 @@ export function ContactsContent({ clientId }: ContactsContentProps) {
   const [clientLinkedIn, setClientLinkedIn] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [isPhoneEditOpen, setIsPhoneEditOpen] = useState(false);
-  const [isWebsiteEditOpen, setIsWebsiteEditOpen] = useState(false);
-  const [isEmailsEditOpen, setIsEmailsEditOpen] = useState(false);
-  const [isLinkedInEditOpen, setIsLinkedInEditOpen] = useState(false);
-  const [editContactIndex, setEditContactIndex] = useState<number | null>(null);
+  const [isContactEditOpen, setIsContactEditOpen] = useState(false);
   const [deleteContactIndex, setDeleteContactIndex] = useState<number | null>(null);
+  const [editPrimaryContactIndex, setEditPrimaryContactIndex] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchClientData = async () => {
@@ -132,7 +131,7 @@ export function ContactsContent({ clientId }: ContactsContentProps) {
       });
       console.log('Updated client response:', updatedClient);
       setClientPhoneNumber((updatedClient && updatedClient.phoneNumber) ? updatedClient.phoneNumber : newPhoneNumber);
-      setIsPhoneEditOpen(false);
+      setIsContactEditOpen(false);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to update phone number";
       setError(errorMessage);
@@ -152,7 +151,7 @@ export function ContactsContent({ clientId }: ContactsContentProps) {
         website: newWebsite,
       });
       setClientWebsite((updatedClient && updatedClient.website) ? updatedClient.website : newWebsite);
-      setIsWebsiteEditOpen(false);
+      setIsContactEditOpen(false);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to update website";
       setError(errorMessage);
@@ -173,7 +172,7 @@ export function ContactsContent({ clientId }: ContactsContentProps) {
         emails: emailsArray,
       });
       setClientEmails((updatedClient && updatedClient.emails) ? updatedClient.emails : emailsArray);
-      setIsEmailsEditOpen(false);
+      setIsContactEditOpen(false);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to update emails";
       setError(errorMessage);
@@ -193,18 +192,13 @@ export function ContactsContent({ clientId }: ContactsContentProps) {
         linkedInProfile: newLinkedIn,
       });
       setClientLinkedIn((updatedClient && updatedClient.linkedInProfile) ? updatedClient.linkedInProfile : newLinkedIn);
-      setIsLinkedInEditOpen(false);
+      setIsContactEditOpen(false);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to update LinkedIn profile";
       setError(errorMessage);
     } finally {
       setLoading(false);
     }
-  };
-
-  // Handler for editing a primary contact
-  const handleEditContact = (index: number) => {
-    setEditContactIndex(index);
   };
 
   // Handler for deleting a primary contact
@@ -240,104 +234,92 @@ export function ContactsContent({ clientId }: ContactsContentProps) {
           <div className="w-full md:w-1/2">
             <div className="bg-white rounded-lg border shadow-sm p-4 space-y-4">
               <h2 className=" text-sm font-semibold mb-4">Client Contact Details</h2>
-              {/* Phone Number */}
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-semibold">Client Phone Number</span>
-                <Button variant="outline" size="sm" className="h-8 gap-2" onClick={() => setIsPhoneEditOpen(true)}>
-                  <Pencil className="h-4 w-4 mr-2" />Edit
-                </Button>
-              </div>
-              <div className="text-base mb-4 border-b border-gray-200 pb-2">
-                {clientPhoneNumber ? (
-                  (() => {
-                    const parsed = parsePhoneNumberFromString('+' + clientPhoneNumber);
-                    if (parsed && parsed.isValid()) {
-                      return <span>{parsed.formatInternational()}</span>;
-                    } else {
-                      return <span>{clientPhoneNumber}</span>;
-                    }
-                  })()
-                ) : (
-                  <span className="text-muted-foreground">No phone number</span>
-                )}
-              </div>
-              {/* Website */}
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-semibold">Client Website</span>
-                <Button variant="outline" size="sm" className="h-8 gap-2" onClick={() => setIsWebsiteEditOpen(true)}>
-                  <Pencil className="h-4 w-4 mr-2" />Edit
-                </Button>
-              </div>
-              <div className="text-base mb-4 border-b border-gray-200 pb-2">
-                {clientWebsite ? (
-                  <a href={clientWebsite} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{clientWebsite}</a>
-                ) : (
-                  <span className="text-muted-foreground">No website</span>
-                )}
-              </div>
-              {/* Emails */}
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-semibold">Client Email(s)</span>
-                <Button variant="outline" size="sm" className="h-8 gap-2" onClick={() => setIsEmailsEditOpen(true)}>
-                  <Pencil className="h-4 w-4 mr-2" />Edit
-                </Button>
-              </div>
-              <div className="text-base mb-4 border-b border-gray-200 pb-2">
-                {clientEmails && clientEmails.length > 0 ? (
-                  <ul className="list-disc ml-4">
-                    {clientEmails.map((email, idx) => (
-                      <li key={idx}>
-                        <a href={`mailto:${email}`} className="text-blue-600 hover:underline">{email}</a>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <span className="text-muted-foreground">No email</span>
-                )}
-              </div>
-              {/* LinkedIn Profile */}
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-semibold">Client LinkedIn Profile</span>
-                <Button variant="outline" size="sm" className="h-8 gap-2" onClick={() => setIsLinkedInEditOpen(true)}>
-                  <Pencil className="h-4 w-4 mr-2" />Edit
-                </Button>
-              </div>
-              <div className="text-base">
-                {clientLinkedIn ? (
-                  <a href={clientLinkedIn} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{clientLinkedIn}</a>
-                ) : (
-                  <span className="text-muted-foreground">No LinkedIn profile</span>
-                )}
+              <div className="space-y-2">
+                <div className="flex items-center mb-1">
+                  <span className="text-xs font-semibold text-gray-500 mr-1">Client Phone Number:</span>
+                  {clientPhoneNumber ? (
+                    (() => {
+                      const parsed = parsePhoneNumberFromString('+' + clientPhoneNumber);
+                      if (parsed && parsed.isValid()) {
+                        return <span className="text-sm text-muted-foreground mr-2">{parsed.formatInternational()}</span>;
+                      } else {
+                        return <span className="text-sm text-muted-foreground mr-2">{clientPhoneNumber}</span>;
+                      }
+                    })()
+                  ) : (
+                    <span className="text-sm text-muted-foreground mr-2">No phone number</span>
+                  )}
+                  <Button variant="outline" size="sm" className="h-8 gap-2 ml-auto" onClick={() => setIsContactEditOpen(true)}>
+                    <Pencil className="h-4 w-4 mr-2" />Edit
+                  </Button>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-gray-500 mr-1">Client Website:</span>
+                  {clientWebsite ? (
+                    <a href={clientWebsite} target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground text-gray-500 hover:underline">{clientWebsite}</a>
+                  ) : (
+                    <span className="text-sm text-muted-foreground">No website</span>
+                  )}
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-gray-500 mr-1">Client Email(s):</span>
+                  {clientEmails && clientEmails.length > 0 ? (
+                    <span className="text-sm text-muted-foreground">
+                      {clientEmails.map((email, idx) => (
+                        <span key={idx}>
+                          <a href={`mailto:${email}`} className="text-sm text-muted-foreground text-gray-500 hover:underline">{email}</a>{idx < clientEmails.length - 1 ? ', ' : ''}
+                        </span>
+                      ))}
+                    </span>
+                  ) : (
+                    <span className="text-sm text-muted-foreground">No email</span>
+                  )}
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-gray-500 mr-1">Client LinkedIn Profile:</span>
+                  {clientLinkedIn ? (
+                    <a href={clientLinkedIn} target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground text-gray-500 hover:underline">{clientLinkedIn}</a>
+                  ) : (
+                    <span className="text-sm text-muted-foreground">No LinkedIn profile</span>
+                  )}
+                </div>
               </div>
             </div>
-            {/* Edit Modals */}
-            <EditFieldModal
-              open={isPhoneEditOpen}
-              onClose={() => setIsPhoneEditOpen(false)}
-              fieldName="Client Phone Number"
-              currentValue={clientPhoneNumber}
-              onSave={handlePhoneNumberUpdate}
-            />
-            <EditFieldModal
-              open={isWebsiteEditOpen}
-              onClose={() => setIsWebsiteEditOpen(false)}
-              fieldName="Client Website"
-              currentValue={clientWebsite}
-              onSave={handleWebsiteUpdate}
-            />
-            <EditFieldModal
-              open={isEmailsEditOpen}
-              onClose={() => setIsEmailsEditOpen(false)}
-              fieldName="Client Email(s)"
-              currentValue={clientEmails.join(', ')}
-              onSave={handleEmailsUpdate}
-            />
-            <EditFieldModal
-              open={isLinkedInEditOpen}
-              onClose={() => setIsLinkedInEditOpen(false)}
-              fieldName="Client LinkedIn Profile"
-              currentValue={clientLinkedIn}
-              onSave={handleLinkedInUpdate}
+            <EditContactDetailsModal
+              open={isContactEditOpen}
+              onClose={() => setIsContactEditOpen(false)}
+              clientId={clientId}
+              initialValues={{
+                phoneNumber: clientPhoneNumber,
+                website: clientWebsite,
+                emails: clientEmails,
+                linkedInProfile: clientLinkedIn,
+              }}
+              onSave={async (values: { phoneNumber: string; website: string; emails: string[]; linkedInProfile: string }) => {
+                setLoading(true);
+                setError("");
+                try {
+                  const clientData: ClientResponse = await getClientById(clientId);
+                  const { _id, createdAt, updatedAt, ...updatePayload } = clientData;
+                  const updatedClient = await updateClient(clientId, {
+                    ...updatePayload,
+                    phoneNumber: values.phoneNumber,
+                    website: values.website,
+                    emails: values.emails,
+                    linkedInProfile: values.linkedInProfile,
+                  });
+                  setClientPhoneNumber(updatedClient.phoneNumber || "");
+                  setClientWebsite(updatedClient.website || "");
+                  setClientEmails(updatedClient.emails || []);
+                  setClientLinkedIn(updatedClient.linkedInProfile || "");
+                  setIsContactEditOpen(false);
+                } catch (err) {
+                  const errorMessage = err instanceof Error ? err.message : "Failed to update contact details";
+                  setError(errorMessage);
+                } finally {
+                  setLoading(false);
+                }
+              }}
             />
           </div>
           {/* Primary Contacts on the right */}
@@ -355,22 +337,28 @@ export function ContactsContent({ clientId }: ContactsContentProps) {
                 <div className="space-y-3">
                   {(primaryContacts || []).map((contact, index) => (
                     <div key={index} className="p-3 rounded-md border">
-                      {/* Buttons row */}
-                      <div className="flex justify-end gap-2 mb-2">
-                        <Button variant="outline" size="sm" onClick={() => handleEditContact(index)}>
-                          <Pencil className="h-4 w-4 mr-1" /> Edit
-                        </Button>
-                        <Button variant="destructive" size="sm" onClick={() => setDeleteContactIndex(index)}>
-                          Delete
-                        </Button>
-                      </div>
-                      {/* Name */}
-                      <div className="text-sm text-muted-foreground">
+                      {/* Name row with right-aligned buttons */}
+                      <div className="flex items-center mb-2">
                         <span className="text-xs font-semibold text-gray-500 mr-1">Name:</span>
-                        {`${contact.firstName || ''} ${contact.lastName || ''}`.trim() || contact.name || "Unnamed Contact"}
+                        <span className="text-sm text-muted-foreground">
+                          {`${contact.firstName || ''} ${contact.lastName || ''}`.trim() || contact.name || "Unnamed Contact"}
+                        </span>
+                        <div className="flex gap-2 ml-auto">
+                          <Button variant="outline" size="sm" onClick={() => setEditPrimaryContactIndex(index)}>
+                            <Pencil className="h-4 w-4 mr-1" /> Edit
+                          </Button>
+                          <Button variant="destructive" size="sm" onClick={() => setDeleteContactIndex(index)}>
+                            <Trash2 className="h-4 w-4 mr-1" /> Delete
+                          </Button>
+                        </div>
                       </div>
                       {/* Position */}
-                      {contact.position && <p className="text-sm text-muted-foreground">{contact.position}</p>}
+                      {contact.position && (
+                        <p className="text-sm text-muted-foreground">
+                          <span className="text-xs font-semibold text-gray-500 mr-1">Position:</span>
+                          {contact.position}
+                        </p>
+                      )}
                       {/* Email */}
                       {contact.email && (
                         <p className="text-sm text-muted-foreground">
@@ -391,7 +379,7 @@ export function ContactsContent({ clientId }: ContactsContentProps) {
                             href={contact.linkedin}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-blue-600 hover:underline"
+                            className="text-gray-500 hover:underline"
                           >
                             {contact.linkedin}
                           </a>
@@ -409,50 +397,62 @@ export function ContactsContent({ clientId }: ContactsContentProps) {
         <AddContactModal
           open={isDialogOpen}
           onOpenChange={setIsDialogOpen}
-          onAdd={(contact) => setPrimaryContacts(prev => [...prev, contact])}
+          onAdd={(contact) => setPrimaryContacts(prev => [
+            {
+              ...contact,
+              ...(typeof contact.firstName === 'string' && contact.firstName ? { name: contact.firstName } : { name: `${contact.firstName || ''} ${contact.lastName || ''}`.trim() || 'Unnamed Contact' }),
+            },
+            ...prev,
+          ])}
           countryCodes={countryCodes}
           positionOptions={positionOptions}
         />
-        {/* Edit modal for primary contact (placeholder, can be replaced with a full modal) */}
-        <EditPrimaryContactDialog
-          open={editContactIndex !== null}
-          onOpenChange={() => setEditContactIndex(null)}
-          contact={editContactIndex !== null ? (primaryContacts || [])[editContactIndex] : null}
-          onSave={async (updatedContact) => {
-            setLoading(true);
-            setError("");
-            try {
-              // Fetch latest client data
-              const clientData: ClientResponse = await getClientById(clientId);
-              const { _id, createdAt, updatedAt, ...updatePayload } = clientData;
-              // Update the primaryContacts array, defaulting to [] if undefined
-              const updatedPrimaryContacts = (primaryContacts || []).map((c, i) => i === editContactIndex ? updatedContact : c);
-              const updatedClient = await updateClient(clientId, {
-                ...updatePayload,
-                primaryContacts: updatedPrimaryContacts,
-              });
-              setPrimaryContacts((updatedClient.primaryContacts || updatedPrimaryContacts || []));
-              setEditContactIndex(null);
-              // Optionally, trigger a custom event or callback to refresh summary page if needed
-            } catch (err) {
-              const errorMessage = err instanceof Error ? err.message : "Failed to update primary contact";
-              setError(errorMessage);
-            } finally {
-              setLoading(false);
-            }
-          }}
-        />
-        {/* Delete confirmation (simple, can be replaced with a dialog) */}
-        {deleteContactIndex !== null && (
-          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
-            <div className="bg-white p-6 rounded shadow-lg">
-              <div className="mb-4">Are you sure you want to delete this contact?</div>
-              <div className="flex gap-2 justify-end">
-                <Button variant="outline" onClick={() => setDeleteContactIndex(null)}>Cancel</Button>
-                <Button variant="destructive" onClick={() => handleDeleteContact(deleteContactIndex!)}>Delete</Button>
-              </div>
-            </div>
-          </div>
+        {/* Delete confirmation (now using Shadcn Dialog) */}
+        <Dialog open={deleteContactIndex !== null} onOpenChange={() => setDeleteContactIndex(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete Contact</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete this contact?
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setDeleteContactIndex(null)}>Cancel</Button>
+              <Button variant="destructive" onClick={() => handleDeleteContact(deleteContactIndex!)}>Delete</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        {editPrimaryContactIndex !== null && (
+          <EditPrimaryContactDialog
+            open={editPrimaryContactIndex !== null}
+            onOpenChange={() => setEditPrimaryContactIndex(null)}
+            contact={primaryContacts[editPrimaryContactIndex]}
+            onSave={async (updatedContact) => {
+              setLoading(true);
+              setError("");
+              try {
+                const clientData: ClientResponse = await getClientById(clientId);
+                const { _id, createdAt, updatedAt, ...updatePayload } = clientData;
+                const updatedPrimaryContacts = (primaryContacts || []).map((c, i) =>
+                  i === editPrimaryContactIndex ? {
+                    ...updatedContact,
+                    ...(typeof updatedContact.name === 'string' && updatedContact.name ? { name: updatedContact.name } : { name: `${updatedContact.firstName || ''} ${updatedContact.lastName || ''}`.trim() || 'Unnamed Contact' }),
+                  } : c
+                );
+                const updatedClient = await updateClient(clientId, {
+                  ...updatePayload,
+                  primaryContacts: updatedPrimaryContacts,
+                });
+                setPrimaryContacts((updatedClient.primaryContacts || updatedPrimaryContacts || []));
+                setEditPrimaryContactIndex(null);
+              } catch (err) {
+                const errorMessage = err instanceof Error ? err.message : "Failed to update primary contact";
+                setError(errorMessage);
+              } finally {
+                setLoading(false);
+              }
+            }}
+          />
         )}
       </div>
     );
@@ -485,7 +485,13 @@ export function ContactsContent({ clientId }: ContactsContentProps) {
       <AddContactModal
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
-        onAdd={(contact) => setPrimaryContacts(prev => [...prev, contact])}
+        onAdd={(contact) => setPrimaryContacts(prev => [
+          {
+            ...contact,
+            ...(typeof contact.firstName === 'string' && contact.firstName ? { name: contact.firstName } : { name: `${contact.firstName || ''} ${contact.lastName || ''}`.trim() || 'Unnamed Contact' }),
+          },
+          ...prev,
+        ])}
         countryCodes={countryCodes}
         positionOptions={positionOptions}
       />

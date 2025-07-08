@@ -1,5 +1,6 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 
 interface ClientPaginationControlsProps {
   currentPage: number;
@@ -53,19 +54,19 @@ const ClientPaginationControls: React.FC<ClientPaginationControlsProps> = ({
           size="sm"
           onClick={() => handlePageChange(currentPage - 1)}
           disabled={currentPage <= 1}
+          
         >
-          Previous
+          <ArrowLeft size={16}/> Previous
         </Button>
         <div className="text-sm">
           Page {currentPage} of {totalPages}
         </div>
         <Button
-          variant="outline"
           size="sm"
           onClick={() => handlePageChange(currentPage + 1)}
           disabled={currentPage >= totalPages}
         >
-          Next
+          Next <ArrowRight size={16} />
         </Button>
       </div>
     </div>

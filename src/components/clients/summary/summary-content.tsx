@@ -206,7 +206,7 @@ export function SummaryContent({ clientId }: SummaryContentProps) {
   }, [clientId]);
 
 
-  const updateClientDetails = async (fieldName: string, value: string) => {
+  const updateClientDetails = async (fieldName: string, value: string | string[]) => {
     try {
       const response = await fetch(`https://aems-backend.onrender.com/api/clients/${clientId}`, {
         method: "PATCH",

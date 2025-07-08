@@ -4,7 +4,7 @@ import { ClientForm } from "@/components/create-client-modal/type";
 import { countryCodes } from "./constants";
 import { Input } from "@/components/ui/input";
 import PhoneInput from "react-phone-input-2";
-import { ClientContactInfo } from "./create-client-modal";
+import { ClientContactInfo } from "./type";
 import { useState } from "react";
 
 interface ContactDetailsTabProps {
