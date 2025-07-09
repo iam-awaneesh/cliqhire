@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import Link from "next/link"
 
@@ -19,47 +20,45 @@ interface HistoryAction {
   timestamp: string
 }
 
-const historyActions: HistoryAction[] = [
-  {
-    id: "1",
-    user: { name: "Shaswat singh", avatar: "SS" },
-    action: "moved the client",
-    client: "microsoft",
-    details: "from stage Engaged to stage Negotiation",
-    timestamp: "a day ago (2025-01-07 • 12:57)"
-  },
-  {
-    id: "2",
-    user: { name: "Shaswat singh", avatar: "SS" },
-    action: "moved the client",
-    client: "microsoft",
-    details: "from stage Lead to stage Engaged",
-    timestamp: "a day ago (2025-01-07 • 12:57)"
-  },
-  {
-    id: "3",
-    user: { name: "Shaswat singh", avatar: "SS" },
-    action: "moved the client",
-    client: "microsoft",
-    details: "from stage Prospect to stage Lead",
-    timestamp: "a day ago (2025-01-07 • 12:57)"
-  },
-  {
-    id: "4",
-    user: { name: "Shaswat singh", avatar: "SS" },
-    action: "created the client",
-    client: "microsoft",
-    timestamp: "3 days ago (2025-01-05 • 14:16)"
-  },
-  {
-    id: "5",
-    user: { name: "Shaswat singh", avatar: "SS" },
-    action: "added themselves",
-    timestamp: "3 days ago (2025-01-05 • 14:16)"
-  }
-]
-
 export function HistoryContent({ clientId }: HistoryContentProps) {
+  const [historyActions, setHistoryActions] = useState<HistoryAction[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchHistory() {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch(`https://aems-backend.onrender.com/api/history/clients/${clientId}`);
+        if (!res.ok) throw new Error("Client history not found");
+        const data = await res.json();
+        // Map the API response array to the expected UI structure
+        setHistoryActions(
+          (data || []).map((item: any, idx: number) => ({
+            id: item.entity_id || idx,
+            user: {
+              name: item.entity_type || "Unknown",
+              avatar: (item.entity_type || "U").charAt(0),
+            },
+            action: item.action,
+            client: item.changes?.after?.fileName,
+            details: item.changes?.after?.notes,
+            timestamp: item.created_at,
+          }))
+        );
+      } catch (err: any) {
+        setError(err.message || "Unknown error");
+      } finally {
+        setLoading(false);
+      }
+    }
+    if (clientId) fetchHistory();
+  }, [clientId]);
+
+  if (loading) return <div className="p-4">Loading history...</div>;
+  if (error) return <div className="p-4 text-red-500">Error: {error}</div>;
+
   return (
     <div className="p-4">
       <div className="text-sm mb-4">
