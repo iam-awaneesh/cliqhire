@@ -1,6 +1,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight } from "lucide-react";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
 interface ClientPaginationControlsProps {
   currentPage: number;
@@ -29,22 +30,26 @@ const ClientPaginationControls: React.FC<ClientPaginationControlsProps> = ({
         </div>
         <div className="flex items-center space-x-2">
           <span className="text-sm">Show</span>
-          <select
-            className="h-8 w-16 rounded-md border border-input bg-background px-2 text-sm"
-            value={pageSize}
-            onChange={(e) => {
-              const newSize = parseInt(e.target.value);
+          <Select
+            value={String(pageSize)}
+            onValueChange={(value) => {
+              const newSize = parseInt(value);
               setPageSize(newSize);
               handlePageChange(1); // Reset to page 1 when changing page size
             }}
           >
-            <option value="1000">All</option>
-            <option value="10">10</option>
-            <option value="25">25</option>
-            <option value="50">50</option>
-            <option value="100">100</option>
-            <option value="200">200</option>
-          </select>
+            <SelectTrigger className="h-8 w-16">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="1000">All</SelectItem>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="25">25</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+              <SelectItem value="100">100</SelectItem>
+              <SelectItem value="200">200</SelectItem>
+            </SelectContent>
+          </Select>
           <span className="text-sm">per page</span>
         </div>
       </div>

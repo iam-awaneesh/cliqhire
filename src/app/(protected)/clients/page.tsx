@@ -120,7 +120,7 @@ export default function ClientsPage() {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
   const [totalClients, setTotalClients] = useState<number>(0);
-  const [pageSize, setPageSize] = useState<number>(1000); // Set a very high number to effectively show all clients
+  const [pageSize, setPageSize] = useState<number>(10); // Default to 10 per page
 
   const fetchClients = async (page = 1, size = pageSize) => {
     setInitialLoading(true);
