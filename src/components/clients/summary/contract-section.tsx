@@ -45,8 +45,20 @@ interface ContractSectionProps {
 
 export function ContractSection({ clientId, clientData }: ContractSectionProps) {
   const levelOptions = ["Senior Level", "Executives", "Non-Executives", "Other"];
-  const contractTypes = ["Fix with Advance", "Fix without Advance", "Level Based (Hiring)", "Level Based With Advance"];
-  const lineOfBusinessOptions = ["Recruitment", "HR Consulting", "Mgt Consulting", "Outsourcing", "HR Managed Services", "IT & Technology"];
+  const contractTypes = [
+    "Fix with Advance",
+    "Fix without Advance",
+    "Level Based (Hiring)",
+    "Level Based With Advance",
+  ];
+  const lineOfBusinessOptions = [
+    "Recruitment",
+    "HR Consulting",
+    "Mgt Consulting",
+    "Outsourcing",
+    "HR Managed Services",
+    "IT & Technology",
+  ];
   const [contract, setContract] = useState<ContractResponse | null>(null);
   const [contractDetails, setContractDetails] = useState<ContractDetailsState>({
     contractStartDate: null,
@@ -64,10 +76,21 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
   const [isLevelDropdownOpen, setIsLevelDropdownOpen] = useState(false);
   const [isLineOfBusinessDropdownOpen, setIsLineOfBusinessDropdownOpen] = useState(false);
   const [tempLineOfBusiness, setTempLineOfBusiness] = useState<string[]>([]);
-  const [editDialog, setEditDialog] = useState({ open: false, type: "", level: "", percentage: "", notes: "", money: "", currency: "" });
+  const [editDialog, setEditDialog] = useState({
+    open: false,
+    type: "",
+    level: "",
+    percentage: "",
+    notes: "",
+    money: "",
+    currency: "",
+  });
   const [editingLevel, setEditingLevel] = useState<string | null>(null);
   const [isEditingContractType, setIsEditingContractType] = useState(false);
-  const [status, setStatus] = useState<{ loading: boolean; error: string | null }>({ loading: false, error: null });
+  const [status, setStatus] = useState<{ loading: boolean; error: string | null }>({
+    loading: false,
+    error: null,
+  });
 
   const patchClientData = useCallback(
     async (field: string, value: any) => {
@@ -91,7 +114,7 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
         setStatus((prev) => ({ ...prev, loading: false }));
       }
     },
-    [clientId, contractDetails.clientName]
+    [clientId, contractDetails.clientName],
   );
 
   const updateContractDetails = useCallback((updates: Partial<ContractDetailsState>) => {
@@ -127,14 +150,18 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
       } else if (["Level Based (Hiring)", "Level Based With Advance"].includes(contractType)) {
         const levelsData: Record<string, ContractTypeDetail> = {};
         const activeLevels: string[] = [];
-        levelOptions.forEach(level => {
+        levelOptions.forEach((level) => {
           const fieldMap = levelFieldMap[level];
           const percentage = client[fieldMap.percentage as keyof typeof client];
           const notes = client[fieldMap.notes as keyof typeof client];
           const money = client[fieldMap.money as keyof typeof client];
           const currency = client[fieldMap.currency as keyof typeof client];
 
-          if (percentage != null || notes != null || (contractType === "Level Based With Advance" && (money != null || currency != null))) {
+          if (
+            percentage != null ||
+            notes != null ||
+            (contractType === "Level Based With Advance" && (money != null || currency != null))
+          ) {
             levelsData[level] = {
               percentage: percentage != null ? String(percentage) : "",
               notes: notes != null ? String(notes) : "",
@@ -145,7 +172,9 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
           }
         });
         Object.assign(contractTypeDetails, levelsData);
-        selectedLevels = activeLevels.sort((a, b) => levelOptions.indexOf(a) - levelOptions.indexOf(b));
+        selectedLevels = activeLevels.sort(
+          (a, b) => levelOptions.indexOf(a) - levelOptions.indexOf(b),
+        );
       }
 
       setContract({
@@ -154,17 +183,24 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
         contractStartDate,
         contractEndDate,
         contractType,
-        levelBasedDetails: contractType === "Level Based (Hiring)"
-          ? Object.fromEntries(
-              (["seniorLevel", "executives", "nonExecutives", "other"] as const)
-                .map((key, i) => [key, client[`${key}Percentage`]])
-                .filter(([, perc]) => typeof perc === "number")
-                .map(([, perc], i) => [
-                  ["seniorLevel", "executives", "nonExecutives", "other"][i],
-                  { percentage: perc, notes: client[`${["seniorLevel", "executives", "nonExecutives", "other"][i]}Notes`] || "" },
-                ])
-            )
-          : null,
+        levelBasedDetails:
+          contractType === "Level Based (Hiring)"
+            ? Object.fromEntries(
+                (["seniorLevel", "executives", "nonExecutives", "other"] as const)
+                  .map((key, i) => [key, client[`${key}Percentage`]])
+                  .filter(([, perc]) => typeof perc === "number")
+                  .map(([, perc], i) => [
+                    ["seniorLevel", "executives", "nonExecutives", "other"][i],
+                    {
+                      percentage: perc,
+                      notes:
+                        client[
+                          `${["seniorLevel", "executives", "nonExecutives", "other"][i]}Notes`
+                        ] || "",
+                    },
+                  ]),
+              )
+            : null,
         agreement: client.agreement || null,
         referralPercentage: parseFloat(client.referralPercentage) || 0,
         notes: client.contractNotes || client.notes || "",
@@ -177,8 +213,8 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
       let lob: string[] = [];
       if (Array.isArray(client.lineOfBusiness)) {
         lob = client.lineOfBusiness;
-      } else if (typeof client.lineOfBusiness === 'string' && client.lineOfBusiness) {
-                lob = client.lineOfBusiness.split(',').map((s: string) => s.trim());
+      } else if (typeof client.lineOfBusiness === "string" && client.lineOfBusiness) {
+        lob = client.lineOfBusiness.split(",").map((s: string) => s.trim());
       }
 
       updateContractDetails({
@@ -186,7 +222,12 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
         contractEndDate,
         referralPercentage: client.referralPercentage?.toString() || "",
         lineOfBusiness: lob,
-        contractDocumentName: (client.agreement && (typeof client.agreement === 'string' ? client.agreement : client.agreement.fileName)) || "",
+        contractDocumentName:
+          (client.agreement &&
+            (typeof client.agreement === "string"
+              ? client.agreement
+              : client.agreement.fileName)) ||
+          "",
         contractType,
         contractTypeDetails,
         selectedLevels,
@@ -202,7 +243,10 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
         formData.append("clientName", client.name || "");
         const newContract = await createContract(formData as any);
         setContract(newContract);
-        localStorage.setItem("contractUpdate", JSON.stringify({ clientId, timestamp: Date.now(), updatedField: "new_contract" }));
+        localStorage.setItem(
+          "contractUpdate",
+          JSON.stringify({ clientId, timestamp: Date.now(), updatedField: "new_contract" }),
+        );
       }
     } catch (error) {
       setStatus({ loading: false, error: "Failed to load contract data" });
@@ -234,14 +278,18 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
           }
         }
         await patchClientData(field, processedValue);
-        localStorage.setItem("contractUpdate", JSON.stringify({ clientId, timestamp: Date.now(), updatedField: field }));
+        localStorage.setItem(
+          "contractUpdate",
+          JSON.stringify({ clientId, timestamp: Date.now(), updatedField: field }),
+        );
         await fetchContractData();
       } catch (error) {
         console.error("Error updating field:", error);
-        if (contract) updateContractDetails({ [field]: contract[field as keyof ContractResponse] || "" });
+        if (contract)
+          updateContractDetails({ [field]: contract[field as keyof ContractResponse] || "" });
       }
     },
-    [contract, clientId, patchClientData, updateContractDetails, fetchContractData]
+    [contract, clientId, patchClientData, updateContractDetails, fetchContractData],
   );
 
   const handleContractDocumentUpload = useCallback(
@@ -258,10 +306,13 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
         formData.append("file", file);
         formData.append("field", "agreement");
         formData.append("clientName", contractDetails.clientName);
-        const response = await fetch(`https://aems-backend.onrender.com/api/clients/${clientId}/upload`, {
-          method: "POST",
-          body: formData,
-        });
+        const response = await fetch(
+          `https://aems-backend.onrender.com/api/clients/${clientId}/upload`,
+          {
+            method: "POST",
+            body: formData,
+          },
+        );
         if (!response.ok) throw new Error("Failed to upload agreement");
         const updatedData = await response.json();
         setContract((prev) => ({
@@ -269,17 +320,30 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
           agreement: updatedData.data.agreement,
           updatedAt: new Date().toISOString(),
         }));
-        localStorage.setItem("contractUpdate", JSON.stringify({ clientId, timestamp: Date.now(), updatedField: "agreement" }));
+        localStorage.setItem(
+          "contractUpdate",
+          JSON.stringify({ clientId, timestamp: Date.now(), updatedField: "agreement" }),
+        );
       } catch (error) {
         setStatus((prev) => ({ ...prev, error: "Failed to upload agreement" }));
-        updateContractDetails({ contractDocument: null, contractDocumentName: (contract?.agreement && (typeof contract.agreement === 'string' ? contract.agreement : contract.agreement.fileName)) || "" });
+        updateContractDetails({
+          contractDocument: null,
+          contractDocumentName:
+            (contract?.agreement &&
+              (typeof contract.agreement === "string"
+                ? contract.agreement
+                : contract.agreement.fileName)) ||
+            "",
+        });
       }
     },
-    [contract, clientId, contractDetails.clientName, updateContractDetails]
+    [contract, clientId, contractDetails.clientName, updateContractDetails],
   );
 
   const handleDownloadContractDocument = useCallback(async () => {
-    const fileName = contract?.agreement && (typeof contract.agreement === 'string' ? contract.agreement : contract.agreement.fileName);
+    const fileName =
+      contract?.agreement &&
+      (typeof contract.agreement === "string" ? contract.agreement : contract.agreement.fileName);
     if (!fileName) {
       setStatus((prev) => ({ ...prev, error: "Agreement file is missing." }));
       return;
@@ -297,40 +361,53 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
       a.remove();
     } catch (error) {
       console.error("Detailed download error:", error);
-      setStatus((prev) => ({ ...prev, error: "Failed to download agreement. See console for details." }));
+      setStatus((prev) => ({
+        ...prev,
+        error: "Failed to download agreement. See console for details.",
+      }));
     } finally {
       setStatus((prev) => ({ ...prev, loading: false }));
     }
   }, [contract]);
 
   const handlePreviewContractDocument = useCallback(async () => {
-    const fileName = contract?.agreement && (typeof contract.agreement === 'string' ? contract.agreement : contract.agreement.fileName);
+    const fileName =
+      contract?.agreement &&
+      (typeof contract.agreement === "string" ? contract.agreement : contract.agreement.fileName);
     if (!fileName) {
-       setStatus((prev) => ({ ...prev, error: "Agreement file is missing." }));
+      setStatus((prev) => ({ ...prev, error: "Agreement file is missing." }));
       return;
     }
     try {
       setStatus((prev) => ({ ...prev, loading: true, error: null }));
       const blob = await downloadAgreement(fileName);
       const url = window.URL.createObjectURL(blob);
-      window.open(url, '_blank');
+      window.open(url, "_blank");
       setTimeout(() => window.URL.revokeObjectURL(url), 100);
     } catch (error) {
       console.error("Detailed preview error:", error);
-      setStatus((prev) => ({ ...prev, error: "Failed to preview agreement. See console for details." }));
+      setStatus((prev) => ({
+        ...prev,
+        error: "Failed to preview agreement. See console for details.",
+      }));
     } finally {
       setStatus((prev) => ({ ...prev, loading: false }));
     }
   }, [contract]);
 
   const handleDeleteContractDocument = useCallback(async () => {
-    const fileName = contract?.agreement && (typeof contract.agreement === 'string' ? contract.agreement : contract.agreement.fileName);
+    const fileName =
+      contract?.agreement &&
+      (typeof contract.agreement === "string" ? contract.agreement : contract.agreement.fileName);
     if (!fileName) return;
     try {
       const updatedContract = await deleteAgreement(fileName);
       setContract(updatedContract);
       updateContractDetails({ contractDocument: null, contractDocumentName: "" });
-      localStorage.setItem("contractUpdate", JSON.stringify({ clientId, timestamp: Date.now(), updatedField: "agreement" }));
+      localStorage.setItem(
+        "contractUpdate",
+        JSON.stringify({ clientId, timestamp: Date.now(), updatedField: "agreement" }),
+      );
     } catch (error) {
       setStatus((prev) => ({ ...prev, error: "Failed to delete agreement" }));
     }
@@ -341,8 +418,12 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
       try {
         updateContractDetails({
           contractType: type,
-          selectedLevels: ["Level Based (Hiring)", "Level Based With Advance"].includes(type) ? contractDetails.selectedLevels : [],
-          contractTypeDetails: ["Level Based (Hiring)", "Level Based With Advance"].includes(type) ? contractDetails.contractTypeDetails : {},
+          selectedLevels: ["Level Based (Hiring)", "Level Based With Advance"].includes(type)
+            ? contractDetails.selectedLevels
+            : [],
+          contractTypeDetails: ["Level Based (Hiring)", "Level Based With Advance"].includes(type)
+            ? contractDetails.contractTypeDetails
+            : {},
         });
         const updatedClient = await patchClientData("contractType", type);
         setContract((prev) => ({
@@ -351,13 +432,16 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
           contractType: type,
           updatedAt: new Date().toISOString(),
         }));
-        localStorage.setItem("contractUpdate", JSON.stringify({ clientId, timestamp: Date.now(), updatedField: "contractType" }));
+        localStorage.setItem(
+          "contractUpdate",
+          JSON.stringify({ clientId, timestamp: Date.now(), updatedField: "contractType" }),
+        );
       } catch (error) {
         setStatus((prev) => ({ ...prev, error: "Failed to update contract type" }));
         updateContractDetails({ contractType: contract?.contractType || "" });
       }
     },
-    [contract, clientId, contractDetails, patchClientData, updateContractDetails]
+    [contract, clientId, contractDetails, patchClientData, updateContractDetails],
   );
 
   const handleLevelSelect = useCallback(
@@ -375,13 +459,16 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
           selectedLevels: newLevels,
           updatedAt: new Date().toISOString(),
         }));
-        localStorage.setItem("contractUpdate", JSON.stringify({ clientId, timestamp: Date.now(), updatedField: "selectedLevels" }));
+        localStorage.setItem(
+          "contractUpdate",
+          JSON.stringify({ clientId, timestamp: Date.now(), updatedField: "selectedLevels" }),
+        );
       } catch (error) {
         setStatus((prev) => ({ ...prev, error: "Failed to update levels" }));
         updateContractDetails({ selectedLevels: contractDetails.selectedLevels });
       }
     },
-    [contract, clientId, contractDetails, patchClientData, updateContractDetails]
+    [contract, clientId, contractDetails, patchClientData, updateContractDetails],
   );
 
   const openLineOfBusinessDropdown = () => {
@@ -405,7 +492,10 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
         ...updatedClient,
         lineOfBusiness: tempLineOfBusiness,
       }));
-      localStorage.setItem("contractUpdate", JSON.stringify({ clientId, timestamp: Date.now(), updatedField: "lineOfBusiness" }));
+      localStorage.setItem(
+        "contractUpdate",
+        JSON.stringify({ clientId, timestamp: Date.now(), updatedField: "lineOfBusiness" }),
+      );
       setIsLineOfBusinessDropdownOpen(false);
     } catch (error) {
       console.error("Failed to update Line of Business", error);
@@ -425,11 +515,34 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
     }
   }, []);
 
-  const levelFieldMap: Record<string, { percentage: string; notes: string; money: string; currency: string; }> = {
-    "Senior Level": { percentage: "seniorLevelPercentage", notes: "seniorLevelNotes", money: "seniorLevelMoney", currency: "seniorLevelCurrency" },
-    "Executives": { percentage: "executivesPercentage", notes: "executivesNotes", money: "executivesMoney", currency: "executivesCurrency" },
-    "Non-Executives": { percentage: "nonExecutivesPercentage", notes: "nonExecutivesNotes", money: "nonExecutivesMoney", currency: "nonExecutivesCurrency" },
-    "Other": { percentage: "otherPercentage", notes: "otherNotes", money: "otherMoney", currency: "otherCurrency" },
+  const levelFieldMap: Record<
+    string,
+    { percentage: string; notes: string; money: string; currency: string }
+  > = {
+    "Senior Level": {
+      percentage: "seniorLevelPercentage",
+      notes: "seniorLevelNotes",
+      money: "seniorLevelMoney",
+      currency: "seniorLevelCurrency",
+    },
+    Executives: {
+      percentage: "executivesPercentage",
+      notes: "executivesNotes",
+      money: "executivesMoney",
+      currency: "executivesCurrency",
+    },
+    "Non-Executives": {
+      percentage: "nonExecutivesPercentage",
+      notes: "nonExecutivesNotes",
+      money: "nonExecutivesMoney",
+      currency: "nonExecutivesCurrency",
+    },
+    Other: {
+      percentage: "otherPercentage",
+      notes: "otherNotes",
+      money: "otherMoney",
+      currency: "otherCurrency",
+    },
   };
 
   const patchClientDataBulk = useCallback(
@@ -454,7 +567,7 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
         setStatus((prev) => ({ ...prev, loading: false }));
       }
     },
-    [clientId, contractDetails.clientName]
+    [clientId, contractDetails.clientName],
   );
 
   const saveEdit = useCallback(
@@ -474,7 +587,7 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
               fieldsToUpdate[fieldMap.currency] = currency || "";
             }
           }
-          
+
           if (Object.keys(fieldsToUpdate).length > 0) {
             await patchClientDataBulk(fieldsToUpdate);
           }
@@ -488,14 +601,21 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
             await patchClientData("fixWithoutAdvanceNotes", newDetails[key]?.notes || "");
           }
         }
-        localStorage.setItem("contractUpdate", JSON.stringify({ clientId, timestamp: Date.now(), updatedField: type === "level" && level ? level : "contractType" }));
+        localStorage.setItem(
+          "contractUpdate",
+          JSON.stringify({
+            clientId,
+            timestamp: Date.now(),
+            updatedField: type === "level" && level ? level : "contractType",
+          }),
+        );
         setEditingLevel(null);
         await fetchContractData();
       } catch (error) {
         setStatus((prev) => ({ ...prev, error: "Failed to save changes" }));
       }
     },
-    [clientId, contractDetails, patchClientDataBulk, fetchContractData, patchClientData]
+    [clientId, contractDetails, patchClientDataBulk, fetchContractData, patchClientData],
   );
 
   const cancelEdit = useCallback(
@@ -504,11 +624,12 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
       updateContractDetails({
         contractTypeDetails: {
           ...contractDetails.contractTypeDetails,
-          [level || contractDetails.contractType]: contractDetails.contractTypeDetails[level || contractDetails.contractType],
+          [level || contractDetails.contractType]:
+            contractDetails.contractTypeDetails[level || contractDetails.contractType],
         },
       });
     },
-    [contractDetails.contractType, contractDetails.contractTypeDetails, updateContractDetails]
+    [contractDetails.contractType, contractDetails.contractTypeDetails, updateContractDetails],
   );
 
   const openEditDialog = useCallback(
@@ -517,13 +638,21 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
         open: true,
         type,
         level: level || "",
-        percentage: level ? contractDetails.contractTypeDetails[level]?.percentage || "" : contractDetails.contractTypeDetails[type]?.percentage || "",
-        notes: level ? contractDetails.contractTypeDetails[level]?.notes || "" : contractDetails.contractTypeDetails[type]?.notes || "",
-        money: level ? contractDetails.contractTypeDetails[level]?.money || "" : contractDetails.contractTypeDetails[type]?.money || "",
-        currency: level ? contractDetails.contractTypeDetails[level]?.currency || "" : contractDetails.contractTypeDetails[type]?.currency || "",
+        percentage: level
+          ? contractDetails.contractTypeDetails[level]?.percentage || ""
+          : contractDetails.contractTypeDetails[type]?.percentage || "",
+        notes: level
+          ? contractDetails.contractTypeDetails[level]?.notes || ""
+          : contractDetails.contractTypeDetails[type]?.notes || "",
+        money: level
+          ? contractDetails.contractTypeDetails[level]?.money || ""
+          : contractDetails.contractTypeDetails[type]?.money || "",
+        currency: level
+          ? contractDetails.contractTypeDetails[level]?.currency || ""
+          : contractDetails.contractTypeDetails[type]?.currency || "",
       });
     },
-    [contractDetails]
+    [contractDetails],
   );
 
   const updateLevelDetail = (level: string, field: keyof ContractTypeDetail, value: string) => {
@@ -538,56 +667,86 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
     });
   };
 
-  const saveEditDialog = useCallback(
-    async () => {
-      try {
-        const { type, level, percentage, notes, money, currency } = editDialog;
-        const key = level || type;
-        const newDetails = { ...contractDetails.contractTypeDetails, [key]: { percentage, notes, money, currency } };
-        updateContractDetails({ contractTypeDetails: newDetails });
+  const saveEditDialog = useCallback(async () => {
+    try {
+      const { type, level, percentage, notes, money, currency } = editDialog;
+      const key = level || type;
+      const newDetails = {
+        ...contractDetails.contractTypeDetails,
+        [key]: { percentage, notes, money, currency },
+      };
+      updateContractDetails({ contractTypeDetails: newDetails });
 
-        if (contractDetails.contractType === "Fix with Advance") {
+      if (contractDetails.contractType === "Fix with Advance") {
+        await patchClientDataBulk({
+          fixWithAdvanceValue: Number(percentage) || 0,
+          fixedPercentageAdvanceNotes: notes || "",
+          fixWithAdvanceMoney: Number(money) || 0,
+          fixWithAdvanceCurrency: currency || "SAR",
+        });
+      } else if (contractDetails.contractType === "Fix without Advance") {
+        await patchClientData("fixWithoutAdvanceValue", percentage);
+        await patchClientData("fixWithoutAdvanceNotes", notes);
+      } else if (level) {
+        const percentageField = levelFieldMap[level]?.percentage;
+        const notesField = levelFieldMap[level]?.notes;
+        const moneyField = levelFieldMap[level]?.money;
+        const currencyField = levelFieldMap[level]?.currency;
+        if (percentageField && notesField && moneyField && currencyField) {
           await patchClientDataBulk({
-            "fixWithAdvanceValue": Number(percentage) || 0,
-            "fixedPercentageAdvanceNotes": notes || "",
-            "fixWithAdvanceMoney": Number(money) || 0,
-            "fixWithAdvanceCurrency": currency || "SAR"
+            [percentageField]: Number(percentage) || 0,
+            [notesField]: notes || "",
+            [moneyField]: Number(money) || 0,
+            [currencyField]: currency || "",
           });
-        } else if (contractDetails.contractType === "Fix without Advance") {
-          await patchClientData("fixWithoutAdvanceValue", percentage);
-          await patchClientData("fixWithoutAdvanceNotes", notes);
-        } else if (level) {
-          const percentageField = levelFieldMap[level]?.percentage;
-          const notesField = levelFieldMap[level]?.notes;
-          const moneyField = levelFieldMap[level]?.money;
-          const currencyField = levelFieldMap[level]?.currency;
-          if (percentageField && notesField && moneyField && currencyField) {
-            await patchClientDataBulk({
-              [percentageField]: Number(percentage) || 0,
-              [notesField]: notes || "",
-              [moneyField]: Number(money) || 0,
-              [currencyField]: currency || "",
-            });
-          }
         }
-        await fetchContractData();
-        localStorage.setItem("contractUpdate", JSON.stringify({ clientId, timestamp: Date.now(), updatedField: level || type }));
-        setEditDialog({ open: false, type: "", level: "", percentage: "", notes: "", money: "", currency: "" });
-      } catch (error) {
-        setStatus((prev) => ({ ...prev, error: "Failed to save contract details" }));
       }
-    },
-    [contractDetails.contractType, contractDetails.contractTypeDetails, clientId, patchClientData, patchClientDataBulk, updateContractDetails, editDialog, fetchContractData]
-  );
+      await fetchContractData();
+      localStorage.setItem(
+        "contractUpdate",
+        JSON.stringify({ clientId, timestamp: Date.now(), updatedField: level || type }),
+      );
+      setEditDialog({
+        open: false,
+        type: "",
+        level: "",
+        percentage: "",
+        notes: "",
+        money: "",
+        currency: "",
+      });
+    } catch (error) {
+      setStatus((prev) => ({ ...prev, error: "Failed to save contract details" }));
+    }
+  }, [
+    contractDetails.contractType,
+    contractDetails.contractTypeDetails,
+    clientId,
+    patchClientData,
+    patchClientDataBulk,
+    updateContractDetails,
+    editDialog,
+    fetchContractData,
+  ]);
 
   return (
     <div className="bg-white rounded-lg border p-6 shadow-sm">
-      <h2 className="text-lg font-semibold text-gray-800">Contract Information</h2>
+      <h2 className="text-sm font-semibold">Contract Information</h2>
       {status.error && <div className="text-red-500 text-sm mt-2">{status.error}</div>}
       {status.loading && <div className="text-gray-500 text-sm mt-2">Loading...</div>}
       <div className="space-y-4 mt-4">
-        <DetailRow label="Contract Start Date" value={contractDetails.contractStartDate} onUpdate={(value) => handleUpdateField("contractStartDate", value)} isDate />
-        <DetailRow label="Contract End Date" value={contractDetails.contractEndDate} onUpdate={(value) => handleUpdateField("contractEndDate", value)} isDate />
+        <DetailRow
+          label="Contract Start Date"
+          value={contractDetails.contractStartDate}
+          onUpdate={(value) => handleUpdateField("contractStartDate", value)}
+          isDate
+        />
+        <DetailRow
+          label="Contract End Date"
+          value={contractDetails.contractEndDate}
+          onUpdate={(value) => handleUpdateField("contractEndDate", value)}
+          isDate
+        />
         <div className="flex items-center space-x-4">
           <label className="w-1/3 text-sm font-medium text-gray-600">Contract Type</label>
           <div className="w-2/3 flex items-center space-x-2">
@@ -598,7 +757,11 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
                   onClick={() => setIsContractTypeDropdownOpen(!isContractTypeDropdownOpen)}
                 >
                   <span>{contractDetails.contractType || "Select Contract Type"}</span>
-                  {isContractTypeDropdownOpen ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
+                  {isContractTypeDropdownOpen ? (
+                    <ChevronUp className="h-4 w-4 text-gray-400" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 text-gray-400" />
+                  )}
                 </button>
                 {isContractTypeDropdownOpen && (
                   <div className="absolute z-10 w-full bg-white border rounded-md mt-1 shadow-lg">
@@ -633,166 +796,196 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
               }}
               aria-label={isEditingContractType ? "Cancel Edit" : "Edit Contract Type"}
             >
-              {isEditingContractType ? (
-                <X className="h-4 w-4" />
-              ) : (
-                <Pencil className="h-4 w-4" />
-              )}
+              {isEditingContractType ? <X className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
               <span className="absolute hidden group-hover:block text-xs bg-gray-800 text-white rounded p-1 -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap">
                 {isEditingContractType ? "Cancel" : "Edit Contract Type"}
               </span>
             </button>
           </div>
         </div>
-        {contractDetails.contractType && !["Level Based (Hiring)", "Level Based With Advance"].includes(contractDetails.contractType) && (
-          <div className="ml-8 flex items-center space-x-4">
-            <label className="w-1/3 text-sm font-medium text-gray-600">{contractDetails.contractType}</label>
-            <div className="w-2/3 flex items-center space-x-2">
-              <div className="relative w-1/5">
-                <input
-                  type="number"
-                  value={contractDetails.contractTypeDetails[contractDetails.contractType]?.percentage || ""}
-                  onChange={(e) =>
-                    updateContractDetails({
-                      contractTypeDetails: {
-                        ...contractDetails.contractTypeDetails,
-                        [contractDetails.contractType]: {
-                          ...contractDetails.contractTypeDetails[contractDetails.contractType],
-                          percentage: e.target.value,
-                        },
-                      },
-                    })
-                  }
-                  readOnly={editingLevel !== "contractType"}
-                  className={`w-full border rounded-md p-2 text-sm pr-6 ${
-                    editingLevel === "contractType"
-                      ? "focus:ring-2 focus:ring-blue-500 bg-white"
-                      : "bg-gray-50 cursor-not-allowed"
-                  }`}
-                  min="0"
-                  max="100"
-                  placeholder="0"
-                />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-gray-500">%</span>
-              </div>
-              {contractDetails.contractType === "Fix with Advance" && (
-                <>
-                  <div className="w-1/5">
-                    <select
-                      value={contractDetails.contractTypeDetails[contractDetails.contractType]?.currency || "SAR"}
-                      onChange={(e) =>
-                        updateContractDetails({
-                          contractTypeDetails: {
-                            ...contractDetails.contractTypeDetails,
-                            [contractDetails.contractType]: {
-                              ...contractDetails.contractTypeDetails[contractDetails.contractType],
-                              currency: e.target.value,
-                            },
+        {contractDetails.contractType &&
+          !["Level Based (Hiring)", "Level Based With Advance"].includes(
+            contractDetails.contractType,
+          ) && (
+            <div className="ml-8 flex items-center space-x-4">
+              <label className="w-1/3 text-sm font-medium text-gray-600">
+                {contractDetails.contractType}
+              </label>
+              <div className="w-2/3 flex flex-wrap items-center gap-2 min-w-0">
+                <div className="relative flex-1 min-w-[100px] max-w-xs">
+                  <input
+                    type="number"
+                    value={
+                      contractDetails.contractTypeDetails[contractDetails.contractType]
+                        ?.percentage || ""
+                    }
+                    onChange={(e) =>
+                      updateContractDetails({
+                        contractTypeDetails: {
+                          ...contractDetails.contractTypeDetails,
+                          [contractDetails.contractType]: {
+                            ...contractDetails.contractTypeDetails[contractDetails.contractType],
+                            percentage: e.target.value,
                           },
-                        })
-                      }
-                      disabled={editingLevel !== "contractType"}
-                      className={`w-full border rounded-md p-2 text-sm ${
-                        editingLevel === "contractType"
-                          ? "focus:ring-2 focus:ring-blue-500 bg-white"
-                          : "bg-gray-50 cursor-not-allowed"
-                      }`}
-                    >
-                      {["USD", "EUR", "GBP", "SAR", "AED", "INR"].map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
-                  </div>
-                  <div className="w-1/5">
-                    <input
-                      type="number"
-                      value={contractDetails.contractTypeDetails[contractDetails.contractType]?.money || ""}
-                      onChange={(e) =>
-                        updateContractDetails({
-                          contractTypeDetails: {
-                            ...contractDetails.contractTypeDetails,
-                            [contractDetails.contractType]: {
-                              ...contractDetails.contractTypeDetails[contractDetails.contractType],
-                              money: e.target.value,
-                            },
-                          },
-                        })
-                      }
-                      readOnly={editingLevel !== "contractType"}
-                      className={`w-full border rounded-md p-2 text-sm ${
-                        editingLevel === "contractType"
-                          ? "focus:ring-2 focus:ring-blue-500 bg-white"
-                          : "bg-gray-50 cursor-not-allowed"
-                      }`}
-                      placeholder="Amount"
-                    />
-                  </div>
-                </>
-              )}
-              <div className={contractDetails.contractType === "Fix with Advance" ? "w-2/5" : "w-2/3"}>
-                <input
-                  type="text"
-                  value={contractDetails.contractTypeDetails[contractDetails.contractType]?.notes || ""}
-                  onChange={(e) =>
-                    updateContractDetails({
-                      contractTypeDetails: {
-                        ...contractDetails.contractTypeDetails,
-                        [contractDetails.contractType]: {
-                          ...contractDetails.contractTypeDetails[contractDetails.contractType],
-                          notes: e.target.value,
                         },
-                      },
-                    })
-                  }
-                  readOnly={editingLevel !== "contractType"}
-                  className={`w-full border rounded-md p-2 text-sm ${
-                    editingLevel === "contractType"
-                      ? "focus:ring-2 focus:ring-blue-500 bg-white"
-                      : "bg-gray-50 cursor-not-allowed"
-                  }`}
-                  placeholder="Notes"
-                />
-              </div>
-
-              <div className="flex space-x-1 ml-8">
-                {editingLevel === "contractType" ? (
+                      })
+                    }
+                    readOnly={editingLevel !== "contractType"}
+                    className={`w-full border rounded-md p-2 text-sm pr-6 ${
+                      editingLevel === "contractType"
+                        ? "focus:ring-2 focus:ring-blue-500 bg-white"
+                        : "bg-gray-50 cursor-not-allowed"
+                    }`}
+                    min="0"
+                    max="100"
+                    placeholder="0"
+                  />
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-gray-500">
+                    %
+                  </span>
+                </div>
+                {contractDetails.contractType === "Fix with Advance" && (
                   <>
-                    <button
-                      className="p-2 border rounded-md hover:bg-green-50 group relative"
-                      onClick={() => saveEdit("contractType")}
-                      aria-label="Save Changes"
-                    >
-                      <Check className="h-4 w-4 text-green-600" />
-                      <span className="absolute hidden group-hover:block text-xs bg-gray-800 text-white rounded p-1 -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                        Save Changes
-                      </span>
-                    </button>
+                    <div className="flex-1 min-w-[80px] max-w-xs">
+                      <select
+                        value={
+                          contractDetails.contractTypeDetails[contractDetails.contractType]
+                            ?.currency || "SAR"
+                        }
+                        onChange={(e) =>
+                          updateContractDetails({
+                            contractTypeDetails: {
+                              ...contractDetails.contractTypeDetails,
+                              [contractDetails.contractType]: {
+                                ...contractDetails.contractTypeDetails[
+                                  contractDetails.contractType
+                                ],
+                                currency: e.target.value,
+                              },
+                            },
+                          })
+                        }
+                        disabled={editingLevel !== "contractType"}
+                        className={`w-full border rounded-md p-2 text-sm ${
+                          editingLevel === "contractType"
+                            ? "focus:ring-2 focus:ring-blue-500 bg-white"
+                            : "bg-gray-50 cursor-not-allowed"
+                        }`}
+                      >
+                        {["USD", "EUR", "GBP", "SAR", "AED", "INR"].map((c) => (
+                          <option key={c} value={c}>
+                            {c}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex-1 min-w-[100px] max-w-xs">
+                      <input
+                        type="number"
+                        value={
+                          contractDetails.contractTypeDetails[contractDetails.contractType]
+                            ?.money || ""
+                        }
+                        onChange={(e) =>
+                          updateContractDetails({
+                            contractTypeDetails: {
+                              ...contractDetails.contractTypeDetails,
+                              [contractDetails.contractType]: {
+                                ...contractDetails.contractTypeDetails[
+                                  contractDetails.contractType
+                                ],
+                                money: e.target.value,
+                              },
+                            },
+                          })
+                        }
+                        readOnly={editingLevel !== "contractType"}
+                        className={`w-full border rounded-md p-2 text-sm ${
+                          editingLevel === "contractType"
+                            ? "focus:ring-2 focus:ring-blue-500 bg-white"
+                            : "bg-gray-50 cursor-not-allowed"
+                        }`}
+                        placeholder="Amount"
+                      />
+                    </div>
+                  </>
+                )}
+                <div
+                  className={
+                    contractDetails.contractType === "Fix with Advance"
+                      ? "flex-[2] min-w-[150px] max-w-lg"
+                      : "flex-1 min-w-[150px] max-w-lg"
+                  }
+                >
+                  <input
+                    type="text"
+                    value={
+                      contractDetails.contractTypeDetails[contractDetails.contractType]?.notes || ""
+                    }
+                    onChange={(e) =>
+                      updateContractDetails({
+                        contractTypeDetails: {
+                          ...contractDetails.contractTypeDetails,
+                          [contractDetails.contractType]: {
+                            ...contractDetails.contractTypeDetails[contractDetails.contractType],
+                            notes: e.target.value,
+                          },
+                        },
+                      })
+                    }
+                    readOnly={editingLevel !== "contractType"}
+                    className={`w-full border rounded-md p-2 text-sm min-w-0 ${
+                      editingLevel === "contractType"
+                        ? "focus:ring-2 focus:ring-blue-500 bg-white"
+                        : "bg-gray-50 cursor-not-allowed"
+                    }`}
+                    placeholder="Notes"
+                  />
+                </div>
+
+                <div className="flex space-x-1 ml-8">
+                  {editingLevel === "contractType" ? (
+                    <>
+                      <button
+                        className="p-2 border rounded-md hover:bg-green-50 group relative"
+                        onClick={() => saveEdit("contractType")}
+                        aria-label="Save Changes"
+                      >
+                        <Check className="h-4 w-4 text-green-600" />
+                        <span className="absolute hidden group-hover:block text-xs bg-gray-800 text-white rounded p-1 -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                          Save Changes
+                        </span>
+                      </button>
+                      <button
+                        className="p-2 border rounded-md hover:bg-gray-100 group relative"
+                        onClick={() => cancelEdit("contractType")}
+                        aria-label="Cancel Edit"
+                      >
+                        <X className="h-4 w-4" />
+                        <span className="absolute hidden group-hover:block text-xs bg-gray-800 text-white rounded p-1 -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                          Cancel
+                        </span>
+                      </button>
+                    </>
+                  ) : (
                     <button
                       className="p-2 border rounded-md hover:bg-gray-100 group relative"
-                      onClick={() => cancelEdit("contractType")}
-                      aria-label="Cancel Edit"
+                      onClick={() => startEditing("contractType")}
+                      aria-label={`Edit ${contractDetails.contractType} Details`}
                     >
-                      <X className="h-4 w-4" />
+                      <Pencil className="h-4 w-4" />
                       <span className="absolute hidden group-hover:block text-xs bg-gray-800 text-white rounded p-1 -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                        Cancel
+                        Edit {contractDetails.contractType} Details
                       </span>
                     </button>
-                  </>
-                ) : (
-                  <button
-                    className="p-2 border rounded-md hover:bg-gray-100 group relative"
-                    onClick={() => startEditing("contractType")}
-                    aria-label={`Edit ${contractDetails.contractType} Details`}
-                  >
-                    <Pencil className="h-4 w-4" />
-                    <span className="absolute hidden group-hover:block text-xs bg-gray-800 text-white rounded p-1 -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                      Edit {contractDetails.contractType} Details
-                    </span>
-                  </button>
-                )}
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        )}
-        {["Level Based (Hiring)", "Level Based With Advance"].includes(contractDetails.contractType) && (
+          )}
+        {["Level Based (Hiring)", "Level Based With Advance"].includes(
+          contractDetails.contractType,
+        ) && (
           <div className="ml-8 space-y-4">
             <div className="flex items-center space-x-4">
               <label className="w-1/4 text-sm font-medium text-gray-600">Levels</label>
@@ -802,7 +995,11 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
                   onClick={() => setIsLevelDropdownOpen(!isLevelDropdownOpen)}
                 >
                   {contractDetails.selectedLevels.join(", ") || "Select Levels"}
-                  {isLevelDropdownOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  {isLevelDropdownOpen ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
                 </button>
                 <button
                   className="p-2 border rounded-md hover:bg-gray-100 group relative"
@@ -835,53 +1032,58 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
               const details = contractDetails.contractTypeDetails[level] || {};
               const isEditing = editingLevel === level;
               return (
-                <div key={level} className="grid grid-cols-12 gap-2 items-center p-2 rounded-md hover:bg-gray-50">
-                  <label className="col-span-2 text-sm font-medium text-gray-800 truncate">{level}</label>
+                <div
+                  key={level}
+                  className="flex flex-wrap items-center gap-2 p-2 rounded-md hover:bg-gray-50"
+                >
+                  <label className="w-32 text-sm font-medium text-gray-800 truncate">{level}</label>
                   {/* Percentage */}
-                  <div className="col-span-2 relative">
+                  <div className="relative flex-1 min-w-[100px] max-w-xs">
                     <input
                       type="number"
                       value={details.percentage}
                       onChange={(e) => updateLevelDetail(level, "percentage", e.target.value)}
                       readOnly={!isEditing}
-                      className={`w-full border rounded-md p-2 text-sm pr-6 ${isEditing ? "bg-white focus:ring-2 focus:ring-blue-500" : "bg-gray-100"}`}
+                      className={`w-full border rounded-md p-2 text-sm pr-6 min-w-0 ${isEditing ? "bg-white focus:ring-2 focus:ring-blue-500" : "bg-gray-100"}`}
                       placeholder="0"
                       min="0"
                       max="100"
                     />
-                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-gray-500">%</span>
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-gray-500">
+                      %
+                    </span>
                   </div>
-
                   {/* Currency & Money (only for Level Based With Advance) */}
                   {contractDetails.contractType === "Level Based With Advance" ? (
                     <>
-                      <div className="col-span-2">
+                      <div className="flex-1 min-w-[80px] max-w-xs">
                         <select
                           value={details.currency || "SAR"}
                           onChange={(e) => updateLevelDetail(level, "currency", e.target.value)}
                           disabled={!isEditing}
-                          className={`w-full border rounded-md p-2 text-sm ${isEditing ? "bg-white focus:ring-2 focus:ring-blue-500" : "bg-gray-100"}`}
+                          className={`w-full border rounded-md p-2 text-sm min-w-0 ${isEditing ? "bg-white focus:ring-2 focus:ring-blue-500" : "bg-gray-100"}`}
                         >
-                          {["USD", "EUR", "GBP", "SAR", "AED", "INR"].map(c => <option key={c} value={c}>{c}</option>)}
+                          {["USD", "EUR", "GBP", "SAR", "AED", "INR"].map((c) => (
+                            <option key={c} value={c}>
+                              {c}
+                            </option>
+                          ))}
                         </select>
                       </div>
-                      <div className="col-span-2">
+                      <div className="flex-1 min-w-[100px] max-w-xs">
                         <input
                           type="number"
                           value={details.money}
                           onChange={(e) => updateLevelDetail(level, "money", e.target.value)}
                           readOnly={!isEditing}
-                          className={`w-full border rounded-md p-2 text-sm ${isEditing ? "bg-white focus:ring-2 focus:ring-blue-500" : "bg-gray-100"}`}
+                          className={`w-full border rounded-md p-2 text-sm min-w-0 ${isEditing ? "bg-white focus:ring-2 focus:ring-blue-500" : "bg-gray-100"}`}
                           placeholder="Amount"
                         />
                       </div>
                     </>
-                  ) : (
-                    <><div className="col-span-2"></div><div className="col-span-2"></div></>)
-                  }
-
+                  ) : null}
                   {/* Notes */}
-                  <div className="col-span-3 min-w-0">
+                  <div className="flex-1 min-w-[150px] max-w-lg">
                     <input
                       type="text"
                       value={details.notes}
@@ -891,9 +1093,8 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
                       placeholder="Notes"
                     />
                   </div>
-
                   {/* Actions */}
-                  <div className="col-span-1 flex space-x- ml-15">
+                  <div className="flex space-x-1 ml-2">
                     {isEditing ? (
                       <>
                         <button
@@ -959,7 +1160,11 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
                     ? contractDetails.lineOfBusiness.join(", ")
                     : "Select Line of Business"}
                 </span>
-                {isLineOfBusinessDropdownOpen ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
+                {isLineOfBusinessDropdownOpen ? (
+                  <ChevronUp className="h-4 w-4 text-gray-400" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-gray-400" />
+                )}
               </button>
               {isLineOfBusinessDropdownOpen && (
                 <div className="absolute z-20 w-full bg-white border rounded-md mt-1 shadow-lg">
@@ -978,8 +1183,18 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
                     </label>
                   ))}
                   <div className="flex justify-end space-x-2 p-2 bg-gray-50 border-t">
-                    <button onClick={cancelLineOfBusinessEdit} className="px-4 py-2 text-sm rounded-md border hover:bg-gray-100">Cancel</button>
-                    <button onClick={saveLineOfBusiness} className="px-4 py-2 text-sm rounded-md border bg-blue-600 text-white hover:bg-blue-700">Save</button>
+                    <button
+                      onClick={cancelLineOfBusinessEdit}
+                      className="px-4 py-2 text-sm rounded-md border hover:bg-gray-100"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={saveLineOfBusiness}
+                      className="px-4 py-2 text-sm rounded-md border bg-blue-600 text-white hover:bg-blue-700"
+                    >
+                      Save
+                    </button>
                   </div>
                 </div>
               )}
@@ -1007,34 +1222,50 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
                   <input
                     type="number"
                     value={editDialog.percentage}
-                    onChange={(e) => setEditDialog((prev) => ({ ...prev, percentage: e.target.value }))}
+                    onChange={(e) =>
+                      setEditDialog((prev) => ({ ...prev, percentage: e.target.value }))
+                    }
                     className="w-full border rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500 pr-6"
                     min="0"
                     max="100"
                     placeholder="0"
                   />
-                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-gray-500">%</span>
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-gray-500">
+                    %
+                  </span>
                 </div>
               </div>
-              {(editDialog.type === "Fix with Advance" || (editDialog.level && contractDetails.contractType === "Level Based With Advance")) && (
+              {(editDialog.type === "Fix with Advance" ||
+                (editDialog.level &&
+                  contractDetails.contractType === "Level Based With Advance")) && (
                 <>
                   <div className="flex space-x-4">
                     <div className="w-1/2">
-                      <label className="block text-sm font-medium text-gray-600 mb-1">Currency</label>
+                      <label className="block text-sm font-medium text-gray-600 mb-1">
+                        Currency
+                      </label>
                       <select
                         value={editDialog.currency || "SAR"}
-                        onChange={(e) => setEditDialog((prev) => ({ ...prev, currency: e.target.value }))}
+                        onChange={(e) =>
+                          setEditDialog((prev) => ({ ...prev, currency: e.target.value }))
+                        }
                         className="w-full border rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500"
                       >
-                        {["USD", "EUR", "GBP", "SAR", "AED", "INR"].map(c => <option key={c} value={c}>{c}</option>)}
+                        {["USD", "EUR", "GBP", "SAR", "AED", "INR"].map((c) => (
+                          <option key={c} value={c}>
+                            {c}
+                          </option>
+                        ))}
                       </select>
                     </div>
-                    <div className="w-1/2">
-                      <label className="block text-sm font-medium text-gray-600 mb-1">Amount</label>
+                    <div className="w-full">
+                      <Label className="text-sm font-medium text-gray-600 ">Amount</Label>
                       <input
                         type="number"
                         value={editDialog.money}
-                        onChange={(e) => setEditDialog((prev) => ({ ...prev, money: e.target.value }))}
+                        onChange={(e) =>
+                          setEditDialog((prev) => ({ ...prev, money: e.target.value }))
+                        }
                         className="w-full border rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500"
                         placeholder="Amount"
                       />
@@ -1054,7 +1285,17 @@ export function ContractSection({ clientId, clientData }: ContractSectionProps) 
               <div className="flex justify-end space-x-2">
                 <button
                   className="px-4 py-2 bg-gray-200 rounded-md text-sm text-gray-800 hover:bg-gray-300"
-                  onClick={() => setEditDialog({ open: false, type: "", level: "", percentage: "", notes: "", money: "", currency: "" })}
+                  onClick={() =>
+                    setEditDialog({
+                      open: false,
+                      type: "",
+                      level: "",
+                      percentage: "",
+                      notes: "",
+                      money: "",
+                      currency: "",
+                    })
+                  }
                 >
                   Cancel
                 </button>

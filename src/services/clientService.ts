@@ -11,7 +11,17 @@ export interface PrimaryContact {
   error?: string;
 }
 
-// Interface for Client Response
+export const clientStageStatuses = [
+  "Replied to a message",
+  "Calls",
+  "Attended a meeting",
+  "Profile Sent",
+  "Contract Sent",
+  "Contract Negotiation",
+] as const;
+
+export type ClientStageStatus = (typeof clientStageStatuses)[number];
+
 export interface ClientResponse {
   _id: string;
   name: string;
@@ -32,6 +42,7 @@ export interface ClientResponse {
   countryCode?: string;
   primaryContacts?: PrimaryContact[];
   clientStage?: "Lead" | "Engaged" | "Negotiation" | "Signed";
+  clientStageStatus?: ClientStageStatus;
   clientTeam?: "Enterprise" | "SMB" | "Mid-Market";
   clientRm?: string;
   clientAge?: number;
@@ -43,7 +54,7 @@ export interface ClientResponse {
   cLevelPercentage?: number;
   belowCLevelPercentage?: number;
   fixedPercentageNotes?: string;
-  fixedPercentageValue?:string;
+  fixedPercentageValue?: string;
   fixedPercentageAdvanceNotes?: string;
   cLevelPercentageNotes?: string;
   belowCLevelPercentageNotes?: string;
@@ -70,6 +81,7 @@ export interface ClientResponse {
   nonExecutives?: string | null;
   other?: string | null;
   salesLead?: string;
+  jobCount?: number; // Added optional jobCount property
   createdAt: string;
   updatedAt?: string;
   __v?: number;
@@ -90,6 +102,7 @@ interface ApiResponse<T> {
   message?: string;
   error?: string;
 }
+
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://aems-backend.onrender.com/api";
 
@@ -170,9 +183,9 @@ const validateAndSanitizeClientData = (data: any) => {
     if (sanitized.contractEndDate && !(typeof sanitized.contractEndDate === 'string')) {
       sanitized.contractEndDate = new Date(sanitized.contractEndDate).toISOString();
     }
-    if (sanitized.incorporationDate && !(typeof sanitized.incorporationDate === 'string')) {
-      sanitized.incorporationDate = new Date(sanitized.incorporationDate).toISOString();
-    }
+    // if (sanitized.incorporationDate && !(typeof sanitized.incorporationDate === 'string')) {
+    //   sanitized.incorporationDate = new Date(sanitized.incorporationDate).toISOString();
+    // }
     
     // Validate primary contacts
     if (sanitized.primaryContacts && Array.isArray(sanitized.primaryContacts)) {
@@ -322,15 +335,14 @@ const sendClientRequest = async (
     // First validate and sanitize the data
     const validatedData = validateAndSanitizeClientData(rawData);
     
-    console.log('Validated data before sending:', {
-      name: validatedData.name,
-      hasFiles: hasFileUploads(validatedData),
-      keys: Object.keys(validatedData)
-    });
+    // console.log('Validated data before sending:', {
+    //   name: validatedData.name,
+    //   hasFiles: hasFileUploads(validatedData),
+    //   keys: Object.keys(validatedData)
+    // });
     
     if (hasFileUploads(validatedData)) {
       const formData = prepareFormData(validatedData);
-      console.log('Sending FormData with files');
       
       return await axios({
         method,
@@ -346,13 +358,11 @@ const sendClientRequest = async (
       // Test JSON serialization before sending
       try {
         const testSerialization = JSON.stringify(jsonData);
-        console.log('JSON serialization test passed, data size:', testSerialization.length);
       } catch (serializationError) {
         console.error('JSON serialization failed:', serializationError);
         throw new Error('Data contains non-serializable content');
       }
       
-      console.log('Sending JSON data with keys:', Object.keys(jsonData));
       
       return await axios({
         method,
@@ -429,7 +439,6 @@ const createClient = async (rawData: FormData | Omit<ClientResponse, "_id" | "cr
 }): Promise<ClientResponse> => {
   try {
     if (rawData instanceof FormData) {
-      console.log('Creating client with FormData');
       // When sending FormData, do not set Content-Type header
       // The browser will automatically set it with the correct boundary
       const response = await axios.post<ApiResponse<ClientResponse>>(
@@ -441,7 +450,6 @@ const createClient = async (rawData: FormData | Omit<ClientResponse, "_id" | "cr
       );
       return response.data.data;
     } else {
-      console.log('Creating client with data:', { name: rawData.name, stage: rawData.clientStage });
       const response = await sendClientRequest(`${API_URL}/clients`, 'post', rawData);
       return response.data.data;
     }
@@ -467,7 +475,6 @@ const getClients = async (queryParams: {
     });
     
     // Log the response for debugging
-    console.log('API Response in service:', response.data);
     
     // Handle different response formats
     if (response.data.success && Array.isArray(response.data.data)) {
@@ -598,6 +605,41 @@ const updateClientStage = async (
   }
 };
 
+// Update client stage status
+const updateClientStageStatus = async (
+  id: string,
+  status: ClientStageStatus
+): Promise<ClientResponse> => {
+  try {
+    // Fetch the full client data to avoid backend issues with partial updates.
+    const currentClient = await getClientById(id);
+
+    const dataToUpdate = {
+      ...currentClient,
+      clientStageStatus: status,
+    };
+
+    // Remove fields that should not be sent in an update payload.
+    const { _id, createdAt, updatedAt, __v, ...updatePayload } = dataToUpdate;
+
+    // Manually remove file URL fields to prevent backend errors.
+    const fileFields = [
+      'profileImage', 'crCopy', 'vatCopy', 'gstTinDocument', 'fixedPercentage', 
+      'fixedPercentageAdvance', 'variablePercentageCLevel', 'variablePercentageBelowCLevel', 
+      'fixWithoutAdvance', 'seniorLevel', 'executives', 'nonExecutives', 'other'
+    ];
+    fileFields.forEach(field => delete (updatePayload as any)[field]);
+
+    // Call the main updateClient function to reuse its logic, including validation.
+    return await updateClient(id, updatePayload);
+
+  } catch (error: any) {
+    console.error("Error updating client stage status:", error);
+    // The error is already handled by `updateClient`, so we just re-throw it.
+    throw error;
+  }
+};
+
 // Delete client
 const deleteClient = async (id: string): Promise<void> => {
   try {
@@ -669,6 +711,7 @@ export {
   getClientById,
   updateClient,
   updateClientStage,
+  updateClientStageStatus,
   deleteClient,
   uploadClientFile,
   addPrimaryContact,

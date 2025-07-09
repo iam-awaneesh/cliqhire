@@ -1,94 +1,137 @@
-"use client"
+"use client";
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Plus } from "lucide-react"
-import { useState, useRef } from "react"
+import { useState, useEffect } from "react";
+import axios from "axios";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+
+import { UploadAttachment } from "./uploadAttachment";
+import { AttachmentList } from "./attachmentList";
+
+export interface BackendAttachment {
+  _id: string;
+  fileName: string;
+  uploadedAt: string;
+  url: string;
+}
 
 interface AttachmentsContentProps {
   clientId: string;
 }
 
+const API_BASE_URL = "https://aems-backend.onrender.com/api/attachments";
+
 export function AttachmentsContent({ clientId }: AttachmentsContentProps) {
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const [isDragging, setIsDragging] = useState(false)
+  const [showUploadBox, setShowUploadBox] = useState(false);
+  const [attachments, setAttachments] = useState<BackendAttachment[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
-  const handleUploadClick = () => {
-    fileInputRef.current?.click()
-  }
+  // Fetch attachments from backend
+  const fetchAttachments = async () => {
+    if (!clientId) return;
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(true)
-  }
+    setLoading(true);
+    try {
+      const response = await axios.get(`${API_BASE_URL}?client_id=${clientId}`);
+      setAttachments(response.data.data || []);
+    } catch (error) {
+      console.error("Error fetching attachments:", error);
+      setAttachments([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const handleDragLeave = () => {
-    setIsDragging(false)
-  }
+  // Bulk delete selected attachments
+  const handleBulkDelete = async (ids: string[]) => {
+    try {
+      await Promise.all(
+        ids.map(id => axios.delete(`${API_BASE_URL}/${id}`))
+      );
+      fetchAttachments();
+    } catch (error) {
+      console.error("Error deleting attachments:", error);
+    }
+  };
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(false)
-    const files = Array.from(e.dataTransfer.files)
-    // Handle file upload logic here
-    console.log('Dropped files:', files)
-  }
+  // Upload a file
+  const handleUpload = async (file: File) => {
+    if (!clientId) return;
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("client_id", clientId);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || [])
-    // Handle file upload logic here
-    console.log('Selected files:', files)
-  }
+      await axios.post(API_BASE_URL, formData);
+      // Always refresh list after upload to ensure new file appears
+      await fetchAttachments();
+    } catch (error) {
+      console.error("Upload failed:", error);
+    }
+  };
+
+  // Delete a file
+  const handleDelete = async (attachmentId: string) => {
+    try {
+      await axios.delete(`${API_BASE_URL}/${attachmentId}`);
+      setAttachments((prev) =>
+        prev.filter((item) => item._id !== attachmentId)
+      );
+    } catch (error) {
+      console.error("Delete failed:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchAttachments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clientId]);
 
   return (
-    <div className="p-4">
-      {/* Upload Section */}
-      <div 
-        className={`border rounded-lg p-4 mb-4 cursor-pointer transition-colors ${
-          isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
-        }`}
-        onClick={handleUploadClick}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-      >
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-medium">Upload Files</span>
-          <Button size="sm" variant="ghost">
-            <Plus className="h-4 w-4 text-blue-500" />
-          </Button>
-        </div>
-        <input 
-          type="file" 
-          ref={fileInputRef}
-          className="hidden"
-          multiple
-          onChange={handleFileChange}
-        />
+    <div className="p-6">
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-gray-800">Upload File</h3>
+        <Button
+          onClick={() => setShowUploadBox(true)}
+          disabled={showUploadBox}
+          className="flex items-center gap-2 bg-black text-white hover:bg-gray-800"
+        >
+          <Plus className="w-4 h-4" />
+          Upload File
+        </Button>
       </div>
 
-      {/* Empty State */}
-      <div className="flex flex-col items-center justify-center py-12">
-        <div className="w-48 h-48 mb-6">
-          <svg
-            viewBox="0 0 200 200"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            className="w-full h-full text-blue-500"
-          >
-            <rect x="50" y="40" width="100" height="120" rx="8" fill="currentColor" fillOpacity="0.1" />
-            <path d="M50 80L100 100L150 80" stroke="currentColor" strokeWidth="2"/>
-            <rect x="70" y="60" width="60" height="4" rx="2" fill="currentColor" />
-            <circle cx="140" cy="30" r="20" fill="currentColor" fillOpacity="0.2" />
-            <circle cx="30" cy="140" r="15" fill="currentColor" fillOpacity="0.2" />
-            <circle cx="170" cy="140" r="10" fill="currentColor" fillOpacity="0.2" />
-          </svg>
+      <UploadAttachment
+        show={showUploadBox}
+        setShow={setShowUploadBox}
+        onUpload={handleUpload}
+        attachments={attachments}
+      />
+
+      {loading ? (
+        <div className="text-center py-8 text-gray-500">Loading attachments...</div>
+      ) : attachments.length === 0 ? (
+        <div className="flex flex-col items-center justify-center p-6 text-center">
+          <div className="w-48 h-48 mb-6">
+            <svg viewBox="0 0 200 200" className="w-full h-full text-blue-500">
+              <rect x="50" y="80" width="100" height="60" rx="10" fill="currentColor" opacity="0.1" />
+              <rect x="70" y="100" width="60" height="20" rx="4" fill="currentColor" opacity="0.2" />
+              <circle cx="100" cy="120" r="8" fill="currentColor" opacity="0.2" />
+              <rect x="120" y="90" width="20" height="8" rx="2" fill="currentColor" opacity="0.3" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-semibold mb-2">No attachments yet</h2>
+          <p className="text-gray-500 mb-4">
+            Add your first attachment to share files with your team.
+          </p>
         </div>
-        <h3 className="text-xl font-semibold mb-2">No attachments uploaded yet</h3>
-        <p className="text-muted-foreground text-center">
-          Drag and drop files here or click the upload button to add attachments.
-        </p>
-      </div>
+      ) : (
+        <AttachmentList
+          attachments={attachments}
+          onDelete={handleDelete}
+          onDeleteSelected={handleBulkDelete}
+        />
+      )}
     </div>
-  )
+  );
 }

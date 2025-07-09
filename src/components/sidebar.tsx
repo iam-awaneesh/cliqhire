@@ -9,6 +9,7 @@ const menuItems = [
   { name: "Home", icon: Home, href: "/" },
   { name: "Clients", icon: Building2, href: "/clients" },
   { name: "Jobs", icon: Briefcase, href: "/jobs" },
+  { name: "Recruiters", icon: Users, href: "/recruiter"   }, 
   { name: "Candidates", icon: Users, href: "/candidates" }, // Line after "Candidates"
   { name: "Placements", icon: UserCheck, href: "/placements" },
   { name: "Activities", icon: Calendar, href: "/activities" },

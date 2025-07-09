@@ -82,7 +82,6 @@ export function JobsTable({ jobs, clientId, clientName }: JobsTableProps) {
         }
 
       } catch (error) {
-        console.log(error);
         // Revert the local state if the API call fails
         setLocalJobs(prev => prev.map(job => 
           job._id === jobId ? { ...job, stage: job.stage } : job
