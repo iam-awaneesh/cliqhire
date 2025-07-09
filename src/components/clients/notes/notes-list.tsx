@@ -9,18 +9,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { MoreVertical, Lock, Pencil, Trash2, ChevronDown } from "lucide-react";
+import { MoreVertical, Lock, Pencil, Trash2, Eye, EyeOff } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useState, useEffect } from "react";
 import type { Note } from "./notes-content";
-import { DialogDescription } from "@/components/ui/dialog";
 
 interface NotesListProps {
   notes: Note[];
@@ -68,9 +60,9 @@ export function NotesList({ notes, onEdit, onDelete }: NotesListProps) {
                 onClick={() => toggleExpand(note.id)}
               >
                 {expandNotes.includes(note.id) ? (
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 012.458 12.042a10.05 10.05 0 0118.417 0M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3l18 18" /></svg>
+                  <EyeOff className="h-5 w-5" />
                 ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7.042a10.05 10.05 0 01-18.084 0z" /></svg>
+                  <Eye className="h-5 w-5" />
                 )}
               </Button>
               <DropdownMenu>
