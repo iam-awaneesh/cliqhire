@@ -40,7 +40,7 @@ import { ClientStageBadge } from "@/components/client-stage-badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SummaryContent } from "@/components/clients/summary/summary-content";
-import { ActivitiesContent } from "@/components/clients/activities/activities-content";
+// import { ActivitiesContent } from "@/components/clients/activities/activities-content";
 import { NotesContent } from "@/components/clients/notes/notes-content";
 import { AttachmentsContent } from "@/components/clients/attachments/attachments-content";
 import TeamContent from "@/components/clients/team/team-content";
@@ -362,13 +362,13 @@ export default function ClientPage({ params }: PageProps) {
             <FileIcon className="h-4 w-4" />
             Jobs
           </TabsTrigger>
-          <TabsTrigger
+          {/* <TabsTrigger
             value="Activities"
             className="data-[state=active]:border-b-2 data-[state=active]:border-black data-[state=active]:shadow-none rounded-none flex items-center gap-2 h-12 px-6"
           >
             <MessageSquare className="h-4 w-4" />
             Activities
-          </TabsTrigger>
+          </TabsTrigger> */}
           <TabsTrigger
             value="Notes"
             className="data-[state=active]:border-b-2 data-[state=active]:border-black data-[state=active]:shadow-none rounded-none flex items-center gap-2 h-12 px-6"
@@ -376,13 +376,13 @@ export default function ClientPage({ params }: PageProps) {
             <StickyNote className="h-4 w-4" />
             Notes
           </TabsTrigger>
-          {/* <TabsTrigger 
+          <TabsTrigger 
             value="Attachments" 
             className="data-[state=active]:border-b-2 data-[state=active]:border-black data-[state=active]:shadow-none rounded-none flex items-center gap-2 h-12 px-6"
           >
             <Paperclip className="h-4 w-4" />
             Attachments
-          </TabsTrigger> */}
+          </TabsTrigger>
           <TabsTrigger
             value="ClientTeam"
             className="data-[state=active]:border-b-2 data-[state=active]:border-black data-[state=active]:shadow-none rounded-none flex items-center gap-2 h-12 px-6"
@@ -461,9 +461,9 @@ export default function ClientPage({ params }: PageProps) {
           <SummaryContent clientId={id} />
         </TabsContent>
 
-        <TabsContent value="Activities" className="p-4">
+        {/* <TabsContent value="Activities" className="p-4">
           <ActivitiesContent clientId={id} />
-        </TabsContent>
+        </TabsContent> */}
 
         <TabsContent value="Notes" className="p-4">
           <NotesContent clientId={id} />
