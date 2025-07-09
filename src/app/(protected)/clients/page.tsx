@@ -61,7 +61,7 @@ const columsArr = [
   "Job Count",
 ];
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://aems-backend.onrender.com/api";
 
 interface Client {
   id: string;

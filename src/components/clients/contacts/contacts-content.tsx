@@ -332,7 +332,7 @@ export function ContactsContent({ clientId }: ContactsContentProps) {
                     {clientLinkedIn}
                   </a>
                 ) : (
-                  <span className="text-sm text-muted-foreground">No LinkedIn' profile</span>
+                  <span className="text-sm text-muted-foreground">No LinkedIn profile</span>
                 )}
                  </div>
 
