@@ -185,7 +185,10 @@ export function CreateClientModal({
 
     setClientContactInfo((prev) => ({
       ...prev,
-      primaryContacts: [...prev.primaryContacts, { ...contact }],
+       primaryContacts: [
+        ...prev.primaryContacts,
+        { ...contact, name: `${contact.firstName} ${contact.lastName}`.trim() },
+      ],
     }));
     setPrimaryContact({
       firstName: "",
