@@ -33,7 +33,7 @@ export function ContractInformationTab({
 
   // Business tabs
   const [activeBusinessTab, setActiveBusinessTab] = useState<string | null>(null);
-  const [previewBusinessTab, setPreviewBusinessTab] = useState<string | null>(null);
+ 
 
   const [standardContractFormData, setStandardContractFormData] = useState(businessInitialState);
   const [consultingContractFormData, setConsultingContractFormData] = useState(consultingInitialState);
@@ -107,7 +107,6 @@ export function ContractInformationTab({
                   });
                   if (!formData.lineOfBusiness?.includes(option) && activeBusinessTab === option) {
                     setActiveBusinessTab(null);
-                    setPreviewBusinessTab(null);
                   }
                 }}
               />
@@ -149,7 +148,6 @@ export function ContractInformationTab({
                     variant="outline"
                     onClick={() => {
                       setActiveBusinessTab(business);
-                      setPreviewBusinessTab(null);
                       setModalBusiness(business);
                       setModalOpen(true);
                     }}
@@ -157,18 +155,6 @@ export function ContractInformationTab({
                     <Pencil className="size-4" />
                     Fill Form
                   </Button>
-                  {formData.contractForms[business] && (
-                    <Button
-                      size="sm"
-                      type="button"
-                      className="w-24"
-                      onClick={() => {
-                        setPreviewBusinessTab(business);
-                      }}
-                    >
-                      Preview
-                    </Button>
-                  )}
                 </div>
               </div>
             ))}
